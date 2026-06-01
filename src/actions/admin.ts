@@ -46,8 +46,8 @@ const productSchema = z.object({
   brandId: z.string().min(1),
   categoryId: z.string().min(1),
   description: z.string().min(10),
-  priceInCents: z.coerce.number().int().min(0),
-  salePriceInCents: z.coerce.number().int().min(0).optional().nullable(),
+  priceInEuros: z.string().min(1),
+  salePriceInEuros: z.string().optional().nullable(),
   stock: z.coerce.number().int().min(0),
   audience: z.nativeEnum(ProductAudience),
   active: z.boolean().default(false),
@@ -153,6 +153,22 @@ async function collectHeroSlides(formData: FormData) {
   }
 
   return slides;
+}
+
+function parseEuroPriceToCents(value?: null | string) {
+  const normalized = value?.trim().replace("€", "").replace(/\s+/g, "").replace(",", ".");
+
+  if (!normalized) {
+    return null;
+  }
+
+  const parsed = Number(normalized);
+
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    throw new Error("Preço inválido");
+  }
+
+  return Math.round(parsed * 100);
 }
 
 export async function loginAdmin(formData: FormData) {
@@ -288,8 +304,8 @@ export async function saveProduct(formData: FormData) {
     brandId: formData.get("brandId"),
     categoryId: formData.get("categoryId"),
     description: formData.get("description"),
-    priceInCents: formData.get("priceInCents"),
-    salePriceInCents: formData.get("salePriceInCents") || undefined,
+    priceInEuros: formData.get("priceInEuros"),
+    salePriceInEuros: formData.get("salePriceInEuros") || undefined,
     stock: formData.get("stock"),
     audience: formData.get("audience"),
     active: formData.get("active") === "on",
@@ -297,9 +313,16 @@ export async function saveProduct(formData: FormData) {
     bestseller: formData.get("bestseller") === "on",
   });
 
+  const priceInCents = parseEuroPriceToCents(parsed.priceInEuros);
+  const rawSalePriceInCents = parseEuroPriceToCents(parsed.salePriceInEuros ?? undefined);
+
+  if (priceInCents === null) {
+    throw new Error("Preço base inválido");
+  }
+
   const salePriceInCents =
-    parsed.salePriceInCents && parsed.salePriceInCents < parsed.priceInCents
-      ? parsed.salePriceInCents
+    rawSalePriceInCents && rawSalePriceInCents < priceInCents
+      ? rawSalePriceInCents
       : null;
 
   const slug = slugify(parsed.name);
@@ -316,7 +339,7 @@ export async function saveProduct(formData: FormData) {
     brandId: parsed.brandId,
     categoryId: parsed.categoryId,
     description: parsed.description,
-    priceInCents: parsed.priceInCents,
+    priceInCents,
     salePriceInCents,
     stock: parsed.stock,
     imageUrl: finalImageUrl,
