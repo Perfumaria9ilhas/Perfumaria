@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "prisma migrate deploy && next start",
     "lint": "eslint",
     "db:init": "node scripts/init-sqlite.mjs && npm run prisma:generate && npm run prisma:seed",
     "images:dubai-scents": "node scripts/fetch-dubai-scents-images.mjs",
@@ -14,8 +14,10 @@
     "images:fix-selected": "node scripts/fix-selected-images.mjs",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:seed": "tsx prisma/seed.ts"
   },
+  "postinstall": "prisma generate",
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
