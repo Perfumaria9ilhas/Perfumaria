@@ -1,7 +1,27 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "10mb",
+    },
+  },
+  images: {
+    localPatterns: [
+      {
+        pathname: "/uploads/**",
+      },
+      {
+        pathname: "/placeholders/**",
+      },
+      {
+        pathname: "/api/upload-image",
+      },
+    ],
+  },
+  turbopack: {
+    root: __dirname,
+  },
 };
 
 export default nextConfig;

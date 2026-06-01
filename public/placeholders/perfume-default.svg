@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="920" viewBox="0 0 800 920" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="84" y1="54" x2="720" y2="870" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FBF4E8"/>
+      <stop offset="1" stop-color="#E9D6B7"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="136" y1="184" x2="665" y2="702" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E7C86E"/>
+      <stop offset="0.52" stop-color="#C9982D"/>
+      <stop offset="1" stop-color="#F2DB8A"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="920" rx="48" fill="url(#bg)"/>
+  <text x="146" y="330" fill="url(#gold)" font-family="Times New Roman, Georgia, serif" font-size="104" letter-spacing="12">9 ILHAS</text>
+  <path d="M178 410H330" stroke="url(#gold)" stroke-width="4" stroke-linecap="round"/>
+  <path d="M472 410H624" stroke="url(#gold)" stroke-width="4" stroke-linecap="round"/>
+  <g transform="translate(360 373)">
+    <rect x="18" y="24" width="44" height="54" rx="7" stroke="url(#gold)" stroke-width="4"/>
+    <rect x="24" y="4" width="32" height="16" rx="4" fill="none" stroke="url(#gold)" stroke-width="4"/>
+  </g>
+  <text x="256" y="506" fill="url(#gold)" font-family="Arial, Helvetica, sans-serif" font-size="34" letter-spacing="12">PERFUMARIA</text>
+</svg>

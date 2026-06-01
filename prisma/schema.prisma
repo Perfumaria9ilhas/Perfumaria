@@ -1,0 +1,181 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model CustomerAccount {
+  id         String   @id @default(cuid())
+  firstName  String
+  lastName   String
+  email      String   @unique
+  passwordHash String?
+  phone      String
+  address    String
+  orders     SiteOrder[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Brand {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  slug      String    @unique
+  origin    String?
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Product {
+  id               String            @id @default(cuid())
+  name             String
+  slug             String            @unique
+  description      String
+  imageUrl         String
+  priceInCents     Int
+  salePriceInCents Int?
+  stock            Int
+  audience         ProductAudience   @default(UNISSEXO)
+  active           Boolean           @default(true)
+  featured         Boolean           @default(false)
+  bestseller       Boolean           @default(false)
+  brandId          String
+  categoryId       String
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  brand            Brand             @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  category         Category          @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  wishes           OutOfStockWish[]
+  orderItems       SiteOrderItem[]
+
+  @@index([brandId])
+  @@index([categoryId])
+}
+
+enum ProductAudience {
+  FEMININO
+  MASCULINO
+  UNISSEXO
+}
+
+model SiteOrder {
+  id                String           @id @default(cuid())
+  reference         String           @unique
+  source            String           @default("site")
+  status            String           @default("novo")
+  customerAccountId String?
+  customerName      String?
+  customerEmail     String?
+  customerPhone     String?
+  customerAddress   String?
+  totalInCents      Int
+  whatsappMessage   String
+  items             SiteOrderItem[]
+  customerAccount   CustomerAccount? @relation(fields: [customerAccountId], references: [id], onDelete: SetNull)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([createdAt])
+  @@index([status])
+}
+
+model SiteOrderItem {
+  id            String    @id @default(cuid())
+  orderId       String
+  productId     String?
+  productName   String
+  brandName     String
+  unitPriceInCents Int
+  quantity      Int
+  lineTotalInCents Int
+  order         SiteOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product       Product?  @relation(fields: [productId], references: [id], onDelete: SetNull)
+  createdAt     DateTime  @default(now())
+
+  @@index([orderId])
+}
+
+model OutOfStockWish {
+  id        String   @id @default(cuid())
+  productId String   @unique
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([attempts])
+}
+
+model StoreSettings {
+  id               String   @id
+  storeName        String
+  heroTitle        String
+  heroDescription  String
+  heroImageUrl     String?
+  heroSlides       HeroSlide[]
+  catalogTitle     String
+  catalogIntro     String
+  contactTitle     String
+  contactIntro     String
+  footerDescription String
+  location         String
+  phone            String
+  whatsappNumber   String
+  whatsappLabel    String
+  openingHours     String
+  contactEmail     String?
+  instagramUrl     String?
+  facebookUrl      String?
+  tiktokUrl        String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model HeroSlide {
+  id              String        @id @default(cuid())
+  imageUrl        String
+  position        Int
+  durationSeconds Int           @default(4)
+  storeSettingsId String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  storeSettings   StoreSettings @relation(fields: [storeSettingsId], references: [id], onDelete: Cascade)
+
+  @@unique([storeSettingsId, position])
+  @@index([storeSettingsId, position])
+}
+
+model StoreReview {
+  id        String   @id @default(cuid())
+  name      String
+  rating    Int
+  comment   String
+  approved  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([approved, createdAt])
+}
