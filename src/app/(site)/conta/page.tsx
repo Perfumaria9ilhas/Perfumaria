@@ -36,33 +36,33 @@ export default async function ContaPage({
             Entrar ou criar conta
           </h1>
           <p className="mt-4 text-base leading-8 text-slate-600">
-            Pode continuar a navegar, ver preços, adicionar ao carrinho e enviar pedidos sem
-            conta. Se preferir, pode criar uma conta para ficar registado na sua base de clientes
-            e associar os pedidos ao seu perfil.
+            Pode continuar a navegar, ver precos, adicionar ao carrinho e enviar pedidos sem
+            conta. Se preferir, pode criar uma conta para guardar os seus dados e associar os
+            pedidos ao seu perfil.
           </p>
         </div>
 
         {params.registered === "1" ? (
           <div className="mt-6 rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">
-            Conta criada com sucesso e sessão iniciada.
+            Conta criada com sucesso e sessao iniciada.
           </div>
         ) : null}
 
         {params.login === "1" ? (
           <div className="mt-6 rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">
-            Sessão iniciada com sucesso.
+            Sessao iniciada com sucesso.
           </div>
         ) : null}
 
         {params.loginError === "1" ? (
           <div className="mt-6 rounded-[1.5rem] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
-            Não foi possível entrar. Verifique o email e a palavra-passe.
+            Nao foi possivel entrar. Verifique o email e a palavra-passe.
           </div>
         ) : null}
 
         {params.registerError === "1" ? (
           <div className="mt-6 rounded-[1.5rem] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
-            Não foi possível criar a conta. Confirme os dados e a confirmação da palavra-passe.
+            Nao foi possivel criar a conta. Confirme os dados e a confirmacao da palavra-passe.
           </div>
         ) : null}
 
@@ -71,7 +71,7 @@ export default async function ContaPage({
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
               <div>
                 <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--atlantic)]">
-                  Sessão ativa
+                  Sessao ativa
                 </p>
                 <h2 className="mt-2 font-serif text-4xl text-[color:var(--ink)]">
                   {customerProfile.firstName} {customerProfile.lastName}
@@ -84,7 +84,7 @@ export default async function ContaPage({
               </div>
               <form action={logoutCustomer}>
                 <button className="rounded-full border border-[color:var(--line)] bg-[color:var(--sand-soft)] px-5 py-3 text-sm font-semibold text-[color:var(--ink)]">
-                  Terminar sessão
+                  Terminar sessao
                 </button>
               </form>
             </div>
@@ -93,96 +93,26 @@ export default async function ContaPage({
                 href="/catalogo"
                 className="rounded-full bg-[color:var(--atlantic)] px-6 py-3 text-sm font-semibold text-white"
               >
-                Continuar no catálogo
+                Continuar no catalogo
               </Link>
               <p className="self-center text-sm text-slate-500">
-                Os seus próximos pedidos ficam associados a esta conta.
+                Os proximos pedidos ficam associados a esta conta.
               </p>
             </div>
           </section>
         ) : (
-          <div className="mt-8 grid gap-6 lg:grid-cols-2">
-            <section className="rounded-[2rem] border border-[color:var(--line)] bg-white p-6 shadow-sm">
-              <div className="max-w-md">
-                <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--atlantic)]">
-                  Criar conta
-                </p>
-                <h2 className="mt-3 font-serif text-4xl text-[color:var(--ink)]">
-                  Registar cliente
-                </h2>
-              </div>
-
-              <form action={createCustomerAccount} className="mt-6 grid gap-4 md:grid-cols-2">
-                <input
-                  name="firstName"
-                  placeholder="Primeiro nome"
-                  className="h-12 rounded-2xl border border-[color:var(--line)] bg-white px-4"
-                  required
-                />
-                <input
-                  name="lastName"
-                  placeholder="Último nome"
-                  className="h-12 rounded-2xl border border-[color:var(--line)] bg-white px-4"
-                  required
-                />
-                <input
-                  name="email"
-                  type="email"
-                  placeholder="Email"
-                  className="h-12 rounded-2xl border border-[color:var(--line)] bg-white px-4 md:col-span-2"
-                  required
-                />
-                <input
-                  name="phone"
-                  placeholder="Número de telefone"
-                  className="h-12 rounded-2xl border border-[color:var(--line)] bg-white px-4 md:col-span-2"
-                  required
-                />
-                <textarea
-                  name="address"
-                  placeholder="Morada"
-                  className="min-h-28 rounded-2xl border border-[color:var(--line)] bg-white px-4 py-3 md:col-span-2"
-                  required
-                />
-                <input
-                  name="password"
-                  type="password"
-                  placeholder="Palavra-passe"
-                  className="h-12 rounded-2xl border border-[color:var(--line)] bg-white px-4"
-                  required
-                />
-                <input
-                  name="confirmPassword"
-                  type="password"
-                  placeholder="Confirmar palavra-passe"
-                  className="h-12 rounded-2xl border border-[color:var(--line)] bg-white px-4"
-                  required
-                />
-                <div className="flex flex-col gap-3 md:col-span-2 md:flex-row md:items-center">
-                  <button className="rounded-full bg-[color:var(--atlantic)] px-6 py-3 text-sm font-semibold text-white">
-                    Criar conta
-                  </button>
-                  <Link
-                    href="/catalogo"
-                    className="rounded-full border border-[color:var(--line)] bg-white px-6 py-3 text-sm font-semibold text-[color:var(--ink)]"
-                  >
-                    Continuar sem conta
-                  </Link>
-                </div>
-              </form>
-            </section>
-
+          <div className="mt-8 space-y-6">
             <section className="rounded-[2rem] border border-[color:var(--line)] bg-white p-6 shadow-sm">
               <div className="max-w-md">
                 <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--atlantic)]">
                   Entrar
                 </p>
                 <h2 className="mt-3 font-serif text-4xl text-[color:var(--ink)]">
-                  Já tenho conta
+                  Ja tenho conta
                 </h2>
                 <p className="mt-4 text-sm leading-7 text-slate-600">
                   Entre com o seu email e palavra-passe. Os pedidos que fizer a partir daqui ficam
-                  ligados à sua ficha de cliente.
+                  ligados a sua ficha de cliente.
                 </p>
               </div>
 
@@ -206,6 +136,86 @@ export default async function ContaPage({
                 </button>
               </form>
             </section>
+
+            <details className="group rounded-[2rem] border border-[color:var(--line)] bg-white shadow-sm">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5">
+                <div className="max-w-2xl">
+                  <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--atlantic)]">
+                    Registar
+                  </p>
+                  <h2 className="mt-2 font-serif text-3xl text-[color:var(--ink)]">
+                    Ainda nao tenho conta
+                  </h2>
+                  <p className="mt-3 text-sm leading-7 text-slate-600">
+                    Carregue no botao para abrir o formulario e criar a sua conta quando quiser.
+                  </p>
+                </div>
+                <span className="rounded-full bg-[color:var(--atlantic)] px-5 py-3 text-sm font-semibold text-white">
+                  Registar
+                </span>
+              </summary>
+
+              <div className="border-t border-[color:var(--line)] px-6 py-6">
+                <form action={createCustomerAccount} className="grid gap-4 md:grid-cols-2">
+                  <input
+                    name="firstName"
+                    placeholder="Primeiro nome"
+                    className="h-12 rounded-2xl border border-[color:var(--line)] bg-white px-4"
+                    required
+                  />
+                  <input
+                    name="lastName"
+                    placeholder="Ultimo nome"
+                    className="h-12 rounded-2xl border border-[color:var(--line)] bg-white px-4"
+                    required
+                  />
+                  <input
+                    name="email"
+                    type="email"
+                    placeholder="Email"
+                    className="h-12 rounded-2xl border border-[color:var(--line)] bg-white px-4 md:col-span-2"
+                    required
+                  />
+                  <input
+                    name="phone"
+                    placeholder="Numero de telefone"
+                    className="h-12 rounded-2xl border border-[color:var(--line)] bg-white px-4 md:col-span-2"
+                    required
+                  />
+                  <textarea
+                    name="address"
+                    placeholder="Morada"
+                    className="min-h-28 rounded-2xl border border-[color:var(--line)] bg-white px-4 py-3 md:col-span-2"
+                    required
+                  />
+                  <input
+                    name="password"
+                    type="password"
+                    placeholder="Palavra-passe"
+                    className="h-12 rounded-2xl border border-[color:var(--line)] bg-white px-4"
+                    required
+                  />
+                  <input
+                    name="confirmPassword"
+                    type="password"
+                    placeholder="Confirmar palavra-passe"
+                    className="h-12 rounded-2xl border border-[color:var(--line)] bg-white px-4"
+                    required
+                  />
+                  <div className="flex flex-col gap-3 md:col-span-2 md:flex-row md:items-center">
+                    <button className="rounded-full bg-[color:var(--atlantic)] px-6 py-3 text-sm font-semibold text-white">
+                      Criar conta
+                    </button>
+                    <Link
+                      href="/catalogo"
+                      className="rounded-full border border-[color:var(--line)] bg-white px-6 py-3 text-sm font-semibold text-[color:var(--ink)]"
+                    >
+                      Continuar sem conta
+                    </Link>
+                  </div>
+                </form>
+              </div>
+            </details>
           </div>
         )}
       </section>
