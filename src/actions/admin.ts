@@ -127,39 +127,6 @@ async function saveUploadedImage(file: File) {
   return `/api/upload-image?asset=${encodeURIComponent(storedImage.id)}`;
 }
 
-async function collectHeroSlides(formData: FormData) {
-  const slides: { imageUrl: string; position: number; durationSeconds: number }[] = [];
-
-  for (const position of [1, 2, 3, 4]) {
-    const heroImageFile = formData.get(`heroSlideFile${position}`);
-    const currentHeroImageUrl =
-      formData.get(`currentHeroSlide${position}`)?.toString().trim() || "";
-    const durationSeconds = Math.max(
-      1,
-      Math.min(
-        30,
-        Number(formData.get(`heroSlideDuration${position}`)?.toString().trim() || "4"),
-      ),
-    );
-
-    let imageUrl = currentHeroImageUrl;
-
-    if (
-      typeof heroImageFile !== "string" &&
-      heroImageFile &&
-      heroImageFile.size > 0
-    ) {
-      imageUrl = await saveUploadedImage(heroImageFile);
-    }
-
-    if (imageUrl) {
-      slides.push({ imageUrl, position, durationSeconds });
-    }
-  }
-
-  return slides;
-}
-
 function parseEuroPriceToCents(value?: null | string) {
   const normalized = value?.trim().replace("€", "").replace(/\s+/g, "").replace(",", ".");
 
@@ -407,26 +374,19 @@ export async function saveStoreSettings(formData: FormData) {
     tiktokUrl: formData.get("tiktokUrl")?.toString().trim() || undefined,
   });
 
-  const heroSlides = await collectHeroSlides(formData);
-  const heroImageUrl = heroSlides[0]?.imageUrl || undefined;
-
   await prisma.storeSettings.upsert({
     where: { id: "main" },
     update: {
       ...parsed,
-      heroImageUrl,
+      heroImageUrl: null,
       heroSlides: {
         deleteMany: {},
-        create: heroSlides,
       },
     },
     create: {
       id: "main",
       ...parsed,
-      heroImageUrl,
-      heroSlides: {
-        create: heroSlides,
-      },
+      heroImageUrl: null,
     },
   });
 
