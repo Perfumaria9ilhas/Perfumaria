@@ -14,8 +14,10 @@ export type CatalogProduct = Product & {
 
 export type CartLine = {
   id: string;
+  productId: string;
   name: string;
   brand: string;
+  sizeLabel: string;
   priceInCents: number;
   originalPriceInCents?: number | null;
   imageUrl: string;

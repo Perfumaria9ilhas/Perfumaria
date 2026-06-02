@@ -59,6 +59,7 @@ model Product {
   salePriceInCents Int?
   stock            Int
   audience         ProductAudience   @default(UNISSEXO)
+  availableInFiveMl Boolean          @default(true)
   active           Boolean           @default(true)
   featured         Boolean           @default(false)
   bestseller       Boolean           @default(false)

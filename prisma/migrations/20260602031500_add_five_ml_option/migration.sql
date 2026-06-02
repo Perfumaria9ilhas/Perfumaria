@@ -1,0 +1,2 @@
+ALTER TABLE "Product"
+ADD COLUMN "availableInFiveMl" BOOLEAN NOT NULL DEFAULT true;

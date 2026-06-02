@@ -62,8 +62,10 @@ function readStoredCart(): CartLine[] {
       )
       .map((item) => ({
         id: item.id,
+        productId: item.productId ?? item.id,
         name: item.name,
         brand: item.brand,
+        sizeLabel: item.sizeLabel ?? "100 ml",
         priceInCents: item.priceInCents,
         originalPriceInCents: item.originalPriceInCents ?? item.priceInCents,
         imageUrl: item.imageUrl,
@@ -121,7 +123,7 @@ export function CartProvider({
     const lines = items
       .map(
         (item) =>
-          `- ${item.name} (${item.brand}) x${item.quantity} | ${formatPrice(item.priceInCents * item.quantity)}`,
+          `- ${item.name} ${item.sizeLabel} (${item.brand}) x${item.quantity} | ${formatPrice(item.priceInCents * item.quantity)}`,
       )
       .join("\n");
 

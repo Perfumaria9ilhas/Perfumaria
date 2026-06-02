@@ -454,6 +454,7 @@ async function main() {
           salePriceInCents: product.salePriceInCents,
           stock: product.stock,
           audience: product.audience,
+          availableInFiveMl: true,
           active: product.active,
           featured: product.featured,
           bestseller: product.bestseller,

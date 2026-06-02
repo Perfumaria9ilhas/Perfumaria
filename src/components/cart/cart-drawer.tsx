@@ -62,8 +62,10 @@ export function CartDrawer() {
         body: JSON.stringify({
           items: items.map((item) => ({
             id: item.id,
+            productId: item.productId,
             name: item.name,
             brand: item.brand,
+            sizeLabel: item.sizeLabel,
             priceInCents: item.priceInCents,
             quantity: item.quantity,
           })),
@@ -167,6 +169,7 @@ export function CartDrawer() {
                         <h3 className="truncate pr-2 font-medium text-[color:var(--ink)]">
                           {item.name}
                         </h3>
+                        <p className="text-xs text-slate-500">{item.sizeLabel}</p>
                       </div>
                       <div className="text-right">
                         {item.originalPriceInCents &&

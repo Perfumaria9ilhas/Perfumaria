@@ -11,11 +11,13 @@ function ProductFlags({
   featured,
   bestseller,
   hasDiscount,
+  availableInFiveMl,
 }: {
   active: boolean;
   featured: boolean;
   bestseller: boolean;
   hasDiscount: boolean;
+  availableInFiveMl: boolean;
 }) {
   const items = [
     {
@@ -38,6 +40,11 @@ function ProductFlags({
       label: "Em desconto",
       visible: hasDiscount,
       className: "bg-rose-50 text-rose-700",
+    },
+    {
+      label: "5 ml",
+      visible: availableInFiveMl,
+      className: "bg-sky-50 text-sky-700",
     },
   ];
 
@@ -193,6 +200,15 @@ export default async function AdminProductsPage({
               required
             />
             <div className="grid gap-3 md:col-span-2 md:grid-cols-4">
+              <label className="flex items-center gap-3 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-700">
+                <input
+                  name="availableInFiveMl"
+                  type="checkbox"
+                  defaultChecked
+                  className="h-4 w-4"
+                />
+                Disponível em 5 ml
+              </label>
               <label className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
                 <input name="active" type="checkbox" defaultChecked className="h-4 w-4" />
                 Ativo
@@ -206,7 +222,7 @@ export default async function AdminProductsPage({
                 Bestseller
               </label>
               <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--sand-soft)] px-4 py-3 text-sm text-slate-600">
-                A imagem só aparece na loja quando fazes upload aqui.
+                Se ativares 5 ml, o valor na loja fica sempre a 3,50 €.
               </div>
             </div>
             <button className="rounded-full bg-[color:var(--atlantic)] px-5 py-3 text-sm font-semibold text-white md:col-span-2">
@@ -301,6 +317,7 @@ export default async function AdminProductsPage({
                             featured={product.featured}
                             bestseller={product.bestseller}
                             hasDiscount={hasDiscount}
+                            availableInFiveMl={product.availableInFiveMl}
                           />
                         </div>
                         <span className="text-sm font-semibold text-[color:var(--atlantic)] transition group-open:rotate-45">
@@ -315,6 +332,7 @@ export default async function AdminProductsPage({
                             featured={product.featured}
                             bestseller={product.bestseller}
                             hasDiscount={hasDiscount}
+                            availableInFiveMl={product.availableInFiveMl}
                           />
                         </div>
 
@@ -410,6 +428,15 @@ export default async function AdminProductsPage({
                             required
                           />
                           <div className="grid gap-3 md:col-span-2 md:grid-cols-4">
+                            <label className="flex items-center gap-3 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-700">
+                              <input
+                                name="availableInFiveMl"
+                                type="checkbox"
+                                defaultChecked={product.availableInFiveMl}
+                                className="h-4 w-4"
+                              />
+                              Disponível em 5 ml
+                            </label>
                             <label className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
                               <input
                                 name="active"
@@ -438,9 +465,11 @@ export default async function AdminProductsPage({
                               Bestseller
                             </label>
                             <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--sand-soft)] px-4 py-3 text-sm text-slate-600">
-                              {product.imageUrl
-                                ? "Imagem guardada."
-                                : "Sem imagem. O logótipo da loja aparece como base até fazeres upload."}
+                              {product.availableInFiveMl
+                                ? "5 ml ativo a 3,50 €."
+                                : product.imageUrl
+                                  ? "Imagem guardada."
+                                  : "Sem imagem. O logótipo da loja aparece como base até fazeres upload."}
                             </div>
                           </div>
                           <button className="rounded-full bg-[color:var(--atlantic)] px-5 py-3 text-sm font-semibold text-white md:col-span-2">

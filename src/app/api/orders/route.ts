@@ -8,8 +8,10 @@ import { prisma } from "@/lib/prisma";
 
 const orderItemSchema = z.object({
   id: z.string(),
+  productId: z.string(),
   name: z.string(),
   brand: z.string(),
+  sizeLabel: z.string().min(1),
   priceInCents: z.number().int().min(0),
   quantity: z.number().int().min(1),
 });
@@ -26,7 +28,7 @@ function buildWhatsappMessage(
   const lines = items
     .map(
       (item) =>
-        `• ${item.brand} ${item.name} - ${formatPrice(item.priceInCents * item.quantity)}`,
+        `• ${item.brand} ${item.name} (${item.sizeLabel}) - ${formatPrice(item.priceInCents * item.quantity)}`,
     )
     .join("\n");
 
@@ -90,8 +92,8 @@ export async function POST(request: Request) {
         customerAddress: customerAccount?.address ?? null,
         items: {
           create: parsed.data.items.map((item) => ({
-            productId: item.id,
-            productName: item.name,
+            productId: item.productId,
+            productName: `${item.name} (${item.sizeLabel})`,
             brandName: item.brand,
             unitPriceInCents: item.priceInCents,
             quantity: item.quantity,

@@ -6,6 +6,12 @@ import { ChevronDown, Search } from "lucide-react";
 import { useCart } from "@/components/providers/cart-provider";
 import { formatPrice } from "@/lib/format";
 import { getProductAudienceLabel, productAudienceOptions, type ProductAudienceValue } from "@/lib/product-audience";
+import {
+  buildCartLineId,
+  FIVE_ML_PRICE_IN_CENTS,
+  getProductSizeLabel,
+  type ProductSizeValue,
+} from "@/lib/product-sizes";
 import type { CatalogProduct } from "@/lib/types";
 
 type CatalogClientProps = {
@@ -78,6 +84,7 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("name");
   const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
+  const [selectedSizes, setSelectedSizes] = useState<Record<string, ProductSizeValue>>({});
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [toast, setToast] = useState<{
@@ -176,6 +183,41 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
     });
   }, [products, search, selectedAudiences, selectedBrands, sortBy]);
 
+  function getSelectedSize(product: CatalogProduct) {
+    return selectedSizes[product.id] ?? "100ml";
+  }
+
+  function setProductSize(productId: string, size: ProductSizeValue) {
+    setSelectedSizes((current) => ({
+      ...current,
+      [productId]: size,
+    }));
+  }
+
+  function getDisplayPrice(product: CatalogProduct, size: ProductSizeValue) {
+    if (size === "5ml") {
+      return FIVE_ML_PRICE_IN_CENTS;
+    }
+
+    return product.salePriceInCents && product.salePriceInCents < product.priceInCents
+      ? product.salePriceInCents
+      : product.priceInCents;
+  }
+
+  function buildCartItem(product: CatalogProduct, size: ProductSizeValue) {
+    return {
+      id: buildCartLineId(product.id, size),
+      productId: product.id,
+      name: product.name,
+      brand: product.brand.name,
+      sizeLabel: getProductSizeLabel(size),
+      priceInCents: getDisplayPrice(product, size),
+      originalPriceInCents: size === "100ml" ? product.priceInCents : null,
+      imageUrl: product.imageUrl,
+      stock: product.stock,
+    };
+  }
+
   function toggleBrand(brandId: string) {
     setSelectedBrands((current) =>
       current.includes(brandId)
@@ -204,7 +246,7 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
     }
   }
 
-  async function handleAddToCart(product: CatalogProduct) {
+  async function handleAddToCart(product: CatalogProduct, size = getSelectedSize(product)) {
     if (product.stock < 1) {
       await registerOutOfStockWish(product.id);
       setToast({
@@ -215,18 +257,7 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
     }
 
     const result = addItem(
-      {
-        id: product.id,
-        name: product.name,
-        brand: product.brand.name,
-        priceInCents:
-          product.salePriceInCents && product.salePriceInCents < product.priceInCents
-            ? product.salePriceInCents
-            : product.priceInCents,
-        originalPriceInCents: product.priceInCents,
-        imageUrl: product.imageUrl,
-        stock: product.stock,
-      },
+      buildCartItem(product, size),
       1,
     );
 
@@ -248,7 +279,7 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
     }
 
     setToast({
-      message: `${product.name} foi adicionado ao carrinho.`,
+      message: `${product.name} ${getProductSizeLabel(size)} foi adicionado ao carrinho.`,
       tone: "success",
     });
   }
@@ -289,9 +320,45 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
               <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--atlantic)]">
                 {selectedProduct.category.name} · {getProductAudienceLabel(selectedProduct.audience)}
               </p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setProductSize(selectedProduct.id, "100ml")}
+                  className={`rounded-full border px-3 py-2 text-xs font-semibold transition ${
+                    getSelectedSize(selectedProduct) === "100ml"
+                      ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-white"
+                      : "border-[color:var(--line)] bg-[color:var(--sand-soft)] text-[color:var(--ink)]"
+                  }`}
+                >
+                  100 ml
+                </button>
+                {selectedProduct.availableInFiveMl ? (
+                  <button
+                    type="button"
+                    onClick={() => setProductSize(selectedProduct.id, "5ml")}
+                    className={`rounded-full border px-3 py-2 text-xs font-semibold transition ${
+                      getSelectedSize(selectedProduct) === "5ml"
+                        ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-white"
+                        : "border-[color:var(--line)] bg-[color:var(--sand-soft)] text-[color:var(--ink)]"
+                    }`}
+                  >
+                    5 ml · {formatPrice(FIVE_ML_PRICE_IN_CENTS)}
+                  </button>
+                ) : null}
+              </div>
+              <p className="font-serif text-2xl text-[color:var(--ink)]">
+                {formatPrice(getDisplayPrice(selectedProduct, getSelectedSize(selectedProduct)))}
+              </p>
               <div className="whitespace-pre-line text-sm leading-7 text-slate-600">
                 {selectedProduct.description}
               </div>
+              <button
+                type="button"
+                onClick={() => handleAddToCart(selectedProduct)}
+                className="inline-flex items-center justify-center rounded-full bg-[color:var(--atlantic)] px-5 py-3 text-sm font-semibold text-white"
+              >
+                Adicionar ao carrinho
+              </button>
             </div>
           </div>
         </div>
@@ -423,12 +490,11 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {filteredProducts.map((product) => {
           const outOfStock = product.stock < 1;
+          const selectedSize = getSelectedSize(product);
           const hasDiscount =
             product.salePriceInCents !== null &&
             product.salePriceInCents < product.priceInCents;
-          const currentPrice = hasDiscount
-            ? (product.salePriceInCents as number)
-            : product.priceInCents;
+          const currentPrice = getDisplayPrice(product, selectedSize);
 
           return (
             <article
@@ -460,11 +526,37 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
                 </p>
 
                 <div className="mt-auto space-y-3">
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setProductSize(product.id, "100ml")}
+                      className={`rounded-full border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] transition ${
+                        selectedSize === "100ml"
+                          ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-white"
+                          : "border-[color:var(--line)] bg-white text-slate-600"
+                      }`}
+                    >
+                      100 ml
+                    </button>
+                    {product.availableInFiveMl ? (
+                      <button
+                        type="button"
+                        onClick={() => setProductSize(product.id, "5ml")}
+                        className={`rounded-full border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] transition ${
+                          selectedSize === "5ml"
+                            ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-white"
+                            : "border-[color:var(--line)] bg-white text-slate-600"
+                        }`}
+                      >
+                        5 ml
+                      </button>
+                    ) : null}
+                  </div>
                   <div className="flex flex-wrap items-end gap-x-2 gap-y-1">
                     <p className="font-serif text-lg text-[color:var(--ink)] sm:text-2xl">
                       {formatPrice(currentPrice)}
                     </p>
-                    {hasDiscount ? (
+                    {selectedSize === "100ml" && hasDiscount ? (
                       <p className="text-[10px] text-slate-400 line-through sm:text-xs">
                         {formatPrice(product.priceInCents)}
                       </p>
@@ -477,7 +569,7 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
                         ? "bg-[#efe7dd] text-[color:var(--ink)] hover:bg-[#e8dccb]"
                         : "bg-[color:var(--atlantic)] text-white hover:bg-[color:var(--atlantic-deep)]"
                     }`}
-                    onClick={() => handleAddToCart(product)}
+                    onClick={() => handleAddToCart(product, selectedSize)}
                   >
                     {outOfStock ? "Avisar interesse" : "Adicionar ao carrinho"}
                   </button>

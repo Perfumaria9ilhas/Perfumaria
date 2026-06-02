@@ -7,6 +7,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/components/providers/cart-provider";
 import { formatPrice } from "@/lib/format";
 import { getProductAudienceLabel } from "@/lib/product-audience";
+import {
+  buildCartLineId,
+  FIVE_ML_PRICE_IN_CENTS,
+  getProductSizeLabel,
+  type ProductSizeValue,
+} from "@/lib/product-sizes";
 import type { CatalogProduct } from "@/lib/types";
 
 function chunkProducts(products: CatalogProduct[], size: number) {
@@ -19,6 +25,38 @@ function chunkProducts(products: CatalogProduct[], size: number) {
   return chunks;
 }
 
+function FeaturedProductImage({
+  imageUrl,
+  name,
+}: {
+  imageUrl: string;
+  name: string;
+}) {
+  if (!imageUrl) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-white/60 p-4">
+        <Image
+          src="/logo-9-ilhas.svg"
+          alt="9 Ilhas Perfumaria"
+          width={150}
+          height={40}
+          className="h-auto w-24 opacity-80"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <Image
+      src={imageUrl}
+      alt={name}
+      fill
+      unoptimized
+      className="object-contain p-4 transition duration-300 group-hover:scale-[1.03]"
+    />
+  );
+}
+
 export function FeaturedProductsSlider({
   products,
 }: {
@@ -28,6 +66,7 @@ export function FeaturedProductsSlider({
   const [activeGroupIndex, setActiveGroupIndex] = useState(0);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
+  const [selectedSizes, setSelectedSizes] = useState<Record<string, ProductSizeValue>>({});
   const [isMobile, setIsMobile] = useState(false);
 
   const productGroups = useMemo(() => chunkProducts(products, 6), [products]);
@@ -36,7 +75,6 @@ export function FeaturedProductsSlider({
 
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth < 768);
-
     onResize();
     window.addEventListener("resize", onResize);
 
@@ -77,19 +115,39 @@ export function FeaturedProductsSlider({
     };
   }, [selectedProduct]);
 
-  function handleAddToCart(product: CatalogProduct) {
-    const currentPrice =
-      product.salePriceInCents && product.salePriceInCents < product.priceInCents
-        ? product.salePriceInCents
-        : product.priceInCents;
+  function getSelectedSize(product: CatalogProduct) {
+    return selectedSizes[product.id] ?? "100ml";
+  }
+
+  function setProductSize(productId: string, size: ProductSizeValue) {
+    setSelectedSizes((current) => ({
+      ...current,
+      [productId]: size,
+    }));
+  }
+
+  function getDisplayPrice(product: CatalogProduct, size: ProductSizeValue) {
+    if (size === "5ml") {
+      return FIVE_ML_PRICE_IN_CENTS;
+    }
+
+    return product.salePriceInCents && product.salePriceInCents < product.priceInCents
+      ? product.salePriceInCents
+      : product.priceInCents;
+  }
+
+  function handleAddToCart(product: CatalogProduct, size = getSelectedSize(product)) {
+    const currentPrice = getDisplayPrice(product, size);
 
     const result = addItem(
       {
-        id: product.id,
+        id: buildCartLineId(product.id, size),
+        productId: product.id,
         name: product.name,
         brand: product.brand.name,
+        sizeLabel: getProductSizeLabel(size),
         priceInCents: currentPrice,
-        originalPriceInCents: product.priceInCents,
+        originalPriceInCents: size === "100ml" ? product.priceInCents : null,
         imageUrl: product.imageUrl,
         stock: product.stock,
       },
@@ -106,7 +164,7 @@ export function FeaturedProductsSlider({
       return;
     }
 
-    setFeedback(`${product.name} foi adicionado ao carrinho.`);
+    setFeedback(`${product.name} ${getProductSizeLabel(size)} foi adicionado ao carrinho.`);
   }
 
   if (!currentGroup.length) {
@@ -120,30 +178,12 @@ export function FeaturedProductsSlider({
           className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(43,30,18,0.55)] px-4 py-6"
           onClick={() => setSelectedProduct(null)}
         >
-            <div
-              className="flex max-h-[88svh] w-full max-w-[32rem] flex-col overflow-hidden rounded-[1.55rem] border border-[color:var(--line)] bg-white shadow-[0_25px_80px_rgba(43,30,18,0.28)]"
-              onClick={(event) => event.stopPropagation()}
-            >
-              <div className="relative aspect-square shrink-0 bg-[radial-gradient(circle_at_top,_rgba(183,146,107,0.18),_transparent_55%),linear-gradient(180deg,_#fbf5ee,_#f1e6d8)]">
-              {selectedProduct.imageUrl ? (
-                <Image
-                  src={selectedProduct.imageUrl}
-                  alt={selectedProduct.name}
-                  fill
-                  unoptimized
-                  className="object-contain"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center bg-white/60 p-4">
-                  <Image
-                    src="/logo-9-ilhas.svg"
-                    alt="9 Ilhas Perfumaria"
-                    width={150}
-                    height={40}
-                    className="h-auto w-24 opacity-80"
-                  />
-                </div>
-              )}
+          <div
+            className="flex max-h-[88svh] w-full max-w-[32rem] flex-col overflow-hidden rounded-[1.55rem] border border-[color:var(--line)] bg-white shadow-[0_25px_80px_rgba(43,30,18,0.28)]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="relative aspect-square shrink-0 bg-[radial-gradient(circle_at_top,_rgba(183,146,107,0.18),_transparent_55%),linear-gradient(180deg,_#fbf5ee,_#f1e6d8)]">
+              <FeaturedProductImage imageUrl={selectedProduct.imageUrl} name={selectedProduct.name} />
               <button
                 type="button"
                 onClick={() => setSelectedProduct(null)}
@@ -152,27 +192,48 @@ export function FeaturedProductsSlider({
                 Fechar
               </button>
             </div>
-              <div className="min-h-0 space-y-3 overflow-y-auto overscroll-contain p-4 sm:p-5">
+            <div className="min-h-0 space-y-3 overflow-y-auto overscroll-contain p-4 sm:p-5">
               <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--atlantic)]">
                 {selectedProduct.brand.name}
               </p>
               <h3 className="font-serif text-3xl text-[color:var(--ink)]">
                 {selectedProduct.name}
               </h3>
-              <p className="text-sm font-semibold text-[color:var(--ink)]">
-                {formatPrice(
-                  selectedProduct.salePriceInCents &&
-                    selectedProduct.salePriceInCents < selectedProduct.priceInCents
-                    ? selectedProduct.salePriceInCents
-                    : selectedProduct.priceInCents,
-                )}
-              </p>
               <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--atlantic)]">
                 {selectedProduct.category.name} · {getProductAudienceLabel(selectedProduct.audience)}
               </p>
-                <div className="whitespace-pre-line text-sm leading-7 text-slate-600">
-                  {selectedProduct.description}
-                </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setProductSize(selectedProduct.id, "100ml")}
+                  className={`rounded-full border px-3 py-2 text-xs font-semibold transition ${
+                    getSelectedSize(selectedProduct) === "100ml"
+                      ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-white"
+                      : "border-[color:var(--line)] bg-[color:var(--sand-soft)] text-[color:var(--ink)]"
+                  }`}
+                >
+                  100 ml
+                </button>
+                {selectedProduct.availableInFiveMl ? (
+                  <button
+                    type="button"
+                    onClick={() => setProductSize(selectedProduct.id, "5ml")}
+                    className={`rounded-full border px-3 py-2 text-xs font-semibold transition ${
+                      getSelectedSize(selectedProduct) === "5ml"
+                        ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-white"
+                        : "border-[color:var(--line)] bg-[color:var(--sand-soft)] text-[color:var(--ink)]"
+                    }`}
+                  >
+                    5 ml · {formatPrice(FIVE_ML_PRICE_IN_CENTS)}
+                  </button>
+                ) : null}
+              </div>
+              <p className="text-sm font-semibold text-[color:var(--ink)]">
+                {formatPrice(getDisplayPrice(selectedProduct, getSelectedSize(selectedProduct)))}
+              </p>
+              <div className="whitespace-pre-line text-sm leading-7 text-slate-600">
+                {selectedProduct.description}
+              </div>
               <button
                 type="button"
                 onClick={() => handleAddToCart(selectedProduct)}
@@ -185,7 +246,7 @@ export function FeaturedProductsSlider({
         </div>
       ) : null}
 
-      <section className="relative overflow-hidden rounded-[1.75rem] border border-[rgba(181,151,115,0.26)] bg-[radial-gradient(circle_at_top_left,_rgba(228,197,154,0.38),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(146,111,79,0.18),_transparent_34%),linear-gradient(180deg,_#fbf6ef,_#efe1cc)] p-3 shadow-[0_16px_46px_rgba(74,51,32,0.09)] lg:p-4.5">
+      <section className="relative overflow-hidden rounded-[1.75rem] border border-[rgba(181,151,115,0.26)] bg-[radial-gradient(circle_at_top_left,_rgba(228,197,154,0.38),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(146,111,79,0.18),_transparent_34%),linear-gradient(180deg,_#fbf6ef,_#efe1cc)] p-3 shadow-[0_16px_46px_rgba(74,51,32,0.09)]">
         <div className="absolute inset-x-0 top-0 h-24 bg-[linear-gradient(180deg,_rgba(255,255,255,0.38),_transparent)]" />
 
         <div className="relative mb-4 flex items-center justify-between gap-4">
@@ -210,11 +271,13 @@ export function FeaturedProductsSlider({
           }
         >
           {(isMobile ? products : currentGroup).map((product) => {
-            const currentPrice =
-              product.salePriceInCents && product.salePriceInCents < product.priceInCents
-                ? product.salePriceInCents
-                : product.priceInCents;
+            const selectedSize = getSelectedSize(product);
+            const currentPrice = getDisplayPrice(product, selectedSize);
             const audience = getProductAudienceLabel(product.audience);
+            const hasDiscount =
+              selectedSize === "100ml" &&
+              product.salePriceInCents !== null &&
+              product.salePriceInCents < product.priceInCents;
 
             return (
               <article
@@ -235,25 +298,7 @@ export function FeaturedProductsSlider({
                   className="relative block w-full overflow-hidden rounded-[1rem] bg-[radial-gradient(circle_at_top,_rgba(183,146,107,0.16),_transparent_55%),linear-gradient(180deg,_#fbf5ee,_#f1e6d8)]"
                 >
                   <div className="relative aspect-square">
-                    {product.imageUrl ? (
-                      <Image
-                        src={product.imageUrl}
-                        alt={product.name}
-                        fill
-                        unoptimized
-                        className="object-contain p-4 transition duration-300 group-hover:scale-[1.03]"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-white/60 p-4">
-                        <Image
-                          src="/logo-9-ilhas.svg"
-                          alt="9 Ilhas Perfumaria"
-                          width={150}
-                          height={40}
-                          className="h-auto w-24 opacity-80"
-                        />
-                      </div>
-                    )}
+                    <FeaturedProductImage imageUrl={product.imageUrl} name={product.name} />
                   </div>
                 </button>
 
@@ -271,10 +316,36 @@ export function FeaturedProductsSlider({
                     {product.name}
                   </h3>
 
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setProductSize(product.id, "100ml")}
+                      className={`rounded-full border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] transition ${
+                        selectedSize === "100ml"
+                          ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-white"
+                          : "border-[color:var(--line)] bg-white text-slate-600"
+                      }`}
+                    >
+                      100 ml
+                    </button>
+                    {product.availableInFiveMl ? (
+                      <button
+                        type="button"
+                        onClick={() => setProductSize(product.id, "5ml")}
+                        className={`rounded-full border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] transition ${
+                          selectedSize === "5ml"
+                            ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-white"
+                            : "border-[color:var(--line)] bg-white text-slate-600"
+                        }`}
+                      >
+                        5 ml
+                      </button>
+                    ) : null}
+                  </div>
+
                   <div className="flex items-end justify-between gap-3">
                     <div>
-                      {product.salePriceInCents &&
-                      product.salePriceInCents < product.priceInCents ? (
+                      {hasDiscount ? (
                         <p className="text-xs text-[color:#b0a08f] line-through">
                           {formatPrice(product.priceInCents)}
                         </p>
@@ -283,8 +354,7 @@ export function FeaturedProductsSlider({
                         {formatPrice(currentPrice)}
                       </p>
                     </div>
-                    {product.salePriceInCents &&
-                    product.salePriceInCents < product.priceInCents ? (
+                    {hasDiscount ? (
                       <span className="rounded-full bg-[rgba(179,71,45,0.1)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:#b3472d]">
                         Desconto
                       </span>
@@ -301,7 +371,7 @@ export function FeaturedProductsSlider({
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleAddToCart(product)}
+                      onClick={() => handleAddToCart(product, selectedSize)}
                       className="inline-flex items-center justify-center gap-2 rounded-[0.9rem] border border-[rgba(210,180,140,0.9)] bg-[rgba(255,250,243,0.72)] px-3 py-2 text-sm font-semibold text-[color:#8a623a] transition hover:bg-white md:px-4 md:py-2.5"
                     >
                       <Flame className="h-4 w-4" />
