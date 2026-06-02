@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { CheckCircle2, Lock, MessageCircleMore, ShieldCheck, Truck, Users } from "lucide-react";
 import { submitStoreReview } from "@/actions/admin";
 
 type Review = {
@@ -18,6 +19,42 @@ type TrustHomeProps = {
     islandsLabel: string;
   };
 };
+
+const trustItems = [
+  "Perfumes originais",
+  "Entregas locais",
+  "Apoio por WhatsApp",
+  "Pagamento seguro",
+  "Clientes satisfeitos",
+];
+
+const confidenceCards = [
+  {
+    icon: ShieldCheck,
+    title: "Perfumes originais",
+    text: "Trabalhamos apenas com fragrâncias escolhidas com autenticidade e consistência.",
+  },
+  {
+    icon: Truck,
+    title: "Entregas locais",
+    text: "Resposta rápida para a Ilha Terceira e envios para outras zonas quando necessário.",
+  },
+  {
+    icon: MessageCircleMore,
+    title: "Apoio por WhatsApp",
+    text: "Acompanhamento próximo antes e depois da compra para ajudar a escolher melhor.",
+  },
+  {
+    icon: Lock,
+    title: "Pagamento seguro",
+    text: "Processo simples e direto para transmitir confiança desde o primeiro contacto.",
+  },
+  {
+    icon: Users,
+    title: "Clientes satisfeitos",
+    text: "A confiança da loja cresce com cada encomenda concluída e cada recomendação recebida.",
+  },
+];
 
 function renderStars(rating: number) {
   const safeRating = Math.max(0, Math.min(5, rating));
@@ -98,74 +135,129 @@ export function TrustHome({ reviews, stats }: TrustHomeProps) {
         </div>
       ) : null}
 
-      <section id="avaliacoes" className="space-y-8 px-1 py-4">
-        <div className="space-y-3">
-          <p className="text-xs uppercase tracking-[0.32em] text-[color:var(--atlantic)]">
-            Confiança
-          </p>
-          <div className="flex flex-col gap-3 text-[color:var(--ink)] sm:flex-row sm:flex-wrap sm:gap-6">
-            <p className="text-sm leading-6 text-slate-700">
+      <section id="avaliacoes" className="space-y-8 py-2">
+        <div className="rounded-[2rem] border border-[rgba(185,154,118,0.18)] bg-[linear-gradient(180deg,_rgba(255,255,255,0.98),_rgba(248,238,225,0.95))] p-7 shadow-[0_18px_46px_rgba(74,51,32,0.06)] sm:p-9">
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <p className="text-xs uppercase tracking-[0.32em] text-[color:var(--atlantic)]">
+                Confiança
+              </p>
+              <h2 className="font-serif text-[2.35rem] leading-tight text-[color:var(--ink)] sm:text-[3rem]">
+                Uma loja pensada para transmitir segurança desde o primeiro olhar.
+              </h2>
+              <div className="flex flex-wrap gap-3">
+                {trustItems.map((item) => (
+                  <span
+                    key={item}
+                    className="inline-flex items-center gap-2 rounded-full border border-[rgba(185,154,118,0.18)] bg-white/80 px-4 py-2 text-sm text-[color:var(--ink)]"
+                  >
+                    <CheckCircle2 className="h-4 w-4 text-[color:var(--gold)]" />
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-5">
+              {confidenceCards.map((item, index) => {
+                const Icon = item.icon;
+                const metricValue =
+                  index === 4
+                    ? `+${stats.satisfiedCustomersCount}`
+                    : index === 0
+                      ? "+100%"
+                      : index === 1
+                        ? stats.islandsLabel
+                        : index === 2
+                          ? "WhatsApp"
+                          : "Seguro";
+
+                return (
+                  <article
+                    key={item.title}
+                    className="rounded-[1.35rem] border border-[rgba(185,154,118,0.16)] bg-white/84 p-5 shadow-[0_12px_28px_rgba(74,51,32,0.05)]"
+                  >
+                    <span className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-[rgba(195,153,100,0.14)] text-[color:var(--gold)]">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <p className="font-serif text-2xl text-[color:var(--ink)]">{metricValue}</p>
+                    <h3 className="mt-3 font-serif text-[1.35rem] text-[color:var(--ink)]">
+                      {item.title}
+                    </h3>
+                    <p className="mt-2 text-sm leading-7 text-slate-600">{item.text}</p>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-[2rem] border border-[rgba(185,154,118,0.18)] bg-white/95 p-7 shadow-[0_18px_46px_rgba(74,51,32,0.05)] sm:p-9">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="space-y-3">
+              <p className="text-xs uppercase tracking-[0.32em] text-[color:var(--atlantic)]">
+                Avaliações
+              </p>
+              <h2 className="font-serif text-[2.1rem] leading-tight text-[color:var(--ink)] sm:text-[2.7rem]">
+                O que os clientes dizem depois de receber.
+              </h2>
+              <p className="max-w-2xl text-sm leading-7 text-slate-600">
+                Comentários reais ajudam novos clientes a comprar com mais segurança.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(true)}
+              className="inline-flex items-center justify-center rounded-full border border-[color:var(--line)] bg-[color:var(--sand-soft)] px-5 py-3 text-sm font-semibold text-[color:var(--ink)] transition hover:border-[color:var(--gold)] hover:text-[color:var(--gold)]"
+            >
+              Fazer comentário
+            </button>
+          </div>
+
+          <div className="mt-7 grid gap-5 lg:grid-cols-3">
+            {reviews.length ? (
+              reviews.slice(0, 6).map((review) => (
+                <article
+                  key={review.id}
+                  className="rounded-[1.5rem] border border-[rgba(185,154,118,0.14)] bg-[linear-gradient(180deg,_rgba(255,250,243,0.85),_rgba(255,255,255,0.95))] p-5"
+                >
+                  <p className="text-sm tracking-[0.14em] text-[color:#b98544]">
+                    {renderStars(review.rating)}
+                  </p>
+                  <p className="mt-3 text-base leading-7 text-slate-700">{review.comment}</p>
+                  <p className="mt-4 text-xs uppercase tracking-[0.24em] text-[color:var(--atlantic)]">
+                    {review.name}
+                  </p>
+                </article>
+              ))
+            ) : (
+              <p className="lg:col-span-3 text-sm leading-7 text-slate-500">
+                Ainda não existem avaliações. Carregue em fazer comentário para deixar a primeira
+                opinião.
+              </p>
+            )}
+          </div>
+
+          <div className="mt-7 flex flex-wrap gap-8 border-t border-[rgba(185,154,118,0.14)] pt-6 text-sm text-slate-600">
+            <p>
               <span className="mr-2 font-serif text-3xl text-[color:var(--ink)]">
                 +{stats.satisfiedCustomersCount}
               </span>
               Clientes satisfeitos
             </p>
-            <p className="text-sm leading-6 text-slate-700">
+            <p>
               <span className="mr-2 font-serif text-3xl text-[color:var(--ink)]">
                 +{stats.productsCount}
               </span>
-              Produtos disponíveis
+              Perfumes disponíveis
             </p>
-            <p className="text-sm leading-6 text-slate-700">
+            <p>
               <span className="mr-2 font-serif text-3xl text-[color:var(--ink)]">
                 {stats.islandsLabel}
               </span>
               Entregas para os Açores
             </p>
           </div>
-        </div>
-
-        <div className="space-y-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.32em] text-[color:var(--atlantic)]">
-                Avaliações
-              </p>
-              <h2 className="mt-2 font-serif text-[2rem] leading-tight text-[color:var(--ink)]">
-                Comentários reais dos clientes.
-              </h2>
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsModalOpen(true)}
-              className="inline-flex items-center justify-center rounded-full border border-[color:var(--line)] bg-white px-5 py-3 text-sm font-semibold text-[color:var(--ink)] transition hover:border-[color:var(--gold)] hover:text-[color:var(--gold)]"
-            >
-              Fazer comentário
-            </button>
-          </div>
-
-          {reviews.length ? (
-            <div className="space-y-5">
-              {reviews.map((review) => (
-                <article
-                  key={review.id}
-                  className="space-y-2 border-b border-[rgba(193,161,122,0.22)] pb-5 last:border-b-0 last:pb-0"
-                >
-                  <p className="text-sm tracking-[0.14em] text-[color:#b98544]">
-                    {renderStars(review.rating)}
-                  </p>
-                  <p className="text-base leading-7 text-slate-700">{review.comment}</p>
-                  <p className="text-xs uppercase tracking-[0.24em] text-[color:var(--atlantic)]">
-                    {review.name}
-                  </p>
-                </article>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm leading-7 text-slate-500">
-              Ainda não existem avaliações. Carregue em fazer comentário para deixar a primeira opinião.
-            </p>
-          )}
         </div>
       </section>
     </>
