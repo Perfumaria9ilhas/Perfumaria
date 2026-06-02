@@ -1,4 +1,3 @@
-import { AccountInviteHome } from "@/components/home/account-invite";
 import { FeaturedProductsSlider } from "@/components/home/featured-products-slider";
 import { HeroHome } from "@/components/home/hero-home";
 import { SampleHome } from "@/components/home/sample-home";
@@ -15,9 +14,8 @@ export default async function Home() {
   return (
     <div className="mx-auto flex max-w-[1240px] flex-col gap-6 px-4 py-4 lg:px-5 lg:py-6">
       <HeroHome settings={settings} />
-      <AccountInviteHome />
-      <SampleHome />
       <FeaturedProductsSlider products={featuredProducts} />
+      <SampleHome />
       <TrustHome reviews={reviews} stats={stats} />
     </div>
   );

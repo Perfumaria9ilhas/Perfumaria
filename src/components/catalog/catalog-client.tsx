@@ -51,7 +51,7 @@ function ProductImage({
       fill
       unoptimized
       sizes="(max-width: 640px) 50vw, (max-width: 900px) 50vw, (max-width: 1200px) 33vw, 25vw"
-      className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+      className="h-full w-full object-contain p-4 transition duration-500 group-hover:scale-[1.04]"
       onError={() => setHasError(true)}
     />
   );
@@ -499,31 +499,40 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
           return (
             <article
               key={product.id}
-              className="group relative flex h-full flex-col overflow-hidden rounded-[1.2rem] border border-[color:var(--line)] bg-[linear-gradient(180deg,_rgba(255,255,255,1),_rgba(253,248,241,0.92))] shadow-[0_10px_22px_rgba(92,68,47,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_20px_34px_rgba(92,68,47,0.14)] sm:rounded-[1.8rem]"
+              className="group relative flex h-full flex-col overflow-hidden rounded-[1.35rem] border border-[rgba(185,154,118,0.2)] bg-[linear-gradient(180deg,_rgba(255,255,255,1),_rgba(252,245,236,0.96))] shadow-[0_12px_28px_rgba(92,68,47,0.08)] transition duration-300 hover:-translate-y-1.5 hover:border-[rgba(185,154,118,0.4)] hover:shadow-[0_24px_42px_rgba(92,68,47,0.15)] sm:rounded-[1.9rem]"
             >
+              <div className="pointer-events-none absolute inset-x-0 top-0 z-0 h-24 bg-[linear-gradient(180deg,_rgba(255,255,255,0.4),_transparent)]" />
               {product.bestseller ? (
-                <div className="pointer-events-none absolute left-[-2.85rem] top-4 z-20 rotate-[-45deg] border border-[rgba(255,240,219,0.35)] bg-[linear-gradient(135deg,_#9f4c2d,_#d47f42_58%,_#efb163)] px-14 py-2 text-[9px] font-bold uppercase tracking-[0.32em] text-white shadow-[0_14px_28px_rgba(159,76,45,0.32)] animate-pulse sm:left-[-2.5rem] sm:top-5 sm:px-16 sm:text-[10px]">
+                <div className="pointer-events-none absolute left-[-2.85rem] top-4 z-20 rotate-[-45deg] border border-[rgba(255,240,219,0.35)] bg-[linear-gradient(135deg,_#8d4026,_#c87239_56%,_#eab16d)] px-14 py-2 text-[9px] font-bold uppercase tracking-[0.32em] text-white shadow-[0_14px_28px_rgba(159,76,45,0.28)] sm:left-[-2.5rem] sm:top-5 sm:px-16 sm:text-[10px]">
                   Best seller
                 </div>
               ) : null}
               <button
                 type="button"
                 onClick={() => setSelectedProduct(product)}
-                className="relative aspect-square bg-[radial-gradient(circle_at_top,_rgba(183,146,107,0.18),_transparent_55%),linear-gradient(180deg,_#fbf5ee,_#f1e6d8)] text-left"
+                className="relative aspect-square bg-[radial-gradient(circle_at_top,_rgba(183,146,107,0.18),_transparent_58%),linear-gradient(180deg,_#fffaf3,_#f4e7d6)] text-left"
               >
                 <div className="relative h-full w-full overflow-hidden">
                   <ProductImage key={product.imageUrl || product.id} src={product.imageUrl} alt={product.name} />
                 </div>
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-[linear-gradient(180deg,_transparent,_rgba(255,248,239,0.88))]" />
               </button>
 
-              <div className="flex flex-1 flex-col gap-3 p-3 sm:p-4">
-                <h3 className="line-clamp-2 min-h-[2.4rem] font-serif text-[0.98rem] leading-tight text-[color:var(--ink)] sm:min-h-0 sm:text-[1.45rem]">
-                  {product.name}
-                </h3>
+              <div className="relative flex flex-1 flex-col gap-3 p-3 sm:p-4">
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full border border-[rgba(185,154,118,0.16)] bg-white/88 px-2.5 py-1 text-[9px] uppercase tracking-[0.28em] text-[color:var(--atlantic)] sm:text-[10px]">
+                      {product.brand.name}
+                    </span>
+                    <span className="rounded-full bg-[rgba(215,191,160,0.24)] px-2.5 py-1 text-[9px] uppercase tracking-[0.28em] text-[color:#8a623a] sm:text-[10px]">
+                      {getProductAudienceLabel(product.audience)}
+                    </span>
+                  </div>
 
-                <p className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--atlantic)] sm:text-xs">
-                  {getProductAudienceLabel(product.audience)}
-                </p>
+                  <h3 className="line-clamp-2 min-h-[2.4rem] font-serif text-[1.02rem] leading-tight text-[color:var(--ink)] sm:min-h-0 sm:text-[1.5rem]">
+                    {product.name}
+                  </h3>
+                </div>
 
                 <div className="mt-auto space-y-3">
                   <div className="flex flex-wrap gap-2">
@@ -533,7 +542,7 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
                       className={`rounded-full border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] transition ${
                         selectedSize === "100ml"
                           ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-white"
-                          : "border-[color:var(--line)] bg-white text-slate-600"
+                          : "border-[color:var(--line)] bg-white text-slate-600 hover:border-[rgba(185,154,118,0.4)]"
                       }`}
                     >
                       100 ml
@@ -545,22 +554,29 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
                         className={`rounded-full border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] transition ${
                           selectedSize === "5ml"
                             ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-white"
-                            : "border-[color:var(--line)] bg-white text-slate-600"
+                            : "border-[color:var(--line)] bg-white text-slate-600 hover:border-[rgba(185,154,118,0.4)]"
                         }`}
                       >
                         5 ml
                       </button>
                     ) : null}
                   </div>
-                  <div className="flex flex-wrap items-end gap-x-2 gap-y-1">
-                    <p className="font-serif text-lg text-[color:var(--ink)] sm:text-2xl">
-                      {formatPrice(currentPrice)}
-                    </p>
-                    {selectedSize === "100ml" && hasDiscount ? (
-                      <p className="text-[10px] text-slate-400 line-through sm:text-xs">
-                        {formatPrice(product.priceInCents)}
-                      </p>
-                    ) : null}
+                  <div className="rounded-[1.1rem] border border-[rgba(185,154,118,0.14)] bg-[rgba(255,250,243,0.86)] px-3 py-3">
+                    <div className="flex flex-wrap items-end justify-between gap-x-2 gap-y-1">
+                      <div className="space-y-1">
+                        <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--atlantic)]">
+                          Preco
+                        </p>
+                        <p className="font-serif text-lg text-[color:var(--ink)] sm:text-2xl">
+                          {formatPrice(currentPrice)}
+                        </p>
+                      </div>
+                      {selectedSize === "100ml" && hasDiscount ? (
+                        <p className="text-[10px] text-slate-400 line-through sm:text-xs">
+                          {formatPrice(product.priceInCents)}
+                        </p>
+                      ) : null}
+                    </div>
                   </div>
 
                   <button
