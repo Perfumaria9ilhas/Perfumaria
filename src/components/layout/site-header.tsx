@@ -41,7 +41,14 @@ export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeade
   return (
     <>
       <header className="sticky top-0 z-30 border-b border-[color:var(--line)] bg-white/92 backdrop-blur-xl">
-        <div className="mx-auto max-w-[1180px] px-4 py-2 lg:px-4.5 lg:py-2.5">
+        <div className="hidden border-b border-[rgba(255,255,255,0.16)] bg-[linear-gradient(90deg,_#ba8a48,_#d5ad6b)] lg:block">
+          <div className="mx-auto flex max-w-[1320px] items-center justify-center gap-8 px-5 py-2 text-[11px] font-medium text-white">
+            <span>Entrega rápida na Ilha Terceira</span>
+            <span>Decants 5ml disponíveis</span>
+            <span>Atendimento personalizado por WhatsApp</span>
+          </div>
+        </div>
+        <div className="mx-auto max-w-[1320px] px-4 py-2 lg:px-5 lg:py-2.5">
           <div className="flex items-center justify-between gap-3 lg:hidden">
             <button
               type="button"

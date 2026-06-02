@@ -12,8 +12,8 @@ export default async function Home() {
   ]);
 
   return (
-    <div className="mx-auto flex max-w-[1240px] flex-col gap-6 px-4 py-4 lg:px-5 lg:py-6">
-      <HeroHome settings={settings} />
+    <div className="mx-auto flex max-w-[1320px] flex-col gap-8 px-4 py-5 lg:px-5 lg:py-7">
+      <HeroHome settings={settings} products={featuredProducts.slice(0, 2)} />
       <FeaturedProductsSlider products={featuredProducts} />
       <SampleHome />
       <TrustHome reviews={reviews} stats={stats} />

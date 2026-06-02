@@ -1,101 +1,189 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { Check, MessageCircleMore, ShieldCheck, Sparkles, Truck } from "lucide-react";
-import type { PublicStoreSettings } from "@/lib/types";
+import { Check, MessageCircleMore, ShieldCheck, TestTubeDiagonal, Truck } from "lucide-react";
+import type { CatalogProduct, PublicStoreSettings } from "@/lib/types";
 
-const heroPoints = [
-  "Perfumes 100% Originais",
-  "Entrega rapida na Ilha Terceira",
-  "Atendimento personalizado por WhatsApp",
-  "Amostras disponiveis em 5ml",
-];
-
-const heroTrust = [
+const trustPoints = [
   {
     icon: ShieldCheck,
-    label: "Originais verificados",
+    title: "Perfumes 100% originais",
+    text: "Trabalhamos com fragrâncias selecionadas para transmitir confiança desde o primeiro contacto.",
   },
   {
     icon: Truck,
-    label: "Entrega local rapida",
+    title: "Entrega rápida na Ilha Terceira",
+    text: "Acompanhamento próximo para entregas locais mais simples e confortáveis.",
   },
   {
     icon: MessageCircleMore,
-    label: "Apoio por WhatsApp",
+    title: "Atendimento por WhatsApp",
+    text: "Resposta humana, rápida e personalizada para orientar cada encomenda.",
   },
   {
-    icon: Sparkles,
-    label: "Decants 5ml",
+    icon: TestTubeDiagonal,
+    title: "Amostras disponíveis em 5ml",
+    text: "Experimente primeiro e compre com mais segurança antes do frasco completo.",
   },
 ];
 
-export function HeroHome({ settings }: { settings: PublicStoreSettings }) {
+function HeroBottle({
+  product,
+  priority = false,
+  className = "",
+}: {
+  product?: CatalogProduct;
+  priority?: boolean;
+  className?: string;
+}) {
+  if (!product?.imageUrl) {
+    return (
+      <div
+        className={`flex items-center justify-center rounded-[2rem] border border-[rgba(194,162,119,0.24)] bg-[linear-gradient(180deg,_rgba(255,255,255,0.92),_rgba(247,233,214,0.92))] ${className}`}
+      >
+        <Image
+          src="/logo-9-ilhas.svg"
+          alt="9 Ilhas Perfumaria"
+          width={240}
+          height={90}
+          className="h-auto w-32 opacity-90 sm:w-40"
+        />
+      </div>
+    );
+  }
+
   return (
-    <section className="relative overflow-hidden rounded-[2.15rem] border border-[rgba(185,154,118,0.2)] bg-[radial-gradient(circle_at_top_left,_rgba(212,180,137,0.18),_transparent_28%),linear-gradient(180deg,_rgba(255,255,255,0.98),_rgba(247,237,224,0.94))] p-6 shadow-[0_18px_46px_rgba(74,51,32,0.08)] sm:p-8 lg:p-10">
-      <div className="absolute inset-x-0 top-0 h-28 bg-[radial-gradient(circle_at_top,_rgba(212,180,137,0.2),_transparent_70%)]" />
-      <div className="relative mx-auto max-w-5xl space-y-7">
-        <div className="space-y-4 text-center">
-          <p className="text-xs uppercase tracking-[0.34em] text-[color:var(--gold)]">
-            Perfumaria 9 Ilhas
-          </p>
-          <h1 className="mx-auto max-w-[11.5ch] font-serif text-4xl leading-[0.98] text-[color:var(--ink)] sm:text-5xl lg:text-[4.1rem]">
-            Perfumes originais com entrega proxima e confianca real.
-          </h1>
-          <p className="mx-auto max-w-3xl text-base leading-8 text-slate-600">
-            Selecao cuidada de perfumes arabes para quem procura autenticidade, apoio humano e
-            uma experiencia mais segura desde o primeiro contacto.
-          </p>
-        </div>
+    <div
+      className={`relative overflow-hidden rounded-[2rem] border border-[rgba(194,162,119,0.24)] bg-[radial-gradient(circle_at_top,_rgba(224,193,150,0.28),_transparent_58%),linear-gradient(180deg,_rgba(255,251,245,0.98),_rgba(244,229,209,0.98))] shadow-[0_20px_42px_rgba(78,55,34,0.12)] ${className}`}
+    >
+      <div className="relative h-full w-full">
+        <Image
+          src={product.imageUrl}
+          alt={product.name}
+          fill
+          priority={priority}
+          unoptimized
+          className="object-contain p-5 sm:p-7"
+        />
+      </div>
+    </div>
+  );
+}
 
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {heroPoints.map((point) => (
-            <div
-              key={point}
-              className="flex items-center gap-3 rounded-[1.15rem] border border-[rgba(185,154,118,0.18)] bg-white/78 px-4 py-3 text-sm font-medium text-[color:var(--ink)] shadow-[0_10px_24px_rgba(74,51,32,0.05)]"
-            >
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[rgba(195,153,100,0.14)] text-[color:var(--gold)]">
-                <Check className="h-4 w-4" />
-              </span>
-              <span>{point}</span>
-            </div>
-          ))}
-        </div>
+export function HeroHome({
+  settings,
+  products,
+}: {
+  settings: PublicStoreSettings;
+  products: CatalogProduct[];
+}) {
+  const primaryProduct = products[0];
+  const secondaryProduct = products[1];
 
-        <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Link
-            href="/catalogo"
-            className="inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,_#b88746,_#d1a15f)] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(184,135,70,0.24)] transition hover:translate-y-[-1px]"
-          >
-            Ver catalogo
-          </Link>
-          <a
-            href={`https://wa.me/${settings.whatsappNumber}`}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center justify-center rounded-full border border-[color:var(--line)] bg-white px-6 py-3.5 text-sm font-semibold text-[color:var(--ink)] transition hover:border-[color:var(--gold)] hover:text-[color:var(--gold)]"
-          >
-            Falar por WhatsApp
-          </a>
-        </div>
+  return (
+    <section className="space-y-6">
+      <div className="overflow-hidden rounded-[2.25rem] border border-[rgba(194,162,119,0.24)] bg-[linear-gradient(135deg,_rgba(255,251,245,0.98),_rgba(243,229,208,0.98))] shadow-[0_24px_70px_rgba(78,55,34,0.10)]">
+        <div className="grid gap-0 lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="flex flex-col justify-center px-6 py-8 sm:px-9 sm:py-10 lg:px-12 lg:py-12">
+            <p className="text-xs font-semibold uppercase tracking-[0.34em] text-[color:var(--gold)]">
+              Bem-vindo à 9 Ilhas
+            </p>
+            <h1 className="mt-4 max-w-[12ch] font-serif text-[2.6rem] leading-[0.96] text-[color:var(--ink)] sm:text-[3.5rem] lg:text-[4.35rem]">
+              Perfumes Originais na Ilha Terceira
+            </h1>
+            <p className="mt-5 max-w-2xl text-[1rem] leading-8 text-slate-600 lg:text-[1.06rem]">
+              Entrega local rápida, decants 5ml disponíveis e atendimento personalizado por
+              WhatsApp para ajudar a escolher com mais confiança.
+            </p>
 
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {heroTrust.map((item) => {
-            const Icon = item.icon;
-
-            return (
-              <div
-                key={item.label}
-                className="rounded-[1.2rem] border border-[rgba(185,154,118,0.14)] bg-[rgba(255,250,243,0.8)] px-4 py-4"
-              >
-                <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[rgba(195,153,100,0.14)] text-[color:var(--gold)]">
-                  <Icon className="h-5 w-5" />
+            <div className="mt-6 flex flex-wrap gap-3">
+              {[
+                "Perfumes 100% Originais",
+                "Entrega rápida na Ilha Terceira",
+                "Atendimento personalizado por WhatsApp",
+                "Amostras disponíveis em 5ml",
+              ].map((item) => (
+                <span
+                  key={item}
+                  className="inline-flex items-center gap-2 rounded-full border border-[rgba(194,162,119,0.2)] bg-white/88 px-4 py-2 text-sm text-[color:var(--ink)] shadow-[0_8px_18px_rgba(78,55,34,0.05)]"
+                >
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[rgba(195,153,100,0.14)] text-[color:var(--gold)]">
+                    <Check className="h-3.5 w-3.5" />
+                  </span>
+                  {item}
                 </span>
-                <p className="text-sm leading-6 text-[color:var(--ink)]">{item.label}</p>
+              ))}
+            </div>
+
+            <p className="mt-6 max-w-xl text-sm leading-7 text-slate-600">
+              Descubra fragrâncias cuidadosamente selecionadas para quem procura autenticidade,
+              elegância e uma experiência de compra mais segura.
+            </p>
+
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Link
+                href="/catalogo"
+                className="inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,_#b88746,_#d1a15f)] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(184,135,70,0.24)] transition hover:translate-y-[-1px]"
+              >
+                Ver catálogo
+              </Link>
+              <a
+                href={`https://wa.me/${settings.whatsappNumber}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center rounded-full border border-[rgba(194,162,119,0.24)] bg-white px-6 py-3.5 text-sm font-semibold text-[color:var(--ink)] transition hover:border-[color:var(--gold)] hover:text-[color:var(--gold)]"
+              >
+                Falar por WhatsApp
+              </a>
+            </div>
+          </div>
+
+          <div className="relative min-h-[360px] overflow-hidden px-6 py-8 sm:px-9 lg:min-h-[620px] lg:px-10 lg:py-10">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(214,183,142,0.35),_transparent_28%),radial-gradient(circle_at_bottom_left,_rgba(157,120,84,0.16),_transparent_30%)]" />
+            <div className="absolute right-5 top-5 h-32 w-32 rounded-full bg-[rgba(255,255,255,0.28)] blur-3xl sm:h-44 sm:w-44" />
+            <div className="relative flex h-full items-end justify-center">
+              <HeroBottle
+                product={secondaryProduct}
+                className="absolute left-[4%] top-[8%] h-[56%] w-[36%] rotate-[-4deg] lg:left-[8%] lg:top-[11%] lg:h-[60%] lg:w-[34%]"
+              />
+              <HeroBottle
+                product={primaryProduct}
+                priority
+                className="relative z-10 h-[86%] w-[54%] lg:h-[88%] lg:w-[50%]"
+              />
+              <div className="absolute bottom-3 right-0 max-w-[220px] rounded-[1.4rem] border border-[rgba(194,162,119,0.18)] bg-white/80 px-4 py-3 text-right shadow-[0_12px_24px_rgba(78,55,34,0.08)] backdrop-blur sm:px-5 sm:py-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[color:var(--gold)]">
+                  Seleção exclusiva
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  Fragrâncias escolhidas com atenção para uma montra mais confiante e premium.
+                </p>
               </div>
-            );
-          })}
+            </div>
+          </div>
         </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {trustPoints.map((item) => {
+          const Icon = item.icon;
+
+          return (
+            <article
+              key={item.title}
+              className="rounded-[1.7rem] border border-[rgba(194,162,119,0.18)] bg-[linear-gradient(180deg,_rgba(255,255,255,0.96),_rgba(250,241,229,0.94))] px-5 py-5 shadow-[0_14px_28px_rgba(78,55,34,0.05)]"
+            >
+              <span className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-[rgba(195,153,100,0.14)] text-[color:var(--gold)]">
+                <Icon className="h-5 w-5" />
+              </span>
+              <h2 className="font-serif text-[1.45rem] leading-tight text-[color:var(--ink)]">
+                {item.title}
+              </h2>
+              <p className="mt-3 text-sm leading-7 text-slate-600">{item.text}</p>
+            </article>
+          );
+        })}
       </div>
     </section>
   );

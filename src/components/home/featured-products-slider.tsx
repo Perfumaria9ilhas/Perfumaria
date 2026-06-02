@@ -15,16 +15,6 @@ import {
 } from "@/lib/product-sizes";
 import type { CatalogProduct } from "@/lib/types";
 
-function chunkProducts(products: CatalogProduct[], size: number) {
-  const chunks: CatalogProduct[][] = [];
-
-  for (let index = 0; index < products.length; index += size) {
-    chunks.push(products.slice(index, index + size));
-  }
-
-  return chunks;
-}
-
 function FeaturedProductImage({
   imageUrl,
   name,
@@ -38,8 +28,8 @@ function FeaturedProductImage({
         <Image
           src="/logo-9-ilhas.svg"
           alt="9 Ilhas Perfumaria"
-          width={150}
-          height={40}
+          width={160}
+          height={48}
           className="h-auto w-24 opacity-80"
         />
       </div>
@@ -52,7 +42,7 @@ function FeaturedProductImage({
       alt={name}
       fill
       unoptimized
-      className="object-contain p-4 transition duration-300 group-hover:scale-[1.03]"
+      className="object-contain p-4 transition duration-500 group-hover:scale-[1.04]"
     />
   );
 }
@@ -63,35 +53,11 @@ export function FeaturedProductsSlider({
   products: CatalogProduct[];
 }) {
   const { addItem } = useCart();
-  const [activeGroupIndex, setActiveGroupIndex] = useState(0);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
   const [selectedSizes, setSelectedSizes] = useState<Record<string, ProductSizeValue>>({});
-  const [isMobile, setIsMobile] = useState(false);
 
-  const productGroups = useMemo(() => chunkProducts(products, 6), [products]);
-  const currentGroup =
-    productGroups.length > 0 ? productGroups[activeGroupIndex % productGroups.length] : [];
-
-  useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth < 768);
-    onResize();
-    window.addEventListener("resize", onResize);
-
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
-
-  useEffect(() => {
-    if (productGroups.length <= 1 || isMobile) {
-      return;
-    }
-
-    const timer = window.setInterval(() => {
-      setActiveGroupIndex((current) => (current + 1) % productGroups.length);
-    }, 5200);
-
-    return () => window.clearInterval(timer);
-  }, [isMobile, productGroups.length]);
+  const visibleProducts = useMemo(() => products.slice(0, 5), [products]);
 
   useEffect(() => {
     if (!feedback) {
@@ -167,7 +133,7 @@ export function FeaturedProductsSlider({
     setFeedback(`${product.name} ${getProductSizeLabel(size)} foi adicionado ao carrinho.`);
   }
 
-  if (!currentGroup.length) {
+  if (!visibleProducts.length) {
     return null;
   }
 
@@ -228,7 +194,7 @@ export function FeaturedProductsSlider({
                   </button>
                 ) : null}
               </div>
-              <p className="text-sm font-semibold text-[color:var(--ink)]">
+              <p className="font-serif text-2xl text-[color:var(--ink)]">
                 {formatPrice(getDisplayPrice(selectedProduct, getSelectedSize(selectedProduct)))}
               </p>
               <div className="whitespace-pre-line text-sm leading-7 text-slate-600">
@@ -246,31 +212,26 @@ export function FeaturedProductsSlider({
         </div>
       ) : null}
 
-      <section className="relative overflow-hidden rounded-[1.75rem] border border-[rgba(181,151,115,0.26)] bg-[radial-gradient(circle_at_top_left,_rgba(228,197,154,0.38),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(146,111,79,0.18),_transparent_34%),linear-gradient(180deg,_#fbf6ef,_#efe1cc)] p-3 shadow-[0_16px_46px_rgba(74,51,32,0.09)]">
-        <div className="absolute inset-x-0 top-0 h-24 bg-[linear-gradient(180deg,_rgba(255,255,255,0.38),_transparent)]" />
-
-        <div className="relative mb-4 flex items-center justify-between gap-4">
-          <div>
-            <p className="text-xs uppercase tracking-[0.35em] text-[color:var(--atlantic)]">
-              Perfumes em Destaque
+      <section className="space-y-6">
+        <div className="flex items-center justify-between gap-4">
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.34em] text-[color:var(--gold)]">
+              Destaques
             </p>
+            <h2 className="font-serif text-[2.25rem] leading-none text-[color:var(--ink)] sm:text-[2.8rem]">
+              Perfumes em destaque
+            </h2>
           </div>
           <Link
             href="/catalogo"
-            className="rounded-full border border-[rgba(171,140,105,0.35)] bg-white/75 px-4 py-2 text-sm font-medium text-[color:var(--ink)] backdrop-blur"
+            className="rounded-full border border-[rgba(194,162,119,0.2)] bg-white px-5 py-3 text-sm font-medium text-[color:var(--ink)] shadow-[0_10px_18px_rgba(78,55,34,0.04)]"
           >
             Ver catálogo
           </Link>
         </div>
 
-        <div
-          className={
-            isMobile
-              ? "flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-              : "grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6"
-          }
-        >
-          {(isMobile ? products : currentGroup).map((product) => {
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          {visibleProducts.map((product) => {
             const selectedSize = getSelectedSize(product);
             const currentPrice = getDisplayPrice(product, selectedSize);
             const audience = getProductAudienceLabel(product.audience);
@@ -282,12 +243,10 @@ export function FeaturedProductsSlider({
             return (
               <article
                 key={product.id}
-                className={`group relative overflow-hidden rounded-[1.2rem] border border-[rgba(181,151,115,0.2)] bg-[linear-gradient(180deg,_rgba(255,255,255,0.94),_rgba(248,238,225,0.92))] p-3 shadow-[0_10px_24px_rgba(74,51,32,0.07)] transition hover:translate-y-[-2px] hover:shadow-[0_16px_34px_rgba(74,51,32,0.1)] ${
-                  isMobile ? "w-[48%] min-w-[48%] snap-start" : ""
-                }`}
+                className="group relative flex h-full flex-col overflow-hidden rounded-[1.7rem] border border-[rgba(194,162,119,0.18)] bg-[linear-gradient(180deg,_rgba(255,255,255,0.98),_rgba(248,239,227,0.96))] p-4 shadow-[0_14px_28px_rgba(78,55,34,0.06)] transition duration-300 hover:-translate-y-1.5 hover:shadow-[0_22px_40px_rgba(78,55,34,0.12)]"
               >
                 {product.bestseller ? (
-                  <div className="absolute left-[-2.3rem] top-5 z-10 rotate-[-45deg] animate-pulse rounded-full bg-[linear-gradient(135deg,_#b3472d,_#df8a46)] px-10 py-1.5 text-[10px] font-bold uppercase tracking-[0.28em] text-white shadow-[0_10px_22px_rgba(179,71,45,0.28)]">
+                  <div className="absolute left-[-2.25rem] top-4 z-20 rotate-[-45deg] rounded-full bg-[linear-gradient(135deg,_#b3472d,_#df8a46)] px-10 py-1.5 text-[10px] font-bold uppercase tracking-[0.3em] text-white shadow-[0_12px_24px_rgba(179,71,45,0.26)]">
                     Best seller
                   </div>
                 ) : null}
@@ -295,28 +254,26 @@ export function FeaturedProductsSlider({
                 <button
                   type="button"
                   onClick={() => setSelectedProduct(product)}
-                  className="relative block w-full overflow-hidden rounded-[1rem] bg-[radial-gradient(circle_at_top,_rgba(183,146,107,0.16),_transparent_55%),linear-gradient(180deg,_#fbf5ee,_#f1e6d8)]"
+                  className="relative block aspect-[4/4.5] overflow-hidden rounded-[1.35rem] bg-[radial-gradient(circle_at_top,_rgba(183,146,107,0.16),_transparent_55%),linear-gradient(180deg,_#fffaf3,_#f2e4d2)]"
                 >
-                  <div className="relative aspect-square">
-                    <FeaturedProductImage imageUrl={product.imageUrl} name={product.name} />
-                  </div>
+                  <FeaturedProductImage imageUrl={product.imageUrl} name={product.name} />
                 </button>
 
-                <div className="mt-3 space-y-2.5">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-full border border-[rgba(173,147,114,0.2)] bg-white/78 px-3 py-1 text-[10px] uppercase tracking-[0.24em] text-[color:#8f7d6b]">
+                <div className="mt-4 flex flex-1 flex-col">
+                  <div className="flex flex-wrap gap-2">
+                    <span className="rounded-full border border-[rgba(194,162,119,0.16)] bg-white/88 px-2.5 py-1 text-[10px] uppercase tracking-[0.24em] text-[color:var(--atlantic)]">
                       {product.brand.name}
                     </span>
-                    <span className="rounded-full bg-[rgba(215,191,160,0.28)] px-3 py-1 text-[10px] uppercase tracking-[0.24em] text-[color:#8a623a]">
+                    <span className="rounded-full bg-[rgba(215,191,160,0.24)] px-2.5 py-1 text-[10px] uppercase tracking-[0.24em] text-[color:#8a623a]">
                       {audience}
                     </span>
                   </div>
 
-                  <h3 className="min-h-[2.5rem] font-serif text-[1.15rem] leading-[1.05] text-[color:var(--ink)] md:min-h-[3.1rem] md:text-[1.35rem]">
+                  <h3 className="mt-3 min-h-[4rem] font-serif text-[1.65rem] leading-[1.05] text-[color:var(--ink)]">
                     {product.name}
                   </h3>
 
-                  <div className="flex flex-wrap gap-2">
+                  <div className="mt-3 flex flex-wrap gap-2">
                     <button
                       type="button"
                       onClick={() => setProductSize(product.id, "100ml")}
@@ -326,7 +283,7 @@ export function FeaturedProductsSlider({
                           : "border-[color:var(--line)] bg-white text-slate-600"
                       }`}
                     >
-                      100 ml
+                      Frasco original 100ml
                     </button>
                     {product.availableInFiveMl ? (
                       <button
@@ -338,19 +295,19 @@ export function FeaturedProductsSlider({
                             : "border-[color:var(--line)] bg-white text-slate-600"
                         }`}
                       >
-                        5 ml
+                        Decant 5ml
                       </button>
                     ) : null}
                   </div>
 
-                  <div className="flex items-end justify-between gap-3">
+                  <div className="mt-4 flex items-end justify-between gap-3">
                     <div>
                       {hasDiscount ? (
-                        <p className="text-xs text-[color:#b0a08f] line-through">
+                        <p className="text-xs text-slate-400 line-through">
                           {formatPrice(product.priceInCents)}
                         </p>
                       ) : null}
-                      <p className="font-serif text-[1.25rem] leading-none text-[color:var(--ink)] md:text-[1.55rem]">
+                      <p className="font-serif text-[1.65rem] leading-none text-[color:var(--ink)]">
                         {formatPrice(currentPrice)}
                       </p>
                     </div>
@@ -361,18 +318,18 @@ export function FeaturedProductsSlider({
                     ) : null}
                   </div>
 
-                  <div className="grid gap-2">
+                  <div className="mt-4 grid gap-2">
                     <button
                       type="button"
                       onClick={() => setSelectedProduct(product)}
-                      className="inline-flex items-center justify-center rounded-[0.9rem] bg-[linear-gradient(135deg,_#b88746,_#d1a15f)] px-3 py-2 text-sm font-bold text-white shadow-[0_10px_20px_rgba(184,135,70,0.24)] transition hover:translate-y-[-1px] md:px-4 md:py-2.5"
+                      className="inline-flex items-center justify-center rounded-full border border-[rgba(194,162,119,0.18)] bg-white px-4 py-3 text-sm font-semibold text-[color:var(--ink)] transition hover:border-[color:var(--gold)] hover:text-[color:var(--gold)]"
                     >
-                      Ver detalhes
+                      Ver opções
                     </button>
                     <button
                       type="button"
                       onClick={() => handleAddToCart(product, selectedSize)}
-                      className="inline-flex items-center justify-center gap-2 rounded-[0.9rem] border border-[rgba(210,180,140,0.9)] bg-[rgba(255,250,243,0.72)] px-3 py-2 text-sm font-semibold text-[color:#8a623a] transition hover:bg-white md:px-4 md:py-2.5"
+                      className="inline-flex items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,_#b88746,_#d1a15f)] px-4 py-3 text-sm font-semibold text-white shadow-[0_10px_20px_rgba(184,135,70,0.22)]"
                     >
                       <Flame className="h-4 w-4" />
                       Adicionar ao carrinho
@@ -385,25 +342,7 @@ export function FeaturedProductsSlider({
         </div>
 
         {feedback ? (
-          <p className="mt-5 text-center text-sm text-[color:#8a623a]">{feedback}</p>
-        ) : null}
-
-        {!isMobile && productGroups.length > 1 ? (
-          <div className="mt-6 flex items-center justify-center gap-2">
-            {productGroups.map((group, index) => (
-              <button
-                key={group.map((product) => product.id).join("-")}
-                type="button"
-                onClick={() => setActiveGroupIndex(index)}
-                aria-label={`Ver grupo ${index + 1}`}
-                className={`h-2.5 rounded-full transition-all ${
-                  index === activeGroupIndex
-                    ? "w-10 bg-[color:var(--gold)]"
-                    : "w-2.5 bg-[rgba(166,133,96,0.34)]"
-                }`}
-              />
-            ))}
-          </div>
+          <p className="text-center text-sm text-[color:#8a623a]">{feedback}</p>
         ) : null}
       </section>
     </>

@@ -1,16 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  CheckCircle2,
-  ImagePlus,
-  Lock,
-  MessageCircleMore,
-  ShieldCheck,
-  Star,
-  Truck,
-  Users,
-} from "lucide-react";
+import { Camera, CheckCircle2, MessageCircleMore, Star } from "lucide-react";
 import { submitStoreReview } from "@/actions/admin";
 
 type Review = {
@@ -29,62 +20,33 @@ type TrustHomeProps = {
   };
 };
 
-const trustItems = [
-  "Perfumes autenticos",
+const socialProofItems = [
+  "Perfumes autênticos",
   "Entregas locais na Ilha Terceira",
   "Atendimento por WhatsApp",
   "Apoio personalizado",
 ];
 
-const confidenceCards = [
-  {
-    icon: ShieldCheck,
-    title: "Perfumes autenticos",
-    text: "Selecao cuidada para transmitir seguranca e autenticidade desde a primeira visita.",
-  },
-  {
-    icon: Truck,
-    title: "Entregas locais",
-    text: "Resposta proxima e mais rapida para quem compra na Ilha Terceira.",
-  },
-  {
-    icon: MessageCircleMore,
-    title: "Atendimento por WhatsApp",
-    text: "Apoio humano para tirar duvidas e orientar melhor cada escolha.",
-  },
-  {
-    icon: Lock,
-    title: "Pagamento seguro",
-    text: "Processo direto, claro e pensado para inspirar confianca ao longo da compra.",
-  },
-  {
-    icon: Users,
-    title: "Clientes satisfeitos",
-    text: "A reputacao da marca cresce com encomendas reais e repeticao de compra.",
-  },
-];
-
-const futureProofBlocks = [
+const futureBlocks = [
   {
     icon: MessageCircleMore,
     title: "Testemunhos",
-    text: "Espaco preparado para destacar experiencias reais de clientes.",
+    text: "Zona preparada para crescer com mais histórias reais de clientes.",
   },
   {
-    icon: ImagePlus,
+    icon: Camera,
     title: "Fotografias de entregas",
-    text: "Zona pronta para mostrar entregas e proximidade com a Ilha Terceira.",
+    text: "Espaço pronto para mostrar proximidade e entregas concluídas.",
   },
   {
     icon: Star,
-    title: "Avaliacoes de clientes",
-    text: "Estrutura preparada para ganhar ainda mais prova social ao longo do tempo.",
+    title: "Avaliações de clientes",
+    text: "Comentários reais para reforçar ainda mais a confiança da marca.",
   },
 ];
 
 function renderStars(rating: number) {
   const safeRating = Math.max(0, Math.min(5, rating));
-
   return "★★★★★".slice(0, safeRating) + "☆☆☆☆☆".slice(0, 5 - safeRating);
 }
 
@@ -105,10 +67,10 @@ export function TrustHome({ reviews, stats }: TrustHomeProps) {
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs uppercase tracking-[0.32em] text-[color:var(--atlantic)]">
-                  Avaliacao
+                  Avaliação
                 </p>
                 <h3 className="mt-2 font-serif text-3xl text-[color:var(--ink)]">
-                  Deixe o seu comentario
+                  Deixe o seu comentário
                 </h3>
               </div>
               <button
@@ -144,7 +106,7 @@ export function TrustHome({ reviews, stats }: TrustHomeProps) {
 
               <textarea
                 name="comment"
-                placeholder="Partilhe a sua opiniao sobre a loja"
+                placeholder="Partilhe a sua opinião sobre a loja"
                 rows={5}
                 className="w-full rounded-[1rem] border border-[color:var(--line)] bg-white px-4 py-3 text-sm outline-none transition focus:border-[color:var(--gold)]"
                 required
@@ -154,171 +116,122 @@ export function TrustHome({ reviews, stats }: TrustHomeProps) {
                 type="submit"
                 className="inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,_#b88746,_#d1a15f)] px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(184,135,70,0.22)]"
               >
-                Enviar comentario
+                Enviar comentário
               </button>
             </form>
           </div>
         </div>
       ) : null}
 
-      <section id="avaliacoes" className="space-y-8 py-2">
-        <div className="rounded-[2.15rem] border border-[rgba(185,154,118,0.18)] bg-[linear-gradient(180deg,_rgba(255,255,255,0.98),_rgba(248,238,225,0.95))] p-7 shadow-[0_18px_46px_rgba(74,51,32,0.06)] sm:p-9">
-          <div className="space-y-6">
-            <div className="space-y-3">
-              <p className="text-xs uppercase tracking-[0.32em] text-[color:var(--atlantic)]">
-                Prova social
-              </p>
-              <h2 className="font-serif text-[2.35rem] leading-tight text-[color:var(--ink)] sm:text-[3rem]">
-                Uma marca que transmite confianca antes mesmo da primeira encomenda.
-              </h2>
-              <div className="flex flex-wrap gap-3">
-                {trustItems.map((item) => (
-                  <span
+      <section className="space-y-8 py-2">
+        <div className="rounded-[2.2rem] border border-[rgba(194,162,119,0.18)] bg-[linear-gradient(135deg,_rgba(255,255,255,0.98),_rgba(246,235,218,0.94))] px-6 py-7 shadow-[0_18px_46px_rgba(78,55,34,0.06)] sm:px-8 sm:py-8 lg:px-10 lg:py-10">
+          <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
+            <div className="space-y-5">
+              <div className="space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.34em] text-[color:var(--gold)]">
+                  Prova social
+                </p>
+                <h2 className="font-serif text-[2.3rem] leading-[1.02] text-[color:var(--ink)] sm:text-[3rem]">
+                  Porque escolher a 9 Ilhas?
+                </h2>
+                <p className="max-w-2xl text-base leading-8 text-slate-600">
+                  Uma base sólida de confiança para transformar a visita num pedido com mais
+                  segurança e vontade de comprar.
+                </p>
+              </div>
+
+              <div className="grid gap-3">
+                {socialProofItems.map((item) => (
+                  <div
                     key={item}
-                    className="inline-flex items-center gap-2 rounded-full border border-[rgba(185,154,118,0.18)] bg-white/80 px-4 py-2 text-sm text-[color:var(--ink)]"
+                    className="flex items-center gap-3 rounded-[1.2rem] border border-[rgba(194,162,119,0.16)] bg-white/80 px-4 py-3"
                   >
-                    <CheckCircle2 className="h-4 w-4 text-[color:var(--gold)]" />
-                    {item}
-                  </span>
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[rgba(195,153,100,0.14)] text-[color:var(--gold)]">
+                      <CheckCircle2 className="h-4 w-4" />
+                    </span>
+                    <span className="text-sm font-medium text-[color:var(--ink)]">{item}</span>
+                  </div>
                 ))}
               </div>
-            </div>
 
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-              {confidenceCards.map((item, index) => {
-                const Icon = item.icon;
-                const metricValue =
-                  index === 4
-                    ? `+${stats.satisfiedCustomersCount}`
-                    : index === 0
-                      ? "+100%"
-                      : index === 1
-                        ? "Local"
-                        : index === 2
-                          ? "WhatsApp"
-                          : "Seguro";
-
-                return (
-                  <article
-                    key={item.title}
-                    className="rounded-[1.35rem] border border-[rgba(185,154,118,0.16)] bg-white/84 p-5 shadow-[0_12px_28px_rgba(74,51,32,0.05)]"
-                  >
-                    <span className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-[rgba(195,153,100,0.14)] text-[color:var(--gold)]">
-                      <Icon className="h-5 w-5" />
-                    </span>
-                    <p className="font-serif text-2xl text-[color:var(--ink)]">{metricValue}</p>
-                    <h3 className="mt-3 font-serif text-[1.35rem] text-[color:var(--ink)]">
-                      {item.title}
-                    </h3>
-                    <p className="mt-2 text-sm leading-7 text-slate-600">{item.text}</p>
-                  </article>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-[1.08fr_0.92fr]">
-          <div className="rounded-[2rem] border border-[rgba(185,154,118,0.18)] bg-white/95 p-7 shadow-[0_18px_46px_rgba(74,51,32,0.05)] sm:p-9">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <div className="space-y-3">
-                <p className="text-xs uppercase tracking-[0.32em] text-[color:var(--atlantic)]">
-                  Comentarios reais
-                </p>
-                <h2 className="font-serif text-[2rem] leading-tight text-[color:var(--ink)] sm:text-[2.55rem]">
-                  O que os clientes dizem depois de receber.
-                </h2>
-                <p className="max-w-2xl text-sm leading-7 text-slate-600">
-                  Comentarios reais ajudam novos clientes a comprar com mais seguranca.
-                </p>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="rounded-[1.35rem] border border-[rgba(194,162,119,0.16)] bg-white/82 px-4 py-4 text-center">
+                  <p className="font-serif text-[2rem] text-[color:var(--ink)]">
+                    +{stats.satisfiedCustomersCount}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-600">Clientes satisfeitos</p>
+                </div>
+                <div className="rounded-[1.35rem] border border-[rgba(194,162,119,0.16)] bg-white/82 px-4 py-4 text-center">
+                  <p className="font-serif text-[2rem] text-[color:var(--ink)]">
+                    +{stats.productsCount}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-600">Perfumes disponíveis</p>
+                </div>
+                <div className="rounded-[1.35rem] border border-[rgba(194,162,119,0.16)] bg-white/82 px-4 py-4 text-center">
+                  <p className="font-serif text-[2rem] text-[color:var(--ink)]">{stats.islandsLabel}</p>
+                  <p className="mt-1 text-sm text-slate-600">Entregas para os Açores</p>
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(true)}
-                className="inline-flex items-center justify-center rounded-full border border-[color:var(--line)] bg-[color:var(--sand-soft)] px-5 py-3 text-sm font-semibold text-[color:var(--ink)] transition hover:border-[color:var(--gold)] hover:text-[color:var(--gold)]"
-              >
-                Fazer comentario
-              </button>
             </div>
 
-            <div className="mt-7 grid gap-5 md:grid-cols-2">
-              {reviews.length ? (
-                reviews.slice(0, 4).map((review) => (
-                  <article
-                    key={review.id}
-                    className="rounded-[1.5rem] border border-[rgba(185,154,118,0.14)] bg-[linear-gradient(180deg,_rgba(255,250,243,0.85),_rgba(255,255,255,0.95))] p-5"
-                  >
-                    <p className="text-sm tracking-[0.14em] text-[color:#b98544]">
-                      {renderStars(review.rating)}
-                    </p>
-                    <p className="mt-3 text-base leading-7 text-slate-700">{review.comment}</p>
-                    <p className="mt-4 text-xs uppercase tracking-[0.24em] text-[color:var(--atlantic)]">
-                      {review.name}
-                    </p>
-                  </article>
-                ))
-              ) : (
-                <p className="md:col-span-2 text-sm leading-7 text-slate-500">
-                  Ainda nao existem avaliacoes. Carregue em fazer comentario para deixar a primeira
-                  opiniao.
-                </p>
-              )}
-            </div>
+            <div className="space-y-5">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.34em] text-[color:var(--gold)]">
+                    O que dizem os nossos clientes
+                  </p>
+                  <h3 className="mt-3 font-serif text-[2rem] leading-tight text-[color:var(--ink)] sm:text-[2.45rem]">
+                    Comentários reais
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(true)}
+                  className="inline-flex items-center justify-center rounded-full border border-[rgba(194,162,119,0.2)] bg-white px-5 py-3 text-sm font-semibold text-[color:var(--ink)] transition hover:border-[color:var(--gold)] hover:text-[color:var(--gold)]"
+                >
+                  Fazer comentário
+                </button>
+              </div>
 
-            <div className="mt-7 flex flex-wrap gap-8 border-t border-[rgba(185,154,118,0.14)] pt-6 text-sm text-slate-600">
-              <p>
-                <span className="mr-2 font-serif text-3xl text-[color:var(--ink)]">
-                  +{stats.satisfiedCustomersCount}
-                </span>
-                Clientes satisfeitos
-              </p>
-              <p>
-                <span className="mr-2 font-serif text-3xl text-[color:var(--ink)]">
-                  +{stats.productsCount}
-                </span>
-                Perfumes disponiveis
-              </p>
-              <p>
-                <span className="mr-2 font-serif text-3xl text-[color:var(--ink)]">
-                  {stats.islandsLabel}
-                </span>
-                Entregas para os Acores
-              </p>
-            </div>
-          </div>
+              <div className="grid gap-4 md:grid-cols-3">
+                {reviews.length ? (
+                  reviews.slice(0, 3).map((review) => (
+                    <article
+                      key={review.id}
+                      className="rounded-[1.5rem] border border-[rgba(194,162,119,0.14)] bg-[linear-gradient(180deg,_rgba(255,255,255,0.96),_rgba(250,241,229,0.9))] p-5"
+                    >
+                      <p className="text-[color:#b98544]">{renderStars(review.rating)}</p>
+                      <p className="mt-3 text-sm leading-7 text-slate-700">{review.comment}</p>
+                      <p className="mt-4 text-xs font-semibold uppercase tracking-[0.22em] text-[color:var(--atlantic)]">
+                        {review.name}
+                      </p>
+                    </article>
+                  ))
+                ) : (
+                  <p className="md:col-span-3 text-sm leading-7 text-slate-600">
+                    Ainda não existem comentários. Carregue em fazer comentário para deixar a
+                    primeira opinião.
+                  </p>
+                )}
+              </div>
 
-          <div className="rounded-[2rem] border border-[rgba(185,154,118,0.18)] bg-[linear-gradient(180deg,_rgba(255,255,255,0.98),_rgba(247,237,224,0.95))] p-7 shadow-[0_18px_46px_rgba(74,51,32,0.05)] sm:p-9">
-            <div className="space-y-3">
-              <p className="text-xs uppercase tracking-[0.32em] text-[color:var(--atlantic)]">
-                Estrutura preparada
-              </p>
-              <h2 className="font-serif text-[2rem] leading-tight text-[color:var(--ink)] sm:text-[2.45rem]">
-                Espaço pronto para reforçar ainda mais a confiança.
-              </h2>
-              <p className="text-sm leading-7 text-slate-600">
-                Esta zona pode crescer com a marca sem perder elegancia nem coerencia visual.
-              </p>
-            </div>
-
-            <div className="mt-7 grid gap-4">
-              {futureProofBlocks.map((block) => {
-                const Icon = block.icon;
-
-                return (
-                  <article
-                    key={block.title}
-                    className="rounded-[1.35rem] border border-dashed border-[rgba(185,154,118,0.28)] bg-white/72 p-5"
-                  >
-                    <span className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-[rgba(195,153,100,0.14)] text-[color:var(--gold)]">
-                      <Icon className="h-5 w-5" />
-                    </span>
-                    <h3 className="font-serif text-[1.35rem] text-[color:var(--ink)]">
-                      {block.title}
-                    </h3>
-                    <p className="mt-2 text-sm leading-7 text-slate-600">{block.text}</p>
-                  </article>
-                );
-              })}
+              <div className="grid gap-3 sm:grid-cols-3">
+                {futureBlocks.map((block) => {
+                  const Icon = block.icon;
+                  return (
+                    <div
+                      key={block.title}
+                      className="rounded-[1.35rem] border border-dashed border-[rgba(194,162,119,0.24)] bg-white/72 px-4 py-4"
+                    >
+                      <span className="mb-3 flex h-9 w-9 items-center justify-center rounded-full bg-[rgba(195,153,100,0.14)] text-[color:var(--gold)]">
+                        <Icon className="h-4.5 w-4.5" />
+                      </span>
+                      <p className="font-semibold text-[color:var(--ink)]">{block.title}</p>
+                      <p className="mt-2 text-sm leading-6 text-slate-600">{block.text}</p>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
