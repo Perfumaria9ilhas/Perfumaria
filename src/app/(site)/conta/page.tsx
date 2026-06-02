@@ -103,17 +103,32 @@ export default async function ContaPage({
         ) : (
           <div className="mt-8 space-y-6">
             <section className="rounded-[2rem] border border-[color:var(--line)] bg-white p-6 shadow-sm">
-              <div className="max-w-md">
-                <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--atlantic)]">
-                  Entrar
-                </p>
-                <h2 className="mt-3 font-serif text-4xl text-[color:var(--ink)]">
-                  Ja tenho conta
-                </h2>
-                <p className="mt-4 text-sm leading-7 text-slate-600">
-                  Entre com o seu email e palavra-passe. Os pedidos que fizer a partir daqui ficam
-                  ligados a sua ficha de cliente.
-                </p>
+              <div className="grid gap-6 lg:grid-cols-[1.02fr_0.98fr] lg:items-start">
+                <div className="max-w-xl">
+                  <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--atlantic)]">
+                    Entrar
+                  </p>
+                  <h2 className="mt-3 font-serif text-4xl text-[color:var(--ink)]">
+                    Ja tenho conta
+                  </h2>
+                  <p className="mt-4 text-sm leading-7 text-slate-600">
+                    Entre com o seu email e palavra-passe. Os pedidos que fizer a partir daqui ficam
+                    ligados a sua ficha de cliente.
+                  </p>
+                </div>
+
+                <div className="rounded-[1.5rem] border border-[rgba(185,154,118,0.16)] bg-[linear-gradient(180deg,_rgba(255,249,242,0.78),_rgba(255,255,255,0.92))] p-5">
+                  <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--atlantic)]">
+                    Ainda nao tem conta?
+                  </p>
+                  <h3 className="mt-2 font-serif text-3xl text-[color:var(--ink)]">
+                    Crie depois de entrar nesta pagina.
+                  </h3>
+                  <p className="mt-3 text-sm leading-7 text-slate-600">
+                    O registo fica escondido ate escolher abrir, para deixar esta pagina mais simples
+                    e mais rapida de usar em telemovel e computador.
+                  </p>
+                </div>
               </div>
 
               <form action={loginCustomer} className="mt-6 grid gap-4">
