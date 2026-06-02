@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 import path from "node:path";
 import { PrismaClient } from "@prisma/client";
 
@@ -41,6 +41,12 @@ async function ensureStoredAsset(fileName: string) {
   }
 
   const filePath = path.join(uploadsDir, fileName);
+  try {
+    await access(filePath);
+  } catch {
+    return null;
+  }
+
   const bytes = await readFile(filePath);
   const extension = path.extname(fileName).toLowerCase();
   const contentType = contentTypes[extension] ?? "application/octet-stream";
@@ -78,6 +84,10 @@ async function main() {
       const assetId = await ensureStoredAsset(fileName);
       const newUrl = `/api/upload-image?asset=${assetId}`;
 
+      if (!assetId) {
+        continue;
+      }
+
       if (newUrl !== product.imageUrl) {
         await prisma.product.update({
           where: { id: product.id },
@@ -106,16 +116,18 @@ async function main() {
     if (heroFileName) {
       try {
         const assetId = await ensureStoredAsset(heroFileName);
-        const newUrl = `/api/upload-image?asset=${assetId}`;
+        if (assetId) {
+          const newUrl = `/api/upload-image?asset=${assetId}`;
 
-        if (newUrl !== settings.heroImageUrl) {
-          await prisma.storeSettings.update({
-            where: { id: settings.id },
-            data: {
-              heroImageUrl: newUrl,
-            },
-          });
-          migratedSlides += 1;
+          if (newUrl !== settings.heroImageUrl) {
+            await prisma.storeSettings.update({
+              where: { id: settings.id },
+              data: {
+                heroImageUrl: newUrl,
+              },
+            });
+            migratedSlides += 1;
+          }
         }
       } catch (error) {
         console.warn(`Nao foi possivel migrar a imagem principal da homepage: ${heroFileName}`);
@@ -132,6 +144,10 @@ async function main() {
 
       try {
         const assetId = await ensureStoredAsset(fileName);
+        if (!assetId) {
+          continue;
+        }
+
         const newUrl = `/api/upload-image?asset=${assetId}`;
 
         if (newUrl !== slide.imageUrl) {
