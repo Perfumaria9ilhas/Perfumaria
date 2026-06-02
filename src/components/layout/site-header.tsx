@@ -41,7 +41,7 @@ export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeade
   return (
     <>
       <header className="sticky top-0 z-30 border-b border-[color:var(--line)] bg-white/92 backdrop-blur-xl">
-        <div className="mx-auto max-w-[1240px] px-4 py-2.5 lg:px-5 lg:py-3">
+        <div className="mx-auto max-w-[1180px] px-4 py-2 lg:px-4.5 lg:py-2.5">
           <div className="flex items-center justify-between gap-3 lg:hidden">
             <button
               type="button"
@@ -80,7 +80,7 @@ export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeade
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
                   className={cn(
-                    "rounded-full px-4 py-3 text-center text-sm font-medium transition",
+                    "rounded-full px-3.5 py-2.5 text-center text-sm font-medium transition",
                     pathname === link.href
                       ? "bg-[color:var(--gold)] text-white shadow-sm"
                       : "bg-white text-slate-700 hover:bg-[color:var(--sand-soft)] hover:text-[color:var(--ink)]",
@@ -128,7 +128,7 @@ export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeade
                     key={link.href}
                     href={link.href}
                     className={cn(
-                      "rounded-full px-3.5 py-1.5 text-sm font-medium transition",
+                      "rounded-full px-3 py-1.25 text-sm font-medium transition",
                       pathname === link.href
                         ? "bg-[color:var(--gold)] text-white shadow-sm"
                         : "text-slate-600 hover:bg-[color:var(--sand-soft)] hover:text-[color:var(--ink)]",
@@ -139,7 +139,7 @@ export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeade
                 ))}
                 <Link
                   href="/conta"
-                  className="rounded-full px-3.5 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-[color:var(--sand-soft)] hover:text-[color:var(--ink)]"
+                className="rounded-full px-3 py-1.25 text-sm font-medium text-slate-600 transition hover:bg-[color:var(--sand-soft)] hover:text-[color:var(--ink)]"
                 >
                   {currentCustomer ? `Olá, ${currentCustomer.firstName}` : "Login"}
                 </Link>
@@ -149,7 +149,7 @@ export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeade
                 type="button"
                 onClick={openCart}
                 title={`Abrir carrinho da ${settings.storeName}`}
-                className="flex items-center justify-between gap-4 rounded-full border border-[color:var(--line)] bg-[color:var(--sand-soft)] px-4 py-2.5 text-left transition hover:border-[color:var(--gold)]"
+                className="flex items-center justify-between gap-3 rounded-full border border-[color:var(--line)] bg-[color:var(--sand-soft)] px-3.5 py-2 text-left transition hover:border-[color:var(--gold)]"
               >
                 <div className="flex items-center gap-3">
                   <div className="rounded-full bg-white p-2 text-[color:var(--atlantic)] shadow-sm">

@@ -27,15 +27,21 @@ html {
   scroll-behavior: smooth;
 }
 
+@media (min-width: 1024px) {
+  html {
+    font-size: 14px;
+  }
+}
+
 @media (min-width: 1280px) {
   html {
-    font-size: 13px;
+    font-size: 12.4px;
   }
 }
 
 @media (min-width: 1600px) {
   html {
-    font-size: 12.5px;
+    font-size: 11.6px;
   }
 }
 
@@ -43,6 +49,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-body), sans-serif;
+  line-height: 1.55;
   background-image:
     radial-gradient(circle at top, rgba(183, 146, 107, 0.12), transparent 26%),
     linear-gradient(180deg, rgba(255, 252, 247, 0.96), rgba(246, 240, 231, 1));

@@ -108,6 +108,19 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
     return () => window.clearTimeout(timeout);
   }, [toast]);
 
+  useEffect(() => {
+    if (!selectedProduct) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [selectedProduct]);
+
   const filteredProducts = useMemo(() => {
     const query = search.toLowerCase().trim();
 
@@ -249,10 +262,10 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
           onClick={() => setSelectedProduct(null)}
         >
           <div
-            className="w-full max-w-md overflow-hidden rounded-[2rem] border border-[color:var(--line)] bg-white shadow-[0_25px_80px_rgba(43,30,18,0.28)]"
+            className="flex max-h-[88svh] w-full max-w-[32rem] flex-col overflow-hidden rounded-[1.55rem] border border-[color:var(--line)] bg-white shadow-[0_25px_80px_rgba(43,30,18,0.28)]"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="relative aspect-square bg-[radial-gradient(circle_at_top,_rgba(183,146,107,0.18),_transparent_55%),linear-gradient(180deg,_#fbf5ee,_#f1e6d8)]">
+            <div className="relative aspect-square shrink-0 bg-[radial-gradient(circle_at_top,_rgba(183,146,107,0.18),_transparent_55%),linear-gradient(180deg,_#fbf5ee,_#f1e6d8)]">
               <ProductImage
                 key={`modal-${selectedProduct.imageUrl || selectedProduct.id}`}
                 src={selectedProduct.imageUrl}
@@ -266,7 +279,7 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
                 Fechar
               </button>
             </div>
-            <div className="space-y-3 p-5">
+            <div className="min-h-0 space-y-3 overflow-y-auto overscroll-contain p-4 sm:p-5">
               <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--atlantic)]">
                 {selectedProduct.brand.name}
               </p>
@@ -276,9 +289,9 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
               <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--atlantic)]">
                 {selectedProduct.category.name} · {getProductAudienceLabel(selectedProduct.audience)}
               </p>
-              <p className="text-sm leading-7 text-slate-600">
+              <div className="whitespace-pre-line text-sm leading-7 text-slate-600">
                 {selectedProduct.description}
-              </p>
+              </div>
             </div>
           </div>
         </div>
