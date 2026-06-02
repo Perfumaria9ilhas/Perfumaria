@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentCustomer } from "@/lib/auth";
+import { getAzoresDateKey } from "@/lib/date";
 import { formatPrice } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 
@@ -76,27 +77,61 @@ export async function POST(request: Request) {
 
   const whatsappMessage = buildWhatsappMessage(parsed.data.items, totalInCents, customerName);
 
-  const order = await prisma.siteOrder.create({
-    data: {
-      reference: buildReference(),
-      totalInCents,
-      whatsappMessage,
-      customerAccountId: customerAccount?.id,
-      customerName: customerName ?? null,
-      customerEmail: customerAccount?.email ?? null,
-      customerPhone: customerAccount?.phone ?? null,
-      customerAddress: customerAccount?.address ?? null,
-      items: {
-        create: parsed.data.items.map((item) => ({
-          productId: item.id,
-          productName: item.name,
-          brandName: item.brand,
-          unitPriceInCents: item.priceInCents,
-          quantity: item.quantity,
-          lineTotalInCents: item.priceInCents * item.quantity,
-        })),
+  const order = await prisma.$transaction(async (tx) => {
+    const createdOrder = await tx.siteOrder.create({
+      data: {
+        reference: buildReference(),
+        totalInCents,
+        whatsappMessage,
+        customerAccountId: customerAccount?.id,
+        customerName: customerName ?? null,
+        customerEmail: customerAccount?.email ?? null,
+        customerPhone: customerAccount?.phone ?? null,
+        customerAddress: customerAccount?.address ?? null,
+        items: {
+          create: parsed.data.items.map((item) => ({
+            productId: item.id,
+            productName: item.name,
+            brandName: item.brand,
+            unitPriceInCents: item.priceInCents,
+            quantity: item.quantity,
+            lineTotalInCents: item.priceInCents * item.quantity,
+          })),
+        },
       },
-    },
+    });
+
+    const activeOrdersCount = await tx.siteOrder.count({
+      where: {
+        status: {
+          not: "cancelado",
+        },
+      },
+    });
+
+    await tx.storeMetric.upsert({
+      where: { id: "main" },
+      update: {
+        totalSatisfiedCustomers: {
+          increment: 1,
+        },
+      },
+      create: {
+        id: "main",
+        totalSatisfiedCustomers: activeOrdersCount,
+      },
+    });
+
+    await tx.dailySiteVisit.upsert({
+      where: { dateKey: getAzoresDateKey() },
+      update: {},
+      create: {
+        dateKey: getAzoresDateKey(),
+        visitCount: 0,
+      },
+    });
+
+    return createdOrder;
   });
 
   const whatsappUrl = `https://wa.me/${settings.whatsappNumber}?text=${encodeURIComponent(

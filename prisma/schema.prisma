@@ -180,6 +180,23 @@ model StoreReview {
   @@index([approved, createdAt])
 }
 
+model StoreMetric {
+  id                      String   @id
+  totalSatisfiedCustomers Int      @default(0)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+}
+
+model DailySiteVisit {
+  id         String   @id @default(cuid())
+  dateKey    String   @unique
+  visitCount Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([dateKey])
+}
+
 model StoredImage {
   id          String   @id @default(cuid())
   fileName    String   @unique

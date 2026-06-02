@@ -396,6 +396,23 @@ async function main() {
     },
   });
 
+  const activeOrdersCount = await prisma.siteOrder.count({
+    where: {
+      status: {
+        not: "cancelado",
+      },
+    },
+  });
+
+  await prisma.storeMetric.upsert({
+    where: { id: "main" },
+    update: {},
+    create: {
+      id: "main",
+      totalSatisfiedCustomers: activeOrdersCount,
+    },
+  });
+
   for (const brand of brands) {
     await prisma.brand.upsert({
       where: { slug: brand.slug },

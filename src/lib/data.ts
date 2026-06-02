@@ -1,4 +1,5 @@
 import { unstable_noStore as noStore } from "next/cache";
+import { getAzoresDateKey } from "@/lib/date";
 import { prisma } from "@/lib/prisma";
 
 export async function getCatalogData() {
@@ -30,7 +31,7 @@ export async function getCatalogData() {
 
 export async function getHomeData() {
   noStore();
-  const [featuredProducts, reviews, productsCount, satisfiedCustomersCount] = await Promise.all([
+  const [featuredProducts, reviews, productsCount, metrics, fallbackOrdersCount] = await Promise.all([
     prisma.product.findMany({
       where: {
         active: true,
@@ -49,6 +50,10 @@ export async function getHomeData() {
       take: 6,
     }),
     prisma.product.count(),
+    prisma.storeMetric.findUnique({
+      where: { id: "main" },
+      select: { totalSatisfiedCustomers: true },
+    }),
     prisma.siteOrder.count({
       where: {
         status: {
@@ -62,36 +67,49 @@ export async function getHomeData() {
     featuredProducts,
     reviews,
     stats: {
-      satisfiedCustomersCount,
+      satisfiedCustomersCount: metrics?.totalSatisfiedCustomers ?? fallbackOrdersCount,
       productsCount,
-      islandsLabel: "Açores",
+      islandsLabel: "Acores",
     },
   };
 }
 
 export async function getAdminDashboardData() {
   noStore();
-  const [brands, categories, products, customers, orders] = await Promise.all([
-    prisma.brand.findMany({
-      orderBy: { name: "asc" },
-    }),
-    prisma.category.findMany({
-      orderBy: { name: "asc" },
-    }),
-    prisma.product.findMany({
-      include: {
-        brand: true,
-        category: true,
-      },
-      orderBy: { updatedAt: "desc" },
-    }),
-    prisma.customerAccount.findMany({
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.siteOrder.findMany({
-      orderBy: { createdAt: "desc" },
-    }),
-  ]);
+  const todayKey = getAzoresDateKey();
+  const [brands, categories, products, customers, orders, metrics, todayVisits, recentVisits] =
+    await Promise.all([
+      prisma.brand.findMany({
+        orderBy: { name: "asc" },
+      }),
+      prisma.category.findMany({
+        orderBy: { name: "asc" },
+      }),
+      prisma.product.findMany({
+        include: {
+          brand: true,
+          category: true,
+        },
+        orderBy: { updatedAt: "desc" },
+      }),
+      prisma.customerAccount.findMany({
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.siteOrder.findMany({
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.storeMetric.findUnique({
+        where: { id: "main" },
+        select: { totalSatisfiedCustomers: true },
+      }),
+      prisma.dailySiteVisit.findUnique({
+        where: { dateKey: todayKey },
+      }),
+      prisma.dailySiteVisit.findMany({
+        orderBy: { dateKey: "desc" },
+        take: 7,
+      }),
+    ]);
 
   return {
     brands,
@@ -99,6 +117,9 @@ export async function getAdminDashboardData() {
     products,
     customers,
     orders,
+    metrics,
+    todayVisits,
+    recentVisits,
   };
 }
 
