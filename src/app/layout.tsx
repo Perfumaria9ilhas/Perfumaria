@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
-import { Merriweather, Nunito_Sans } from "next/font/google";
+import { Inter, Playfair_Display } from "next/font/google";
 import { CartProvider } from "@/components/providers/cart-provider";
 import { getStoreSettings } from "@/lib/store-settings";
 import "./globals.css";
 
-const displayFont = Merriweather({
+const displayFont = Playfair_Display({
   variable: "--font-display",
   subsets: ["latin"],
-  weight: ["400", "700"],
+  weight: ["600", "700"],
 });
 
-const bodyFont = Nunito_Sans({
+const bodyFont = Inter({
   variable: "--font-body",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
