@@ -1,5 +1,5 @@
 import { hash } from "bcryptjs";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, ProductAudience } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -16,19 +16,19 @@ const brands = [
 
 const categories = [
   {
-    name: "Perfumes Árabes",
+    name: "Perfumes Arabes",
     slug: "perfumes-arabes",
-    description: "Fragrâncias intensas, elegantes e marcantes.",
+    description: "Fragrancias intensas, elegantes e marcantes.",
   },
   {
-    name: "Cosméticos",
+    name: "Cosmeticos",
     slug: "cosmeticos",
     description: "Cuidados de rosto e corpo com assinatura oriental.",
   },
   {
     name: "Ambientadores",
     slug: "ambientadores",
-    description: "Difusores e sprays para casa com carácter.",
+    description: "Difusores e sprays para casa com carater.",
   },
 ];
 
@@ -37,11 +37,12 @@ const products = [
     name: "9PM",
     slug: "9pm",
     description:
-      "Fragrância masculina intensa e sedutora com notas de maçã, canela, lavanda e baunilha. Ideal para noites e clima mais fresco.",
+      "Para homens que gostam de marcar presenca e deixar rasto.\n\nNotas de topo: bergamota, maca, canela e lavanda.\nNotas de coracao: flor de laranjeira e lirio-do-vale.\nNotas de fundo: baunilha, fava tonka, ambar e patchouli.\n\nDoce, sedutor, ideal para noite e inverno.\nDuracao: 9/10.\nProjecao: 9/10.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 3490,
     salePriceInCents: 3190,
     stock: 9,
+    audience: ProductAudience.MASCULINO,
     active: true,
     featured: true,
     bestseller: true,
@@ -52,11 +53,12 @@ const products = [
     name: "9PM Femme",
     slug: "9pm-femme",
     description:
-      "Perfume feminino doce e elegante com frutas vermelhas, flores brancas e fundo quente de baunilha e almíscar.",
+      "Feminino, elegante e envolvente.\n\nNotas de topo: frutas citricas e frutos vermelhos.\nNotas de coracao: flores brancas e rosa.\nNotas de fundo: baunilha, almiscar e ambar.\n\nRomantico, doce e feminino.\nDuracao: 8/10.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 3490,
     salePriceInCents: null,
     stock: 8,
+    audience: ProductAudience.FEMININO,
     active: true,
     featured: false,
     bestseller: false,
@@ -67,11 +69,12 @@ const products = [
     name: "9AM Dive",
     slug: "9am-dive",
     description:
-      "Fragrância fresca e aquática com citrinos vibrantes, maçã verde e notas amadeiradas modernas.",
+      "Fragrancia fresca e aquatica com citrinos vibrantes, maca verde e notas amadeiradas modernas.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 2990,
     salePriceInCents: null,
     stock: 12,
+    audience: ProductAudience.UNISSEXO,
     active: true,
     featured: false,
     bestseller: false,
@@ -82,11 +85,12 @@ const products = [
     name: "Sabah Al Ward",
     slug: "sabah-al-ward",
     description:
-      "Aroma floral feminino sofisticado com rosa, frutas doces e almíscar suave.",
+      "Delicadeza floral com toque oriental luxuoso.\n\nNotas de topo: mandarina e frutas.\nNotas de coracao: rosa e flores brancas.\nNotas de fundo: baunilha e almiscar.\n\nFeminino, elegante e sofisticado.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 2990,
     salePriceInCents: null,
     stock: 7,
+    audience: ProductAudience.FEMININO,
     active: true,
     featured: false,
     bestseller: false,
@@ -97,11 +101,12 @@ const products = [
     name: "Club de Nuit Intense Man",
     slug: "club-de-nuit-intense-man",
     description:
-      "Fragrância masculina intensa com limão, ananás, bétula e almíscar. Um dos perfumes árabes mais populares.",
+      "Um dos perfumes arabes masculinos mais procurados do mundo.\n\nNotas de topo: limao, bergamota, ananas, maca e groselha negra.\nNotas de coracao: jasmim, rosa e vidoeiro.\nNotas de fundo: ambar cinzento, almiscar, baunilha e patchouli.\n\nMasculino, luxuoso e marcante.\nDuracao: 10/10.\nProjecao: 10/10.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 4490,
     salePriceInCents: 4190,
     stock: 9,
+    audience: ProductAudience.MASCULINO,
     active: true,
     featured: true,
     bestseller: true,
@@ -112,11 +117,12 @@ const products = [
     name: "Club de Nuit EDP",
     slug: "club-de-nuit-edp",
     description:
-      "Versão mais refinada e duradoura da linha Club de Nuit, com excelente projeção e elegância.",
+      "Luxo, feminilidade e sofisticacao.\n\nNotas de topo: laranja, toranja, bergamota e pessego.\nNotas de coracao: rosa, jasmim, geranio e lichia.\nNotas de fundo: baunilha, almiscar, patchouli e vetiver.\n\nElegante, pensado para mulher confiante.\nDuracao: 9/10.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 4990,
     salePriceInCents: null,
     stock: 6,
+    audience: ProductAudience.FEMININO,
     active: true,
     featured: false,
     bestseller: false,
@@ -127,11 +133,12 @@ const products = [
     name: "Ameerat Al Arab Sugar Crown",
     slug: "ameerat-al-arab-sugar-crown",
     description:
-      "Perfume feminino gourmand com baunilha cremosa, açúcar caramelizado e flores delicadas.",
+      "Perfume feminino gourmand com baunilha cremosa, acucar caramelizado e flores delicadas.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 3290,
     salePriceInCents: null,
     stock: 5,
+    audience: ProductAudience.FEMININO,
     active: true,
     featured: false,
     bestseller: false,
@@ -142,11 +149,12 @@ const products = [
     name: "Liquid Brun",
     slug: "liquid-brun",
     description:
-      "Fragrância quente e sofisticada com cacau, madeira escura, âmbar e especiarias envolventes.",
+      "Sofisticacao intensa e luxuosa.\n\nPerfil: madeiras nobres, baunilha e especiarias.\n\nMasculino, elegante e ideal para a noite.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 4290,
     salePriceInCents: null,
     stock: 4,
+    audience: ProductAudience.MASCULINO,
     active: true,
     featured: false,
     bestseller: false,
@@ -157,11 +165,12 @@ const products = [
     name: "Asad",
     slug: "asad",
     description:
-      "Perfume masculino intenso com especiarias, tabaco, âmbar e madeiras quentes.",
+      "Poder, intensidade e elegancia arabe.\n\nNotas de topo: pimenta preta, tabaco e ananas.\nNotas de coracao: cafe, patchouli e iris.\nNotas de fundo: baunilha, ambar, benjoim, madeira seca e ladano.\n\nForte, ideal para noite e inverno.\nDuracao: 10/10.\nProjecao: 9/10.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 2990,
     salePriceInCents: null,
     stock: 3,
+    audience: ProductAudience.MASCULINO,
     active: true,
     featured: false,
     bestseller: false,
@@ -172,11 +181,12 @@ const products = [
     name: "Asad Bourbon",
     slug: "asad-bourbon",
     description:
-      "Interpretação mais gourmand da linha Asad com baunilha, bourbon e acordes amadeirados.",
+      "Uma interpretacao mais quente e sofisticada da linha Asad.\n\nPerfil: baunilha amadeirada, especiado e ambar.\n\nElegante, sedutor e exclusivo.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 3590,
     salePriceInCents: null,
     stock: 3,
+    audience: ProductAudience.MASCULINO,
     active: true,
     featured: false,
     bestseller: false,
@@ -186,12 +196,12 @@ const products = [
   {
     name: "Bade'e Al Oud Noble Blush",
     slug: "badee-al-oud-noble-blush",
-    description:
-      "Mistura sofisticada de rosa cremosa, oud suave e baunilha elegante.",
+    description: "Mistura sofisticada de rosa cremosa, oud suave e baunilha elegante.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 3990,
     salePriceInCents: null,
     stock: 4,
+    audience: ProductAudience.FEMININO,
     active: true,
     featured: false,
     bestseller: false,
@@ -202,11 +212,12 @@ const products = [
     name: "Eclaire",
     slug: "eclaire",
     description:
-      "Perfume doce e cremoso inspirado em sobremesas luxuosas com baunilha e caramelo.",
+      "Um verdadeiro dessert em forma de perfume.\n\nPerfil: baunilha, leite, caramelo e acucar.\n\nFeminino, doce e viciante.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 3800,
     salePriceInCents: null,
     stock: 2,
+    audience: ProductAudience.FEMININO,
     active: true,
     featured: false,
     bestseller: false,
@@ -217,11 +228,12 @@ const products = [
     name: "Eclaire Pistache",
     slug: "eclaire-pistache",
     description:
-      "Fragrância gourmand com pistácio cremoso, baunilha e notas açucaradas sofisticadas.",
+      "A versao cremosa e sofisticada da linha Eclaire.\n\nPerfil: pistacio, baunilha e creme.\n\nGourmand, luxuoso e diferente.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 3990,
     salePriceInCents: null,
     stock: 2,
+    audience: ProductAudience.UNISSEXO,
     active: true,
     featured: false,
     bestseller: false,
@@ -231,12 +243,12 @@ const products = [
   {
     name: "Fakhar Gold Extrait",
     slug: "fakhar-gold-extrait",
-    description:
-      "Perfume elegante com flores brancas, âmbar dourado e fundo sensual amadeirado.",
+    description: "Perfume elegante com flores brancas, ambar dourado e fundo sensual amadeirado.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 4290,
     salePriceInCents: null,
     stock: 5,
+    audience: ProductAudience.FEMININO,
     active: true,
     featured: false,
     bestseller: false,
@@ -247,11 +259,12 @@ const products = [
     name: "Khamrah",
     slug: "khamrah",
     description:
-      "Fragrância quente e envolvente com canela, baunilha, tâmaras, âmbar e especiarias orientais.",
+      "Fragrancia quente e envolvente com canela, baunilha, tamaras, ambar e especiarias orientais.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 3890,
     salePriceInCents: 3590,
     stock: 12,
+    audience: ProductAudience.UNISSEXO,
     active: true,
     featured: true,
     bestseller: true,
@@ -261,12 +274,12 @@ const products = [
   {
     name: "Mayar",
     slug: "mayar",
-    description:
-      "Aroma floral frutado feminino com lichia, rosa e almíscar branco.",
+    description: "Aroma floral frutado feminino com lichia, rosa e almiscar branco.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 3490,
     salePriceInCents: null,
     stock: 8,
+    audience: ProductAudience.FEMININO,
     active: true,
     featured: false,
     bestseller: false,
@@ -277,11 +290,12 @@ const products = [
     name: "Yara Candy",
     slug: "yara-candy",
     description:
-      "Perfume feminino doce com frutas açucaradas, baunilha cremosa e almíscar delicado.",
+      "Uma explosao doce e divertida.\n\nPerfil: doces, frutas vermelhas e baunilha.\n\nJovem, alegre e viciante.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 3490,
     salePriceInCents: null,
     stock: 11,
+    audience: ProductAudience.FEMININO,
     active: true,
     featured: false,
     bestseller: false,
@@ -292,11 +306,12 @@ const products = [
     name: "Yara Tous",
     slug: "yara-tous",
     description:
-      "Fragrância tropical feminina com manga, coco, flores exóticas e almíscar suave.",
+      "Tropical e irresistivel.\n\nPerfil: manga, coco e baunilha.\n\nPerfeito para verao, doce e exotico.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 3490,
     salePriceInCents: null,
     stock: 10,
+    audience: ProductAudience.FEMININO,
     active: true,
     featured: false,
     bestseller: false,
@@ -307,11 +322,12 @@ const products = [
     name: "Desert Angel Romance",
     slug: "desert-angel-romance",
     description:
-      "Perfume romântico e elegante com flores orientais, baunilha e madeiras suaves.",
+      "Perfume romantico e elegante com flores orientais, baunilha e madeiras suaves.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 3690,
     salePriceInCents: null,
     stock: 4,
+    audience: ProductAudience.FEMININO,
     active: true,
     featured: false,
     bestseller: false,
@@ -322,11 +338,12 @@ const products = [
     name: "Jorge Di Profumo",
     slug: "jorge-di-profumo",
     description:
-      "Fragrância masculina fresca e aquática inspirada no Mediterrâneo, com notas marinhas e âmbar.",
+      "Frescura aquatica com assinatura masculina refinada.\n\nPerfil: citricos, marinho e madeira.\n\nVersatil, perfeito para verao e uso diario.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 3290,
     salePriceInCents: null,
     stock: 7,
+    audience: ProductAudience.MASCULINO,
     active: true,
     featured: true,
     bestseller: false,
@@ -352,48 +369,26 @@ async function main() {
 
   await prisma.storeSettings.upsert({
     where: { id: "main" },
-    update: {
-      storeName: "9 Ilhas Perfumaria",
-      heroTitle: "Perfumes árabes escolhidos com atenção.",
-      heroDescription:
-        "Uma loja online pensada para a Ilha Terceira, com seleção cuidada e apoio próximo por WhatsApp.",
-      catalogTitle: "Catálogo de perfumes árabes",
-      catalogIntro:
-        "Pesquise por nome ou marca, filtre rapidamente e finalize a sua seleção pelo WhatsApp.",
-      contactTitle: "Fale com a 9 Ilhas Perfumaria",
-      contactIntro:
-        "Esclarecemos dúvidas, confirmamos stock e acompanhamos encomendas a partir da Ilha Terceira.",
-      footerDescription:
-        "Seleção cuidada de perfumes árabes, cosméticos e ambientadores com envio para Terceira, Açores e Portugal Continental.",
-      location: "Ilha Terceira, Açores",
-      phone: "+351 912 345 678",
-      whatsappNumber: "351912345678",
-      whatsappLabel: "Encomendas e apoio",
-      openingHours: "Segunda a sábado, das 10h00 às 19h00",
-      contactEmail: "geral@9ilhasperfumaria.pt",
-      instagramUrl: "https://instagram.com/9ilhasperfumaria",
-      facebookUrl: "https://facebook.com/9ilhasperfumaria",
-      tiktokUrl: "https://tiktok.com/@9ilhasperfumaria",
-    },
+    update: {},
     create: {
       id: "main",
       storeName: "9 Ilhas Perfumaria",
-      heroTitle: "Perfumes árabes escolhidos com atenção.",
+      heroTitle: "Perfumes arabes escolhidos com atencao.",
       heroDescription:
-        "Uma loja online pensada para a Ilha Terceira, com seleção cuidada e apoio próximo por WhatsApp.",
-      catalogTitle: "Catálogo de perfumes árabes",
+        "Uma loja online pensada para a Ilha Terceira, com selecao cuidada e apoio proximo por WhatsApp.",
+      catalogTitle: "Catalogo de perfumes arabes",
       catalogIntro:
-        "Pesquise por nome ou marca, filtre rapidamente e finalize a sua seleção pelo WhatsApp.",
+        "Pesquise por nome ou marca, filtre rapidamente e finalize a sua selecao pelo WhatsApp.",
       contactTitle: "Fale com a 9 Ilhas Perfumaria",
       contactIntro:
-        "Esclarecemos dúvidas, confirmamos stock e acompanhamos encomendas a partir da Ilha Terceira.",
+        "Esclarecemos duvidas, confirmamos stock e acompanhamos encomendas a partir da Ilha Terceira.",
       footerDescription:
-        "Seleção cuidada de perfumes árabes, cosméticos e ambientadores com envio para Terceira, Açores e Portugal Continental.",
-      location: "Ilha Terceira, Açores",
+        "Selecao cuidada de perfumes arabes, cosmeticos e ambientadores com envio para Terceira, Acores e Portugal Continental.",
+      location: "Ilha Terceira, Acores",
       phone: "+351 912 345 678",
       whatsappNumber: "351912345678",
       whatsappLabel: "Encomendas e apoio",
-      openingHours: "Segunda a sábado, das 10h00 às 19h00",
+      openingHours: "Segunda a sabado, das 10h00 as 19h00",
       contactEmail: "geral@9ilhasperfumaria.pt",
       instagramUrl: "https://instagram.com/9ilhasperfumaria",
       facebookUrl: "https://facebook.com/9ilhasperfumaria",
@@ -417,60 +412,39 @@ async function main() {
     });
   }
 
-  await prisma.product.deleteMany({
-    where: {
-      slug: {
-        notIn: products.map((product) => product.slug),
-      },
-    },
-  });
-
-  await prisma.brand.deleteMany({
-    where: {
-      slug: {
-        notIn: brands.map((brand) => brand.slug),
-      },
-    },
-  });
-
   for (const product of products) {
     const brand = await prisma.brand.findUniqueOrThrow({
       where: { slug: product.brandSlug },
     });
+
     const category = await prisma.category.findUniqueOrThrow({
       where: { slug: product.categorySlug },
     });
 
-    await prisma.product.upsert({
+    const existingProduct = await prisma.product.findUnique({
       where: { slug: product.slug },
-      update: {
-        name: product.name,
-        description: product.description,
-        imageUrl: product.imageUrl,
-        priceInCents: product.priceInCents,
-        salePriceInCents: product.salePriceInCents,
-        stock: product.stock,
-        active: product.active,
-        featured: product.featured,
-        bestseller: product.bestseller,
-        brandId: brand.id,
-        categoryId: category.id,
-      },
-      create: {
-        name: product.name,
-        slug: product.slug,
-        description: product.description,
-        imageUrl: product.imageUrl,
-        priceInCents: product.priceInCents,
-        salePriceInCents: product.salePriceInCents,
-        stock: product.stock,
-        active: product.active,
-        featured: product.featured,
-        bestseller: product.bestseller,
-        brandId: brand.id,
-        categoryId: category.id,
-      },
+      select: { id: true },
     });
+
+    if (!existingProduct) {
+      await prisma.product.create({
+        data: {
+          name: product.name,
+          slug: product.slug,
+          description: product.description,
+          imageUrl: product.imageUrl,
+          priceInCents: product.priceInCents,
+          salePriceInCents: product.salePriceInCents,
+          stock: product.stock,
+          audience: product.audience,
+          active: product.active,
+          featured: product.featured,
+          bestseller: product.bestseller,
+          brandId: brand.id,
+          categoryId: category.id,
+        },
+      });
+    }
   }
 }
 

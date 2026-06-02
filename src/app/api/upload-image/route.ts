@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
 const contentTypes: Record<string, string> = {
   ".jpg": "image/jpeg",
@@ -14,7 +15,29 @@ const contentTypes: Record<string, string> = {
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
+  const asset = searchParams.get("asset");
   const file = searchParams.get("file");
+
+  if (asset) {
+    const storedImage = await prisma.storedImage.findUnique({
+      where: { id: asset },
+      select: {
+        data: true,
+        contentType: true,
+      },
+    });
+
+    if (!storedImage) {
+      return new NextResponse("Not found", { status: 404 });
+    }
+
+    return new NextResponse(new Uint8Array(storedImage.data), {
+      headers: {
+        "Content-Type": storedImage.contentType,
+        "Cache-Control": "public, max-age=31536000, immutable",
+      },
+    });
+  }
 
   if (!file || file.includes("/") || file.includes("\\")) {
     return new NextResponse("Not found", { status: 404 });

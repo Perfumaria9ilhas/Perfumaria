@@ -179,3 +179,12 @@ model StoreReview {
 
   @@index([approved, createdAt])
 }
+
+model StoredImage {
+  id          String   @id @default(cuid())
+  fileName    String   @unique
+  contentType String
+  data        Bytes
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
