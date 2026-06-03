@@ -4,14 +4,11 @@ import Link from "next/link";
 import {
   Camera,
   Globe2,
-  Menu,
   MessageCircleMore,
   Music2,
   ShoppingBag,
-  X,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
 import { CartDrawer } from "@/components/cart/cart-drawer";
 import { BrandLogo } from "@/components/layout/brand-logo";
 import { useCart } from "@/components/providers/cart-provider";
@@ -32,7 +29,6 @@ type SiteHeaderProps = {
 export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeaderProps) {
   const pathname = usePathname();
   const { itemCount, total, openCart, hasHydrated } = useCart();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const mobileLinks = [
     ...navigationLinks,
     { href: "/conta", label: currentCustomer ? `Olá, ${currentCustomer.firstName}` : "Login" },
@@ -50,14 +46,7 @@ export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeade
         </div>
         <div className="mx-auto max-w-[1320px] px-4 py-2 lg:px-5 lg:py-2.5">
           <div className="flex items-center justify-between gap-3 lg:hidden">
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen((current) => !current)}
-              className="relative z-20 flex h-11 w-11 shrink-0 select-none items-center justify-center rounded-full border border-[color:var(--line)] bg-[color:var(--sand-soft)] text-[color:var(--ink)] shadow-sm pointer-events-auto"
-              aria-label={mobileMenuOpen ? "Fechar menu" : "Abrir menu"}
-            >
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </button>
+            <BrandLogo compact className="shrink-0" />
 
             <button
               type="button"
@@ -75,29 +64,24 @@ export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeade
                 {formatPrice(hasHydrated ? total : 0)}
               </strong>
             </button>
-
-            <BrandLogo compact className="shrink-0" />
           </div>
 
-          {mobileMenuOpen ? (
-            <nav className="mt-3 grid gap-2 rounded-[1.5rem] border border-[color:var(--line)] bg-[color:var(--sand-soft)] p-3 shadow-[0_14px_30px_rgba(92,68,47,0.08)] lg:hidden">
-              {mobileLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={cn(
-                    "rounded-full px-3.5 py-2.5 text-center text-sm font-medium transition",
-                    pathname === link.href
-                      ? "bg-[color:var(--gold)] text-white shadow-sm"
-                      : "bg-white text-slate-700 hover:bg-[color:var(--sand-soft)] hover:text-[color:var(--ink)]",
-                  )}
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
-          ) : null}
+          <nav className="mt-2.5 flex items-center gap-4 overflow-x-auto whitespace-nowrap pb-1 text-sm lg:hidden">
+            {mobileLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  "shrink-0 border-b px-0 pb-1 font-medium transition",
+                  pathname === link.href
+                    ? "border-[color:var(--gold)] text-[color:var(--gold)]"
+                    : "border-transparent text-slate-700 hover:border-[rgba(183,146,107,0.45)] hover:text-[color:var(--ink)]",
+                )}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
 
           <div className="hidden flex-col gap-2.5 lg:flex">
             <div className="flex items-center justify-between gap-4">
