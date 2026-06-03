@@ -57,32 +57,10 @@ export function HeroHome({ settings }: HeroHomeProps) {
   }
 
   return (
-    <section className="overflow-hidden rounded-[1.45rem] border border-[rgba(194,162,119,0.16)] bg-white shadow-[0_12px_28px_rgba(78,55,34,0.05)]">
-      <div className="grid gap-0 lg:grid-cols-[0.32fr_0.68fr]">
-        <div className="flex h-full flex-col justify-center px-4 py-5 sm:px-5 lg:px-6 lg:py-6">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.34em] text-[color:var(--gold)]">
-            Bem-vindo a 9 Ilhas
-          </p>
-          <h1 className="mt-3 text-[1.95rem] leading-[0.98] text-[color:var(--ink)] sm:text-[2.45rem] lg:text-[2.9rem]">
-            {settings.heroTitle}
-          </h1>
-          <p className="mt-3 text-[13px] leading-6 text-slate-600">
-            {settings.heroDescription}
-          </p>
-
-          <div className="mt-5">
-            <Link
-              href="/catalogo"
-              className="inline-flex items-center justify-center rounded-md bg-[linear-gradient(135deg,_#b88746,_#d0a260)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-white shadow-[0_10px_20px_rgba(184,135,70,0.16)] transition hover:translate-y-[-1px]"
-            >
-              Ver catalogo
-            </Link>
-          </div>
-        </div>
-
-        <div className="relative overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(230,208,176,0.3),_transparent_48%),linear-gradient(180deg,_rgba(255,252,247,0.98),_rgba(244,229,208,0.98))] px-4 py-5 sm:px-5 lg:px-6 lg:py-6">
+    <section className="overflow-hidden rounded-[1.45rem] border border-[rgba(194,162,119,0.16)] bg-[radial-gradient(circle_at_top,_rgba(230,208,176,0.3),_transparent_48%),linear-gradient(180deg,_rgba(255,252,247,0.98),_rgba(244,229,208,0.98))] shadow-[0_12px_28px_rgba(78,55,34,0.05)]">
+      <div className="relative overflow-hidden px-2 py-2 sm:px-3 sm:py-3 lg:px-4 lg:py-4">
           <div className="relative overflow-hidden rounded-[1.3rem] border border-[rgba(194,162,119,0.14)] bg-[linear-gradient(180deg,_rgba(255,255,255,0.96),_rgba(248,238,224,0.96))]">
-            <div className="relative aspect-[16/8.5]">
+            <div className="relative aspect-[16/7.2]">
               {activeSlide?.imageUrl ? (
                 <Image
                   src={activeSlide.imageUrl}
@@ -150,7 +128,6 @@ export function HeroHome({ settings }: HeroHomeProps) {
               ))}
             </div>
           ) : null}
-        </div>
       </div>
     </section>
   );
