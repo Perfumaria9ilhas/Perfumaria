@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Camera, MessageCircleMore, ShieldCheck, Star, Truck } from "lucide-react";
 import { submitStoreReview } from "@/actions/admin";
 
 type Review = {
@@ -19,14 +18,6 @@ type TrustHomeProps = {
     islandsLabel: string;
   };
 };
-
-const socialProofItems = [
-  { icon: ShieldCheck, label: "Perfumes 100% Originais" },
-  { icon: Truck, label: "Entrega Local" },
-  { icon: MessageCircleMore, label: "Apoio por WhatsApp" },
-  { icon: Camera, label: "Decants Disponiveis" },
-  { icon: Star, label: "Atendimento Personalizado" },
-];
 
 function renderStars(rating: number) {
   const safeRating = Math.max(0, Math.min(5, rating));
@@ -163,21 +154,6 @@ export function TrustHome({ reviews, stats }: TrustHomeProps) {
           </div>
         </div>
 
-        <div className="border-t border-b border-[rgba(194,162,119,0.18)] px-3 py-4 text-[color:var(--ink)]">
-          <div className="grid gap-3 text-center sm:grid-cols-2 lg:grid-cols-5">
-            {socialProofItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <div key={item.label} className="flex items-center justify-center gap-3">
-                  <Icon className="h-4 w-4 text-[color:var(--gold)]" />
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">
-                    {item.label}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
       </section>
     </>
   );
