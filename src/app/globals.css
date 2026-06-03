@@ -49,7 +49,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-body), sans-serif;
-  font-weight: 400;
+  font-weight: 500;
   line-height: 1.55;
   background-image:
     radial-gradient(circle at top, rgba(183, 146, 107, 0.12), transparent 26%),
@@ -57,11 +57,22 @@ body {
 }
 
 p,
+span,
+li,
+label,
+small,
+a,
+td,
+th,
+caption,
+input::placeholder,
 input,
 select,
-textarea {
+textarea,
+table,
+[role="dialog"] {
   font-family: var(--font-body), sans-serif;
-  font-weight: 400;
+  font-weight: 500;
 }
 
 nav a {
@@ -71,23 +82,18 @@ nav a {
 
 button {
   font-family: var(--font-body), sans-serif;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 h1,
 h2,
-h3 {
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--font-display), serif;
   color: var(--ink);
-}
-
-h1 {
   font-weight: 700;
-}
-
-h2,
-h3 {
-  font-weight: 600;
 }
 
 a,

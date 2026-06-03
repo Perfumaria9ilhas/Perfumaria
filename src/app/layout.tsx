@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
+import { Montserrat, Playfair_Display } from "next/font/google";
 import { CartProvider } from "@/components/providers/cart-provider";
 import { getStoreSettings } from "@/lib/store-settings";
 import "./globals.css";
@@ -7,13 +7,13 @@ import "./globals.css";
 const displayFont = Playfair_Display({
   variable: "--font-display",
   subsets: ["latin"],
-  weight: ["600", "700"],
+  weight: ["700"],
 });
 
-const bodyFont = Inter({
+const bodyFont = Montserrat({
   variable: "--font-body",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["500"],
 });
 
 export const metadata: Metadata = {
