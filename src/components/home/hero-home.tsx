@@ -105,7 +105,7 @@ export function HeroHome({ settings }: HeroHomeProps) {
               {activeSlide ? (
                 <Link
                   href={activeSlide.href}
-                  className="absolute bottom-5 left-20 z-20 inline-flex items-center border-b border-[rgba(255,255,255,0.72)] pb-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white transition hover:text-[color:#f4dfbf] sm:left-24 md:left-5"
+                  className="absolute bottom-5 left-28 z-20 inline-flex items-center border-b border-[rgba(255,255,255,0.72)] pb-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white transition hover:text-[color:#f4dfbf] sm:left-32 md:left-5"
                 >
                   Catálogo {activeSlide.label}
                 </Link>
