@@ -136,6 +136,10 @@ model StoreSettings {
   heroTitle        String
   heroDescription  String
   heroImageUrl     String?
+  heroMaleImageUrl String?
+  heroFemaleImageUrl String?
+  heroUnisexImageUrl String?
+  decantsImageUrl  String?
   heroSlides       HeroSlide[]
   catalogTitle     String
   catalogIntro     String

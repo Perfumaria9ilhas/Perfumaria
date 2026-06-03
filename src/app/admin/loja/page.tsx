@@ -2,6 +2,7 @@ import { saveStoreSettings } from "@/actions/admin";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { requireAdmin } from "@/lib/auth";
 import { getStoreSettings } from "@/lib/store-settings";
+import Image from "next/image";
 
 export default async function AdminLojaPage() {
   await requireAdmin();
@@ -18,6 +19,80 @@ export default async function AdminLojaPage() {
           className="grid gap-4 md:grid-cols-2"
           encType="multipart/form-data"
         >
+          <div className="grid gap-4 md:col-span-2 md:grid-cols-2">
+            <div className="rounded-[1.5rem] border border-[color:var(--line)] bg-[color:var(--sand-soft)] p-4">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--gold)]">
+                Hero masculino
+              </p>
+              {settings.heroMaleImageUrl ? (
+                <div className="relative mb-3 aspect-[16/10] overflow-hidden rounded-2xl bg-white">
+                  <Image
+                    src={settings.heroMaleImageUrl}
+                    alt="Hero masculino"
+                    fill
+                    unoptimized
+                    className="object-cover"
+                  />
+                </div>
+              ) : null}
+              <input name="heroMaleImageFile" type="file" accept="image/*" className="w-full rounded-2xl border px-4 py-3" />
+            </div>
+
+            <div className="rounded-[1.5rem] border border-[color:var(--line)] bg-[color:var(--sand-soft)] p-4">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--gold)]">
+                Hero feminino
+              </p>
+              {settings.heroFemaleImageUrl ? (
+                <div className="relative mb-3 aspect-[16/10] overflow-hidden rounded-2xl bg-white">
+                  <Image
+                    src={settings.heroFemaleImageUrl}
+                    alt="Hero feminino"
+                    fill
+                    unoptimized
+                    className="object-cover"
+                  />
+                </div>
+              ) : null}
+              <input name="heroFemaleImageFile" type="file" accept="image/*" className="w-full rounded-2xl border px-4 py-3" />
+            </div>
+
+            <div className="rounded-[1.5rem] border border-[color:var(--line)] bg-[color:var(--sand-soft)] p-4">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--gold)]">
+                Hero unissexo
+              </p>
+              {settings.heroUnisexImageUrl ? (
+                <div className="relative mb-3 aspect-[16/10] overflow-hidden rounded-2xl bg-white">
+                  <Image
+                    src={settings.heroUnisexImageUrl}
+                    alt="Hero unissexo"
+                    fill
+                    unoptimized
+                    className="object-cover"
+                  />
+                </div>
+              ) : null}
+              <input name="heroUnisexImageFile" type="file" accept="image/*" className="w-full rounded-2xl border px-4 py-3" />
+            </div>
+
+            <div className="rounded-[1.5rem] border border-[color:var(--line)] bg-[color:var(--sand-soft)] p-4">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--gold)]">
+                Imagem dos decants
+              </p>
+              {settings.decantsImageUrl ? (
+                <div className="relative mb-3 aspect-[16/10] overflow-hidden rounded-2xl bg-white">
+                  <Image
+                    src={settings.decantsImageUrl}
+                    alt="Imagem dos decants"
+                    fill
+                    unoptimized
+                    className="object-cover"
+                  />
+                </div>
+              ) : null}
+              <input name="decantsImageFile" type="file" accept="image/*" className="w-full rounded-2xl border px-4 py-3" />
+            </div>
+          </div>
+
           <input
             name="storeName"
             defaultValue={settings.storeName}

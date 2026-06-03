@@ -8,6 +8,10 @@ const fallbackSettings = {
   heroDescription:
     "Perfumes arabes, cosmeticos e ambientadores com atendimento a partir da Ilha Terceira.",
   heroImageUrl: "",
+  heroMaleImageUrl: "",
+  heroFemaleImageUrl: "",
+  heroUnisexImageUrl: "",
+  decantsImageUrl: "",
   heroSlides: [],
   catalogTitle: "Catalogo de perfumes arabes",
   catalogIntro:

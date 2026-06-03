@@ -354,6 +354,16 @@ export async function deleteProduct(formData: FormData) {
 export async function saveStoreSettings(formData: FormData) {
   await requireAdmin();
 
+  const currentSettings = await prisma.storeSettings.findUnique({
+    where: { id: "main" },
+    select: {
+      heroMaleImageUrl: true,
+      heroFemaleImageUrl: true,
+      heroUnisexImageUrl: true,
+      decantsImageUrl: true,
+    },
+  });
+
   const parsed = settingsSchema.parse({
     storeName: formData.get("storeName"),
     heroTitle: formData.get("heroTitle"),
@@ -374,11 +384,49 @@ export async function saveStoreSettings(formData: FormData) {
     tiktokUrl: formData.get("tiktokUrl")?.toString().trim() || undefined,
   });
 
+  const heroMaleImageFile = formData.get("heroMaleImageFile");
+  const heroFemaleImageFile = formData.get("heroFemaleImageFile");
+  const heroUnisexImageFile = formData.get("heroUnisexImageFile");
+  const decantsImageFile = formData.get("decantsImageFile");
+
+  let heroMaleImageUrl = currentSettings?.heroMaleImageUrl ?? null;
+  let heroFemaleImageUrl = currentSettings?.heroFemaleImageUrl ?? null;
+  let heroUnisexImageUrl = currentSettings?.heroUnisexImageUrl ?? null;
+  let decantsImageUrl = currentSettings?.decantsImageUrl ?? null;
+
+  if (typeof heroMaleImageFile !== "string" && heroMaleImageFile && heroMaleImageFile.size > 0) {
+    heroMaleImageUrl = await saveUploadedImage(heroMaleImageFile);
+  }
+
+  if (
+    typeof heroFemaleImageFile !== "string" &&
+    heroFemaleImageFile &&
+    heroFemaleImageFile.size > 0
+  ) {
+    heroFemaleImageUrl = await saveUploadedImage(heroFemaleImageFile);
+  }
+
+  if (
+    typeof heroUnisexImageFile !== "string" &&
+    heroUnisexImageFile &&
+    heroUnisexImageFile.size > 0
+  ) {
+    heroUnisexImageUrl = await saveUploadedImage(heroUnisexImageFile);
+  }
+
+  if (typeof decantsImageFile !== "string" && decantsImageFile && decantsImageFile.size > 0) {
+    decantsImageUrl = await saveUploadedImage(decantsImageFile);
+  }
+
   await prisma.storeSettings.upsert({
     where: { id: "main" },
     update: {
       ...parsed,
       heroImageUrl: null,
+      heroMaleImageUrl,
+      heroFemaleImageUrl,
+      heroUnisexImageUrl,
+      decantsImageUrl,
       heroSlides: {
         deleteMany: {},
       },
@@ -387,6 +435,10 @@ export async function saveStoreSettings(formData: FormData) {
       id: "main",
       ...parsed,
       heroImageUrl: null,
+      heroMaleImageUrl,
+      heroFemaleImageUrl,
+      heroUnisexImageUrl,
+      decantsImageUrl,
     },
   });
 

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { ChevronDown, Search } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { useCart } from "@/components/providers/cart-provider";
 import { formatPrice } from "@/lib/format";
 import { getProductAudienceLabel, productAudienceOptions, type ProductAudienceValue } from "@/lib/product-audience";
@@ -79,8 +80,10 @@ function Toast({
 
 export function CatalogClient({ brands, products }: CatalogClientProps) {
   const { addItem } = useCart();
+  const searchParams = useSearchParams();
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedAudiences, setSelectedAudiences] = useState<ProductAudienceValue[]>([]);
+  const [hasTouchedAudienceFilter, setHasTouchedAudienceFilter] = useState(false);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("name");
   const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
@@ -105,6 +108,30 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
+
+  const audienceFromQuery = useMemo(() => {
+    const audienceParam = searchParams.get("audience")?.toUpperCase();
+
+    if (
+      audienceParam === "MASCULINO" ||
+      audienceParam === "FEMININO" ||
+      audienceParam === "UNISSEXO"
+    ) {
+      return audienceParam as ProductAudienceValue;
+    }
+
+    return null;
+  }, [searchParams]);
+
+  const effectiveSelectedAudiences = useMemo(
+    () =>
+      hasTouchedAudienceFilter
+        ? selectedAudiences
+        : audienceFromQuery
+          ? [audienceFromQuery]
+          : selectedAudiences,
+    [audienceFromQuery, hasTouchedAudienceFilter, selectedAudiences],
+  );
 
   useEffect(() => {
     if (!toast) {
@@ -135,7 +162,8 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
       const matchesBrand =
         selectedBrands.length === 0 || selectedBrands.includes(product.brandId);
       const matchesAudience =
-        selectedAudiences.length === 0 || selectedAudiences.includes(product.audience as ProductAudienceValue);
+        effectiveSelectedAudiences.length === 0 ||
+        effectiveSelectedAudiences.includes(product.audience as ProductAudienceValue);
       const matchesSearch =
         product.name.toLowerCase().includes(query) ||
         product.brand.name.toLowerCase().includes(query);
@@ -181,7 +209,7 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
 
       return left.name.localeCompare(right.name, "pt");
     });
-  }, [products, search, selectedAudiences, selectedBrands, sortBy]);
+  }, [effectiveSelectedAudiences, products, search, selectedBrands, sortBy]);
 
   function getSelectedSize(product: CatalogProduct) {
     return selectedSizes[product.id] ?? "100ml";
@@ -227,6 +255,7 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
   }
 
   function toggleAudience(audience: ProductAudienceValue) {
+    setHasTouchedAudienceFilter(true);
     setSelectedAudiences((current) =>
       current.includes(audience)
         ? current.filter((item) => item !== audience)
@@ -433,7 +462,7 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
 
             <div className="mb-6 flex flex-wrap gap-3">
               {productAudienceOptions.map((audience) => {
-                const active = selectedAudiences.includes(audience.value);
+                const active = effectiveSelectedAudiences.includes(audience.value);
 
                 return (
                   <label
@@ -470,6 +499,7 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
                 onClick={() => {
                   setSelectedBrands([]);
                   setSelectedAudiences([]);
+                  setHasTouchedAudienceFilter(true);
                   setSearch("");
                   setSortBy("name");
                 }}
