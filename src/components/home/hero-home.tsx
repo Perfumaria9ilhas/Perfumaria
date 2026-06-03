@@ -86,7 +86,7 @@ export function HeroHome({ settings }: HeroHomeProps) {
                   <button
                     type="button"
                     onClick={() => moveSlide("prev")}
-                    className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-[color:var(--ink)] shadow-[0_10px_22px_rgba(78,55,34,0.14)] transition hover:scale-105"
+                    className="pointer-events-auto flex h-9 w-9 items-center justify-center text-white drop-shadow-[0_6px_16px_rgba(78,55,34,0.35)] transition hover:scale-105 md:rounded-full md:bg-white/90 md:text-[color:var(--ink)] md:shadow-[0_10px_22px_rgba(78,55,34,0.14)] md:drop-shadow-none animate-pulse md:animate-none"
                     aria-label="Slide anterior"
                   >
                     <ChevronLeft className="h-4.5 w-4.5" />
@@ -94,7 +94,7 @@ export function HeroHome({ settings }: HeroHomeProps) {
                   <button
                     type="button"
                     onClick={() => moveSlide("next")}
-                    className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-[color:var(--ink)] shadow-[0_10px_22px_rgba(78,55,34,0.14)] transition hover:scale-105"
+                    className="pointer-events-auto flex h-9 w-9 items-center justify-center text-white drop-shadow-[0_6px_16px_rgba(78,55,34,0.35)] transition hover:scale-105 md:rounded-full md:bg-white/90 md:text-[color:var(--ink)] md:shadow-[0_10px_22px_rgba(78,55,34,0.14)] md:drop-shadow-none animate-pulse md:animate-none"
                     aria-label="Slide seguinte"
                   >
                     <ChevronRight className="h-4.5 w-4.5" />
@@ -105,7 +105,7 @@ export function HeroHome({ settings }: HeroHomeProps) {
               {activeSlide ? (
                 <Link
                   href={activeSlide.href}
-                  className="absolute bottom-5 left-5 z-20 inline-flex items-center border-b border-[rgba(255,255,255,0.72)] pb-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white transition hover:text-[color:#f4dfbf]"
+                  className="absolute bottom-5 left-14 z-20 inline-flex items-center border-b border-[rgba(255,255,255,0.72)] pb-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white transition hover:text-[color:#f4dfbf] sm:left-16 md:left-5"
                 >
                   Perfumes {activeSlide.label}
                 </Link>
