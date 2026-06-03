@@ -110,8 +110,12 @@ export function TrustHome({ reviews, stats }: TrustHomeProps) {
             <p className="mt-1.5 text-xs text-slate-600">Perfumes disponiveis</p>
           </div>
           <div className="px-4 py-2 text-center">
-            <p className="text-[1.65rem] leading-none text-[color:var(--ink)]">{stats.islandsLabel}</p>
-            <p className="mt-1.5 text-xs text-slate-600">Entregas para os Acores</p>
+            <p className="text-[1.2rem] leading-tight text-[color:var(--ink)] sm:text-[1.35rem]">
+              Entregas Ilha Terceira
+            </p>
+            <p className="mt-1.5 text-xs leading-5 text-slate-600">
+              Envios para Portugal e arquipelagos da Madeira e Acores
+            </p>
           </div>
         </div>
 
