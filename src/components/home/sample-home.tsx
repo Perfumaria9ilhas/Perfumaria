@@ -14,8 +14,8 @@ const benefits = [
 export function SampleHome({ imageUrl }: { imageUrl?: string | null }) {
   return (
     <section className="bg-transparent px-0 py-0">
-      <div className="grid items-center gap-5 lg:grid-cols-[0.88fr_1.12fr]">
-        <div className="relative overflow-hidden rounded-[1.05rem]">
+      <div className="grid items-center gap-4 lg:grid-cols-[0.88fr_1.12fr]">
+        <div className="relative overflow-hidden">
           <div className="relative aspect-[16/7]">
             {imageUrl ? (
               <Image
@@ -39,7 +39,7 @@ export function SampleHome({ imageUrl }: { imageUrl?: string | null }) {
           </div>
         </div>
 
-        <div className="space-y-3 px-1">
+        <div className="space-y-3 px-0.5">
           <div>
             <h2 className="text-[1.55rem] leading-[1.04] text-[color:var(--ink)] sm:text-[1.95rem]">
               Experimente antes de comprar

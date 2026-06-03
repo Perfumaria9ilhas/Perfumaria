@@ -57,10 +57,10 @@ export function HeroHome({ settings }: HeroHomeProps) {
   }
 
   return (
-    <section className="bg-[radial-gradient(circle_at_top,_rgba(230,208,176,0.2),_transparent_48%),linear-gradient(180deg,_rgba(255,252,247,0.98),_rgba(244,229,208,0.9))]">
-      <div className="relative overflow-hidden px-0 py-0">
-          <div className="relative overflow-hidden rounded-[1.15rem]">
-            <div className="relative aspect-[16/7.2]">
+    <section className="bg-transparent">
+      <div className="relative px-0 py-0">
+          <div className="relative overflow-hidden">
+            <div className="relative aspect-[16/6.7] sm:aspect-[16/6.3]">
               {activeSlide?.imageUrl ? (
                 <Image
                   src={activeSlide.imageUrl}
@@ -86,7 +86,7 @@ export function HeroHome({ settings }: HeroHomeProps) {
                   <button
                     type="button"
                     onClick={() => moveSlide("prev")}
-                    className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/94 text-[color:var(--ink)] shadow-[0_10px_22px_rgba(78,55,34,0.16)] transition hover:scale-105"
+                    className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-[color:var(--ink)] shadow-[0_10px_22px_rgba(78,55,34,0.14)] transition hover:scale-105"
                     aria-label="Slide anterior"
                   >
                     <ChevronLeft className="h-4.5 w-4.5" />
@@ -94,7 +94,7 @@ export function HeroHome({ settings }: HeroHomeProps) {
                   <button
                     type="button"
                     onClick={() => moveSlide("next")}
-                    className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/94 text-[color:var(--ink)] shadow-[0_10px_22px_rgba(78,55,34,0.16)] transition hover:scale-105"
+                    className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-[color:var(--ink)] shadow-[0_10px_22px_rgba(78,55,34,0.14)] transition hover:scale-105"
                     aria-label="Slide seguinte"
                   >
                     <ChevronRight className="h-4.5 w-4.5" />

@@ -43,7 +43,7 @@ const trustItems = [
 
 export function WhyChooseHome() {
   return (
-    <section className="px-0 py-1">
+    <section className="px-0 py-0.5">
       <div className="mb-4 flex items-center gap-3">
         <span className="h-px flex-1 bg-[rgba(194,162,119,0.24)]" />
         <h2 className="text-center text-[0.95rem] uppercase tracking-[0.14em] text-[color:var(--ink)]">
@@ -61,7 +61,7 @@ export function WhyChooseHome() {
               key={item.title}
               className="flex flex-col items-center justify-start gap-1.5 px-1 py-1.5 text-center"
             >
-              <span className="flex h-9 w-9 items-center justify-center rounded-full border border-[rgba(194,162,119,0.2)] text-[color:var(--gold)]">
+              <span className="flex h-8 w-8 items-center justify-center text-[color:var(--gold)]">
                 <Icon className="h-4 w-4" />
               </span>
               <h3 className="text-[0.73rem] leading-tight text-[color:var(--ink)] sm:text-[0.82rem]">
