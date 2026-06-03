@@ -82,24 +82,24 @@ export function HeroHome({ settings }: HeroHomeProps) {
               )}
 
               {slides.length > 1 ? (
-                <>
+                <div className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex items-center justify-between px-4">
                   <button
                     type="button"
                     onClick={() => moveSlide("prev")}
-                    className="absolute left-3 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/92 text-[color:var(--ink)] shadow-[0_10px_22px_rgba(78,55,34,0.22)] transition hover:scale-105"
+                    className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full border border-[rgba(194,162,119,0.18)] bg-white/94 text-[color:var(--ink)] shadow-[0_10px_22px_rgba(78,55,34,0.16)] transition hover:scale-105 hover:border-[rgba(194,162,119,0.32)]"
                     aria-label="Slide anterior"
                   >
-                    <ChevronLeft className="h-5 w-5" />
+                    <ChevronLeft className="h-4.5 w-4.5" />
                   </button>
                   <button
                     type="button"
                     onClick={() => moveSlide("next")}
-                    className="absolute right-3 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/92 text-[color:var(--ink)] shadow-[0_10px_22px_rgba(78,55,34,0.22)] transition hover:scale-105"
+                    className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full border border-[rgba(194,162,119,0.18)] bg-white/94 text-[color:var(--ink)] shadow-[0_10px_22px_rgba(78,55,34,0.16)] transition hover:scale-105 hover:border-[rgba(194,162,119,0.32)]"
                     aria-label="Slide seguinte"
                   >
-                    <ChevronRight className="h-5 w-5" />
+                    <ChevronRight className="h-4.5 w-4.5" />
                   </button>
-                </>
+                </div>
               ) : null}
 
               {activeSlide ? (

@@ -52,7 +52,7 @@ export function WhyChooseHome() {
         <span className="h-px flex-1 bg-[rgba(194,162,119,0.24)]" />
       </div>
 
-      <div className="grid grid-cols-3 gap-x-3 gap-y-4">
+      <div className="grid grid-cols-3 gap-x-3 gap-y-4 lg:grid-cols-6 lg:gap-x-4">
         {trustItems.map((item) => {
           const Icon = item.icon;
 
