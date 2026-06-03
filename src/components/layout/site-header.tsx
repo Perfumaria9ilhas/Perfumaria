@@ -44,8 +44,8 @@ export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeade
         <div className="hidden border-b border-[rgba(255,255,255,0.16)] bg-[linear-gradient(90deg,_#ba8a48,_#d5ad6b)] lg:block">
           <div className="mx-auto flex max-w-[1320px] items-center justify-center gap-8 px-5 py-2 text-[11px] font-medium text-white">
             <span>Entrega rápida na Ilha Terceira</span>
-            <span>Decants 5ml disponíveis</span>
-            <span>Atendimento personalizado por WhatsApp</span>
+            <span>Todos os dias das 08h00 as 22h00</span>
+            <span>Envio para todas as ilhas dos Acores</span>
           </div>
         </div>
         <div className="mx-auto max-w-[1320px] px-4 py-2 lg:px-5 lg:py-2.5">
