@@ -24,13 +24,13 @@ function FeaturedProductImage({
 }) {
   if (!imageUrl) {
     return (
-      <div className="flex h-full w-full items-center justify-center bg-white p-4">
+      <div className="flex h-full w-full items-center justify-center bg-white p-3">
         <Image
           src="/logo-9-ilhas.svg"
           alt="9 Ilhas Perfumaria"
           width={160}
           height={48}
-          className="h-auto w-24 opacity-80"
+          className="h-auto w-20 opacity-80"
         />
       </div>
     );
@@ -42,7 +42,7 @@ function FeaturedProductImage({
       alt={name}
       fill
       unoptimized
-      className="object-contain p-4 transition duration-500 group-hover:scale-[1.03]"
+      className="object-contain p-3 transition duration-500 group-hover:scale-[1.03]"
     />
   );
 }
@@ -210,16 +210,16 @@ export function FeaturedProductsSlider({
         </div>
       ) : null}
 
-      <section className="space-y-6">
-        <div className="flex items-center gap-5">
+      <section className="space-y-4">
+        <div className="flex items-center gap-4">
           <span className="h-px flex-1 bg-[color:var(--line)]" />
-          <h2 className="text-center text-[1.85rem] uppercase tracking-[0.08em] text-[color:var(--ink)] sm:text-[2.1rem]">
+          <h2 className="text-center text-[1.35rem] uppercase tracking-[0.08em] text-[color:var(--ink)] sm:text-[1.55rem]">
             Destaques
           </h2>
           <span className="h-px flex-1 bg-[color:var(--line)]" />
         </div>
 
-        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           {visibleProducts.map((product) => {
             const selectedSize = getSelectedSize(product);
             const currentPrice = getDisplayPrice(product, selectedSize);
@@ -232,10 +232,10 @@ export function FeaturedProductsSlider({
             return (
               <article
                 key={product.id}
-                className="group relative flex h-full flex-col rounded-[1.7rem] border border-[rgba(194,162,119,0.16)] bg-white p-4 shadow-[0_14px_28px_rgba(78,55,34,0.05)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_20px_36px_rgba(78,55,34,0.10)]"
+                className="group relative flex h-full flex-col rounded-[1.3rem] border border-[rgba(194,162,119,0.14)] bg-white p-3 shadow-[0_10px_20px_rgba(78,55,34,0.04)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_16px_28px_rgba(78,55,34,0.08)]"
               >
                 {product.bestseller ? (
-                  <div className="absolute left-3 top-3 z-20 rounded-full bg-[linear-gradient(135deg,_#b3472d,_#df8a46)] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-white shadow-[0_10px_20px_rgba(179,71,45,0.22)]">
+                  <div className="absolute left-3 top-3 z-20 rounded-full bg-[linear-gradient(135deg,_#b3472d,_#df8a46)] px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.2em] text-white shadow-[0_8px_18px_rgba(179,71,45,0.18)]">
                     Best Seller
                   </div>
                 ) : null}
@@ -243,27 +243,27 @@ export function FeaturedProductsSlider({
                 <button
                   type="button"
                   onClick={() => setSelectedProduct(product)}
-                  className="relative block aspect-[4/4.8] overflow-hidden rounded-[1.2rem] border border-[rgba(194,162,119,0.12)] bg-[linear-gradient(180deg,_#fffaf3,_#f3e8d8)]"
+                  className="relative block aspect-[4/4.6] overflow-hidden rounded-[1rem] border border-[rgba(194,162,119,0.1)] bg-[linear-gradient(180deg,_#fffaf3,_#f3e8d8)]"
                 >
                   <FeaturedProductImage imageUrl={product.imageUrl} name={product.name} />
                 </button>
 
                 <div className="mt-4 flex flex-1 flex-col">
-                  <p className="text-xs uppercase tracking-[0.24em] text-[color:var(--atlantic)]">
+                  <p className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--atlantic)]">
                     {product.brand.name}
                   </p>
-                  <h3 className="mt-2 text-[1.65rem] leading-tight text-[color:var(--ink)]">
+                  <h3 className="mt-1.5 text-[1.25rem] leading-tight text-[color:var(--ink)]">
                     {product.name}
                   </h3>
-                  <p className="mt-1 text-xs uppercase tracking-[0.24em] text-[color:var(--gold)]">
+                  <p className="mt-1 text-[10px] uppercase tracking-[0.22em] text-[color:var(--gold)]">
                     {audience}
                   </p>
 
-                  <div className="mt-4 flex flex-wrap gap-2">
+                  <div className="mt-3 flex flex-wrap gap-1.5">
                     <button
                       type="button"
                       onClick={() => setProductSize(product.id, "100ml")}
-                      className={`rounded-md border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] transition ${
+                      className={`rounded-md border px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.1em] transition ${
                         selectedSize === "100ml"
                           ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-white"
                           : "border-[color:var(--line)] bg-[color:var(--sand-soft)] text-slate-600"
@@ -275,7 +275,7 @@ export function FeaturedProductsSlider({
                       <button
                         type="button"
                         onClick={() => setProductSize(product.id, "5ml")}
-                        className={`rounded-md border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] transition ${
+                        className={`rounded-md border px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.1em] transition ${
                           selectedSize === "5ml"
                             ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-white"
                             : "border-[color:var(--line)] bg-[color:var(--sand-soft)] text-slate-600"
@@ -286,29 +286,29 @@ export function FeaturedProductsSlider({
                     ) : null}
                   </div>
 
-                  <div className="mt-4">
+                  <div className="mt-3">
                     {hasDiscount ? (
                       <p className="text-xs text-slate-400 line-through">
                         {formatPrice(product.priceInCents)}
                       </p>
                     ) : null}
-                    <p className="text-[1.65rem] leading-none text-[color:var(--ink)]">
+                    <p className="text-[1.25rem] leading-none text-[color:var(--ink)]">
                       {formatPrice(currentPrice)}
                     </p>
                   </div>
 
-                  <div className="mt-5 grid gap-2">
+                  <div className="mt-4 grid gap-2">
                     <button
                       type="button"
                       onClick={() => setSelectedProduct(product)}
-                      className="inline-flex items-center justify-center rounded-md border border-[rgba(194,162,119,0.18)] bg-white px-4 py-2.5 text-sm font-semibold text-[color:var(--ink)] transition hover:border-[color:var(--gold)] hover:text-[color:var(--gold)]"
+                      className="inline-flex items-center justify-center rounded-md border border-[rgba(194,162,119,0.18)] bg-white px-4 py-2 text-xs font-semibold text-[color:var(--ink)] transition hover:border-[color:var(--gold)] hover:text-[color:var(--gold)]"
                     >
                       Ver opcoes
                     </button>
                     <button
                       type="button"
                       onClick={() => handleAddToCart(product, selectedSize)}
-                      className="inline-flex items-center justify-center gap-2 rounded-md bg-[linear-gradient(135deg,_#b88746,_#d1a15f)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_20px_rgba(184,135,70,0.18)]"
+                      className="inline-flex items-center justify-center gap-2 rounded-md bg-[linear-gradient(135deg,_#b88746,_#d1a15f)] px-4 py-2 text-xs font-semibold text-white shadow-[0_8px_16px_rgba(184,135,70,0.16)]"
                     >
                       <Flame className="h-4 w-4" />
                       Adicionar
@@ -323,7 +323,7 @@ export function FeaturedProductsSlider({
         <div className="flex justify-center">
           <Link
             href="/catalogo"
-            className="inline-flex items-center justify-center rounded-md border border-[rgba(194,162,119,0.2)] bg-white px-6 py-3 text-sm font-medium text-[color:var(--ink)] shadow-[0_10px_18px_rgba(78,55,34,0.04)]"
+            className="inline-flex items-center justify-center rounded-md border border-[rgba(194,162,119,0.2)] bg-white px-5 py-2.5 text-xs font-medium text-[color:var(--ink)] shadow-[0_8px_16px_rgba(78,55,34,0.04)]"
           >
             Ver opcoes
           </Link>

@@ -1,13 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Camera,
-  MessageCircleMore,
-  ShieldCheck,
-  Star,
-  Truck,
-} from "lucide-react";
+import { Camera, MessageCircleMore, ShieldCheck, Star, Truck } from "lucide-react";
 import { submitStoreReview } from "@/actions/admin";
 
 type Review = {
@@ -110,49 +104,49 @@ export function TrustHome({ reviews, stats }: TrustHomeProps) {
         </div>
       ) : null}
 
-      <section className="space-y-8">
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-[1.7rem] border border-[rgba(194,162,119,0.16)] bg-white px-5 py-5 text-center shadow-[0_12px_28px_rgba(78,55,34,0.05)]">
-            <p className="text-[2.3rem] leading-none text-[color:var(--ink)]">
+      <section className="space-y-5">
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-[1.2rem] border border-[rgba(194,162,119,0.14)] bg-white px-4 py-4 text-center shadow-[0_10px_22px_rgba(78,55,34,0.04)]">
+            <p className="text-[1.65rem] leading-none text-[color:var(--ink)]">
               +{stats.satisfiedCustomersCount}
             </p>
-            <p className="mt-2 text-sm text-slate-600">Clientes satisfeitos</p>
+            <p className="mt-1.5 text-xs text-slate-600">Clientes satisfeitos</p>
           </div>
-          <div className="rounded-[1.7rem] border border-[rgba(194,162,119,0.16)] bg-white px-5 py-5 text-center shadow-[0_12px_28px_rgba(78,55,34,0.05)]">
-            <p className="text-[2.3rem] leading-none text-[color:var(--ink)]">
+          <div className="rounded-[1.2rem] border border-[rgba(194,162,119,0.14)] bg-white px-4 py-4 text-center shadow-[0_10px_22px_rgba(78,55,34,0.04)]">
+            <p className="text-[1.65rem] leading-none text-[color:var(--ink)]">
               +{stats.productsCount}
             </p>
-            <p className="mt-2 text-sm text-slate-600">Perfumes disponiveis</p>
+            <p className="mt-1.5 text-xs text-slate-600">Perfumes disponiveis</p>
           </div>
-          <div className="rounded-[1.7rem] border border-[rgba(194,162,119,0.16)] bg-white px-5 py-5 text-center shadow-[0_12px_28px_rgba(78,55,34,0.05)]">
-            <p className="text-[2.3rem] leading-none text-[color:var(--ink)]">{stats.islandsLabel}</p>
-            <p className="mt-2 text-sm text-slate-600">Entregas para os Acores</p>
+          <div className="rounded-[1.2rem] border border-[rgba(194,162,119,0.14)] bg-white px-4 py-4 text-center shadow-[0_10px_22px_rgba(78,55,34,0.04)]">
+            <p className="text-[1.65rem] leading-none text-[color:var(--ink)]">{stats.islandsLabel}</p>
+            <p className="mt-1.5 text-xs text-slate-600">Entregas para os Acores</p>
           </div>
         </div>
 
-        <div className="space-y-6 rounded-[2.2rem] border border-[rgba(194,162,119,0.16)] bg-white px-6 py-8 shadow-[0_18px_42px_rgba(78,55,34,0.05)] sm:px-8 lg:px-10">
-          <div className="flex items-center gap-5">
+        <div className="space-y-4 rounded-[1.8rem] border border-[rgba(194,162,119,0.14)] bg-white px-5 py-6 shadow-[0_12px_28px_rgba(78,55,34,0.04)] sm:px-6 lg:px-8">
+          <div className="flex items-center gap-4">
             <span className="h-px flex-1 bg-[color:var(--line)]" />
-            <h2 className="text-center text-[1.85rem] uppercase tracking-[0.08em] text-[color:var(--ink)] sm:text-[2.1rem]">
+            <h2 className="text-center text-[1.35rem] uppercase tracking-[0.08em] text-[color:var(--ink)] sm:text-[1.55rem]">
               O que dizem os nossos clientes
             </h2>
             <span className="h-px flex-1 bg-[color:var(--line)]" />
           </div>
 
-          <div className="grid gap-5 lg:grid-cols-3">
+          <div className="grid gap-4 lg:grid-cols-3">
             {reviews.length ? (
               reviews.slice(0, 3).map((review) => (
                 <article
                   key={review.id}
-                  className="rounded-[1.6rem] border border-[rgba(194,162,119,0.14)] bg-[linear-gradient(180deg,_rgba(255,255,255,0.96),_rgba(250,241,229,0.9))] px-5 py-6 text-center"
+                  className="rounded-[1.2rem] border border-[rgba(194,162,119,0.12)] bg-[linear-gradient(180deg,_rgba(255,255,255,0.96),_rgba(250,241,229,0.9))] px-4 py-4 text-center"
                 >
-                  <p className="text-[color:#b98544]">{renderStars(review.rating)}</p>
-                  <p className="mt-4 text-sm leading-7 text-slate-700">{review.comment}</p>
-                  <p className="mt-5 text-sm font-semibold text-[color:var(--ink)]">{review.name}</p>
+                  <p className="text-sm text-[color:#b98544]">{renderStars(review.rating)}</p>
+                  <p className="mt-3 text-xs leading-6 text-slate-700">{review.comment}</p>
+                  <p className="mt-4 text-xs font-semibold text-[color:var(--ink)]">{review.name}</p>
                 </article>
               ))
             ) : (
-              <div className="lg:col-span-3 text-center text-sm leading-7 text-slate-600">
+              <div className="text-center text-sm leading-7 text-slate-600 lg:col-span-3">
                 Ainda nao existem comentarios. Seja a primeira pessoa a comentar.
               </div>
             )}
@@ -162,21 +156,21 @@ export function TrustHome({ reviews, stats }: TrustHomeProps) {
             <button
               type="button"
               onClick={() => setIsModalOpen(true)}
-              className="inline-flex items-center justify-center rounded-full border border-[rgba(194,162,119,0.2)] bg-white px-5 py-3 text-sm font-semibold text-[color:var(--ink)] transition hover:border-[color:var(--gold)] hover:text-[color:var(--gold)]"
+              className="inline-flex items-center justify-center rounded-full border border-[rgba(194,162,119,0.2)] bg-white px-4 py-2.5 text-xs font-semibold text-[color:var(--ink)] transition hover:border-[color:var(--gold)] hover:text-[color:var(--gold)]"
             >
               Fazer comentario
             </button>
           </div>
         </div>
 
-        <div className="rounded-[2rem] bg-[linear-gradient(90deg,_#b88746,_#d1a15f)] px-6 py-5 text-white shadow-[0_18px_36px_rgba(184,135,70,0.18)]">
-          <div className="grid gap-4 text-center sm:grid-cols-2 lg:grid-cols-5">
+        <div className="rounded-[1.5rem] bg-[linear-gradient(90deg,_#b88746,_#d1a15f)] px-5 py-4 text-white shadow-[0_12px_24px_rgba(184,135,70,0.16)]">
+          <div className="grid gap-3 text-center sm:grid-cols-2 lg:grid-cols-5">
             {socialProofItems.map((item) => {
               const Icon = item.icon;
               return (
                 <div key={item.label} className="flex items-center justify-center gap-3">
-                  <Icon className="h-5 w-5" />
-                  <span className="text-sm font-semibold uppercase tracking-[0.16em]">
+                  <Icon className="h-4 w-4" />
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.14em]">
                     {item.label}
                   </span>
                 </div>

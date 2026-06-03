@@ -8,7 +8,7 @@ export default async function Home() {
   const { featuredProducts, reviews, stats } = await getHomeData();
 
   return (
-    <div className="mx-auto flex max-w-[1320px] flex-col gap-8 px-4 py-5 lg:px-5 lg:py-7">
+    <div className="mx-auto flex max-w-[1180px] flex-col gap-6 px-4 py-4 lg:px-4 lg:py-5">
       <HeroHome products={featuredProducts.slice(0, 2)} />
       <SampleHome />
       <FeaturedProductsSlider products={featuredProducts} />
