@@ -119,10 +119,9 @@ export function HeroHome({ settings }: HeroHomeProps) {
           <div className="space-y-3">
             <div className="grid gap-2">
               {audienceCards.map((item) => (
-                <Link
+                <div
                   key={item.key}
-                  href={`/catalogo?audience=${item.key.toLowerCase()}`}
-                  className="flex items-center justify-between rounded-[0.95rem] border border-[rgba(194,162,119,0.16)] bg-[linear-gradient(180deg,_rgba(255,255,255,0.98),_rgba(249,242,232,0.98))] px-3.5 py-2.5 transition hover:border-[rgba(194,162,119,0.34)] hover:shadow-[0_8px_18px_rgba(78,55,34,0.06)]"
+                  className="flex items-center justify-between rounded-[0.95rem] border border-[rgba(194,162,119,0.16)] bg-[linear-gradient(180deg,_rgba(255,255,255,0.98),_rgba(249,242,232,0.98))] px-3.5 py-2.5"
                 >
                   <div>
                     <p className="font-serif text-[0.98rem] text-[color:var(--ink)]">{item.label}</p>
@@ -131,16 +130,13 @@ export function HeroHome({ settings }: HeroHomeProps) {
                   <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--gold)]">
                     Ver
                   </span>
-                </Link>
+                </div>
               ))}
             </div>
 
-            <Link
-              href="/catalogo"
-              className="inline-flex items-center justify-center rounded-md bg-[linear-gradient(135deg,_#b88746,_#d0a260)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-white shadow-[0_10px_20px_rgba(184,135,70,0.16)] transition hover:translate-y-[-1px]"
-            >
+            <div className="inline-flex items-center justify-center rounded-md bg-[linear-gradient(135deg,_#b88746,_#d0a260)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-white shadow-[0_10px_20px_rgba(184,135,70,0.16)]">
               Ver catalogo
-            </Link>
+            </div>
           </div>
 
           <div className="mt-5 border-t border-[rgba(194,162,119,0.12)] pt-4">
@@ -152,7 +148,7 @@ export function HeroHome({ settings }: HeroHomeProps) {
               <span className="h-px flex-1 bg-[rgba(194,162,119,0.24)]" />
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-y-4 sm:grid-cols-3 sm:gap-x-3">
               {trustItems.map((item) => {
                 const Icon = item.icon;
 
@@ -201,18 +197,29 @@ export function HeroHome({ settings }: HeroHomeProps) {
                   <button
                     type="button"
                     onClick={() => moveSlide("prev")}
-                    className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[color:var(--ink)] shadow-[0_8px_18px_rgba(78,55,34,0.18)]"
+                    className="absolute left-3 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/92 text-[color:var(--ink)] shadow-[0_10px_22px_rgba(78,55,34,0.22)] transition hover:scale-105"
+                    aria-label="Slide anterior"
                   >
-                    <ChevronLeft className="h-4.5 w-4.5" />
+                    <ChevronLeft className="h-5 w-5" />
                   </button>
                   <button
                     type="button"
                     onClick={() => moveSlide("next")}
-                    className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[color:var(--ink)] shadow-[0_8px_18px_rgba(78,55,34,0.18)]"
+                    className="absolute right-3 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/92 text-[color:var(--ink)] shadow-[0_10px_22px_rgba(78,55,34,0.22)] transition hover:scale-105"
+                    aria-label="Slide seguinte"
                   >
-                    <ChevronRight className="h-4.5 w-4.5" />
+                    <ChevronRight className="h-5 w-5" />
                   </button>
                 </>
+              ) : null}
+
+              {activeSlide ? (
+                <Link
+                  href={activeSlide.href}
+                  className="absolute bottom-4 left-4 z-20 inline-flex items-center rounded-full bg-[rgba(255,255,255,0.94)] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--ink)] shadow-[0_10px_22px_rgba(78,55,34,0.18)] transition hover:text-[color:var(--gold)]"
+                >
+                  Perfumes {activeSlide.label}
+                </Link>
               ) : null}
             </div>
           </div>
