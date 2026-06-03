@@ -59,7 +59,7 @@ export function HeroHome({ settings }: HeroHomeProps) {
   return (
     <section className="bg-transparent">
       <div className="relative px-0 py-0">
-          <div className="relative overflow-hidden">
+          <div className="relative overflow-visible">
             <div className="relative aspect-[16/6.7] sm:aspect-[16/6.3]">
               {activeSlide?.imageUrl ? (
                 <Image
@@ -82,7 +82,7 @@ export function HeroHome({ settings }: HeroHomeProps) {
               )}
 
               {slides.length > 1 ? (
-                <div className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex items-center justify-between px-4">
+                <div className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex items-center justify-between px-3 md:px-4">
                   <button
                     type="button"
                     onClick={() => moveSlide("prev")}
@@ -105,7 +105,7 @@ export function HeroHome({ settings }: HeroHomeProps) {
               {activeSlide ? (
                 <Link
                   href={activeSlide.href}
-                  className="absolute bottom-5 left-28 z-20 inline-flex items-center border-b border-[rgba(255,255,255,0.72)] pb-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white transition hover:text-[color:#f4dfbf] sm:left-32 md:left-5"
+                  className="absolute bottom-5 left-20 z-20 inline-flex items-center border-b border-[rgba(255,255,255,0.72)] pb-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white transition hover:text-[color:#f4dfbf] sm:left-24 md:left-6"
                 >
                   Catálogo {activeSlide.label}
                 </Link>

@@ -64,7 +64,7 @@ export function SampleHome({ imageUrl }: { imageUrl?: string | null }) {
           <div>
             <Link
               href="/catalogo"
-              className="inline-flex items-center justify-center rounded-md bg-[linear-gradient(135deg,_#b88746,_#d0a260)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-white shadow-[0_10px_20px_rgba(184,135,70,0.16)]"
+              className="inline-flex items-center justify-center rounded-md bg-[linear-gradient(135deg,_#b88746,_#d0a260)] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-white"
             >
               Ver decants
             </Link>
