@@ -57,9 +57,9 @@ export function HeroHome({ settings }: HeroHomeProps) {
   }
 
   return (
-    <section className="overflow-hidden rounded-[1.45rem] border border-[rgba(194,162,119,0.16)] bg-[radial-gradient(circle_at_top,_rgba(230,208,176,0.3),_transparent_48%),linear-gradient(180deg,_rgba(255,252,247,0.98),_rgba(244,229,208,0.98))] shadow-[0_12px_28px_rgba(78,55,34,0.05)]">
-      <div className="relative overflow-hidden px-2 py-2 sm:px-3 sm:py-3 lg:px-4 lg:py-4">
-          <div className="relative overflow-hidden rounded-[1.3rem] border border-[rgba(194,162,119,0.14)] bg-[linear-gradient(180deg,_rgba(255,255,255,0.96),_rgba(248,238,224,0.96))]">
+    <section className="bg-[radial-gradient(circle_at_top,_rgba(230,208,176,0.2),_transparent_48%),linear-gradient(180deg,_rgba(255,252,247,0.98),_rgba(244,229,208,0.9))]">
+      <div className="relative overflow-hidden px-0 py-0">
+          <div className="relative overflow-hidden rounded-[1.15rem]">
             <div className="relative aspect-[16/7.2]">
               {activeSlide?.imageUrl ? (
                 <Image
@@ -86,7 +86,7 @@ export function HeroHome({ settings }: HeroHomeProps) {
                   <button
                     type="button"
                     onClick={() => moveSlide("prev")}
-                    className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full border border-[rgba(194,162,119,0.18)] bg-white/94 text-[color:var(--ink)] shadow-[0_10px_22px_rgba(78,55,34,0.16)] transition hover:scale-105 hover:border-[rgba(194,162,119,0.32)]"
+                    className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/94 text-[color:var(--ink)] shadow-[0_10px_22px_rgba(78,55,34,0.16)] transition hover:scale-105"
                     aria-label="Slide anterior"
                   >
                     <ChevronLeft className="h-4.5 w-4.5" />
@@ -94,7 +94,7 @@ export function HeroHome({ settings }: HeroHomeProps) {
                   <button
                     type="button"
                     onClick={() => moveSlide("next")}
-                    className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full border border-[rgba(194,162,119,0.18)] bg-white/94 text-[color:var(--ink)] shadow-[0_10px_22px_rgba(78,55,34,0.16)] transition hover:scale-105 hover:border-[rgba(194,162,119,0.32)]"
+                    className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/94 text-[color:var(--ink)] shadow-[0_10px_22px_rgba(78,55,34,0.16)] transition hover:scale-105"
                     aria-label="Slide seguinte"
                   >
                     <ChevronRight className="h-4.5 w-4.5" />

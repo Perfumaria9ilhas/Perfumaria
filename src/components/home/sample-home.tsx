@@ -13,9 +13,9 @@ const benefits = [
 
 export function SampleHome({ imageUrl }: { imageUrl?: string | null }) {
   return (
-    <section className="overflow-hidden rounded-[1.45rem] border border-[rgba(194,162,119,0.12)] bg-[linear-gradient(135deg,_rgba(255,255,255,0.98),_rgba(248,237,223,0.96))] px-4 py-5 shadow-[0_10px_24px_rgba(78,55,34,0.04)] sm:px-5 lg:px-6">
+    <section className="bg-transparent px-0 py-0">
       <div className="grid items-center gap-5 lg:grid-cols-[0.88fr_1.12fr]">
-        <div className="relative overflow-hidden rounded-[1.15rem] border border-[rgba(194,162,119,0.12)] bg-white">
+        <div className="relative overflow-hidden rounded-[1.05rem]">
           <div className="relative aspect-[16/7]">
             {imageUrl ? (
               <Image
@@ -39,7 +39,7 @@ export function SampleHome({ imageUrl }: { imageUrl?: string | null }) {
           </div>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-3 px-1">
           <div>
             <h2 className="text-[1.55rem] leading-[1.04] text-[color:var(--ink)] sm:text-[1.95rem]">
               Experimente antes de comprar
