@@ -105,7 +105,7 @@ export function HeroHome({ settings }: HeroHomeProps) {
               {activeSlide ? (
                 <Link
                   href={activeSlide.href}
-                  className="absolute bottom-4 left-4 z-20 inline-flex items-center rounded-full bg-[rgba(255,255,255,0.94)] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--ink)] shadow-[0_10px_22px_rgba(78,55,34,0.18)] transition hover:text-[color:var(--gold)]"
+                  className="absolute bottom-5 left-5 z-20 inline-flex items-center border-b border-[rgba(255,255,255,0.72)] pb-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white transition hover:text-[color:#f4dfbf]"
                 >
                   Perfumes {activeSlide.label}
                 </Link>

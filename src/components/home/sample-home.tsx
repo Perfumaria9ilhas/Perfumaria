@@ -50,10 +50,10 @@ export function SampleHome({ imageUrl }: { imageUrl?: string | null }) {
             </p>
           </div>
 
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="grid gap-x-5 gap-y-2 sm:grid-cols-2">
             {benefits.map((benefit) => (
               <div key={benefit} className="flex items-center gap-2.5 text-[0.78rem] text-slate-700">
-                <span className="flex h-5.5 w-5.5 items-center justify-center rounded-full bg-[rgba(194,162,119,0.12)] text-[color:var(--gold)]">
+                <span className="text-[color:var(--gold)]">
                   <Check className="h-3.5 w-3.5" />
                 </span>
                 <span>{benefit}</span>
