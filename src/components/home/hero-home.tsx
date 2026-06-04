@@ -58,14 +58,22 @@ export function HeroHome({ settings }: HeroHomeProps) {
       <div className="relative px-0 py-0">
         <div className="relative overflow-visible">
           <div className="relative aspect-[16/6.7] sm:aspect-[16/6.3]">
-            {activeSlide?.imageUrl ? (
-              <Image
-                src={activeSlide.imageUrl}
-                alt={activeSlide.label}
-                fill
-                unoptimized
-                className="object-cover"
-              />
+            {slides.length ? (
+              slides.map((slide, index) => (
+                <Image
+                  key={slide.key}
+                  src={slide.imageUrl!}
+                  alt={slide.label}
+                  fill
+                  unoptimized
+                  priority={index === 0}
+                  loading={index === 0 ? "eager" : "eager"}
+                  sizes="100vw"
+                  className={`object-cover transition-opacity duration-500 ${
+                    index === activeSlideIndex ? "opacity-100" : "pointer-events-none opacity-0"
+                  }`}
+                />
+              ))
             ) : (
               <div className="flex h-full w-full items-center justify-center bg-white/60 p-6">
                 <Image
