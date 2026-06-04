@@ -25,9 +25,11 @@ type SortOption = "price" | "name" | "brand";
 function ProductImage({
   src,
   alt,
+  priority = false,
 }: {
   src: string;
   alt: string;
+  priority?: boolean;
 }) {
   const [hasError, setHasError] = useState(false);
 
@@ -51,6 +53,9 @@ function ProductImage({
       alt={alt}
       fill
       unoptimized
+      priority={priority}
+      loading={priority ? "eager" : "lazy"}
+      fetchPriority={priority ? "high" : "auto"}
       sizes="(max-width: 640px) 50vw, (max-width: 900px) 50vw, (max-width: 1200px) 33vw, 25vw"
       className="h-full w-full object-contain p-4 transition duration-500 group-hover:scale-[1.04]"
       onError={() => setHasError(true)}
@@ -518,13 +523,14 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
       ) : null}
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {filteredProducts.map((product) => {
+        {filteredProducts.map((product, index) => {
           const outOfStock = product.stock < 1;
           const selectedSize = getSelectedSize(product);
           const hasDiscount =
             product.salePriceInCents !== null &&
             product.salePriceInCents < product.priceInCents;
           const currentPrice = getDisplayPrice(product, selectedSize);
+          const shouldPreloadImage = index < 8;
 
           return (
             <article
@@ -543,7 +549,12 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
                 className="relative aspect-square bg-[radial-gradient(circle_at_top,_rgba(183,146,107,0.18),_transparent_58%),linear-gradient(180deg,_#fffaf3,_#f4e7d6)] text-left"
               >
                 <div className="relative h-full w-full overflow-hidden">
-                  <ProductImage key={product.imageUrl || product.id} src={product.imageUrl} alt={product.name} />
+                  <ProductImage
+                    key={product.imageUrl || product.id}
+                    src={product.imageUrl}
+                    alt={product.name}
+                    priority={shouldPreloadImage}
+                  />
                 </div>
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-[linear-gradient(180deg,_transparent,_rgba(255,248,239,0.88))]" />
               </button>
