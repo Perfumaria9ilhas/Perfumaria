@@ -609,3 +609,17 @@ export async function submitStoreReview(formData: FormData) {
   revalidatePath("/");
   redirect("/?reviewSaved=1#avaliacoes");
 }
+
+export async function deleteStoreReview(formData: FormData) {
+  await requireAdmin();
+
+  const id = z.string().min(1).parse(formData.get("id"));
+
+  await prisma.storeReview.delete({
+    where: { id },
+  });
+
+  revalidatePath("/");
+  revalidatePath("/admin");
+  revalidatePath("/admin/comentarios");
+}

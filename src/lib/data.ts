@@ -69,7 +69,7 @@ export async function getHomeData() {
     stats: {
       satisfiedCustomersCount: metrics?.totalSatisfiedCustomers ?? fallbackOrdersCount,
       productsCount,
-      islandsLabel: "Acores",
+      islandsLabel: "Açores",
     },
   };
 }
@@ -152,6 +152,13 @@ export async function getAdminOrdersData() {
         orderBy: { createdAt: "asc" },
       },
     },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+export async function getAdminReviewsData() {
+  noStore();
+  return prisma.storeReview.findMany({
     orderBy: { createdAt: "desc" },
   });
 }

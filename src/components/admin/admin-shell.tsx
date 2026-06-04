@@ -65,6 +65,12 @@ export function AdminShell({
               Desejos
             </Link>
             <Link
+              href="/admin/comentarios"
+              className="rounded-full bg-[color:var(--sand-soft)] px-3.5 py-1.5 text-sm text-slate-700"
+            >
+              Comentários
+            </Link>
+            <Link
               href="/admin/loja"
               className="rounded-full bg-[color:var(--sand-soft)] px-3.5 py-1.5 text-sm text-slate-700"
             >

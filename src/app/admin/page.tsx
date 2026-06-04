@@ -12,7 +12,7 @@ export default async function AdminPage() {
   return (
     <AdminShell
       title="Dashboard"
-      description="Visao geral rapida do catalogo, dos pedidos e do movimento diario da loja."
+      description="Visão geral rápida do catálogo, dos pedidos e do movimento diário da loja."
     >
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {[
@@ -62,11 +62,14 @@ export default async function AdminPage() {
             <Link href="/admin/desejos" className="rounded-full bg-[color:var(--sand-soft)] px-4 py-3 text-sm">
               Ver desejos
             </Link>
+            <Link href="/admin/comentarios" className="rounded-full bg-[color:var(--sand-soft)] px-4 py-3 text-sm">
+              Ver comentários
+            </Link>
           </div>
         </article>
 
         <article className="rounded-[2rem] border border-[color:var(--line)] bg-white p-6 shadow-sm">
-          <h3 className="font-serif text-3xl text-[color:var(--ink)]">Ultimos produtos</h3>
+          <h3 className="font-serif text-3xl text-[color:var(--ink)]">Últimos produtos</h3>
           <div className="mt-5 space-y-3">
             {products.slice(0, 5).map((product) => (
               <div
@@ -92,7 +95,7 @@ export default async function AdminPage() {
             <div>
               <h3 className="font-serif text-3xl text-[color:var(--ink)]">Visitas por dia</h3>
               <p className="text-sm text-slate-500">
-                O contador do site reinicia a meia-noite, mas o historico fica guardado aqui.
+                O contador do site reinicia à meia-noite, mas o histórico fica guardado aqui.
               </p>
             </div>
             <p className="rounded-full bg-[color:var(--sand-soft)] px-4 py-2 text-sm font-semibold text-[color:var(--ink)]">
