@@ -16,12 +16,12 @@ const brands = [
 
 const categories = [
   {
-    name: "Perfumes Arabes",
+    name: "Perfumes Árabes",
     slug: "perfumes-arabes",
-    description: "Fragrancias intensas, elegantes e marcantes.",
+    description: "Fragrâncias intensas, elegantes e marcantes.",
   },
   {
-    name: "Cosmeticos",
+    name: "Cosméticos",
     slug: "cosmeticos",
     description: "Cuidados de rosto e corpo com assinatura oriental.",
   },
@@ -356,6 +356,8 @@ async function main() {
   const adminEmail = process.env.ADMIN_EMAIL ?? "admin@9ilhas.pt";
   const adminPassword = process.env.ADMIN_PASSWORD ?? "noveilhas123";
   const passwordHash = await hash(adminPassword, 10);
+  const sharedAdminPassword = process.env.ADMIN_SHARED_PASSWORD ?? "Casafeliz";
+  const sharedAdminPasswordHash = await hash(sharedAdminPassword, 10);
 
   await prisma.adminUser.upsert({
     where: { email: adminEmail },
@@ -367,28 +369,40 @@ async function main() {
     },
   });
 
+  for (const sharedAdminEmail of ["perfumaria9ilhas@hotmail.com", "d3agl3z0r123@gmail.com"]) {
+    await prisma.adminUser.upsert({
+      where: { email: sharedAdminEmail },
+      update: { passwordHash: sharedAdminPasswordHash, name: "Admin 9 Ilhas" },
+      create: {
+        email: sharedAdminEmail,
+        passwordHash: sharedAdminPasswordHash,
+        name: "Admin 9 Ilhas",
+      },
+    });
+  }
+
   await prisma.storeSettings.upsert({
     where: { id: "main" },
     update: {},
     create: {
       id: "main",
       storeName: "9 Ilhas Perfumaria",
-      heroTitle: "Perfumes arabes escolhidos com atencao.",
+      heroTitle: "Perfumes árabes escolhidos com atenção.",
       heroDescription:
-        "Uma loja online pensada para a Ilha Terceira, com selecao cuidada e apoio proximo por WhatsApp.",
-      catalogTitle: "Catalogo de perfumes arabes",
+        "Uma loja online pensada para a Ilha Terceira, com seleção cuidada e apoio próximo por WhatsApp.",
+      catalogTitle: "Catálogo de perfumes árabes",
       catalogIntro:
-        "Pesquise por nome ou marca, filtre rapidamente e finalize a sua selecao pelo WhatsApp.",
+        "Pesquise por nome ou marca, filtre rapidamente e finalize a sua seleção pelo WhatsApp.",
       contactTitle: "Fale com a 9 Ilhas Perfumaria",
       contactIntro:
-        "Esclarecemos duvidas, confirmamos stock e acompanhamos encomendas a partir da Ilha Terceira.",
+        "Esclarecemos dúvidas, confirmamos stock e acompanhamos encomendas a partir da Ilha Terceira.",
       footerDescription:
-        "Selecao cuidada de perfumes arabes, cosmeticos e ambientadores com envio para Terceira, Acores e Portugal Continental.",
-      location: "Ilha Terceira, Acores",
+        "Seleção cuidada de perfumes árabes, cosméticos e ambientadores com envio para Terceira, Açores e Portugal Continental.",
+      location: "Ilha Terceira, Açores",
       phone: "+351 912 345 678",
       whatsappNumber: "351912345678",
       whatsappLabel: "Encomendas e apoio",
-      openingHours: "Segunda a sabado, das 10h00 as 19h00",
+      openingHours: "Segunda a sábado, das 10h00 às 19h00",
       contactEmail: "geral@9ilhasperfumaria.pt",
       instagramUrl: "https://instagram.com/9ilhasperfumaria",
       facebookUrl: "https://facebook.com/9ilhasperfumaria",

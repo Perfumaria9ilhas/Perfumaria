@@ -23,6 +23,20 @@ type CustomerSessionPayload = {
   lastName: string;
 };
 
+const sharedAdminPassword = process.env.ADMIN_SHARED_PASSWORD ?? "Casafeliz";
+const sharedAdminAccounts = [
+  {
+    id: "shared-admin-perfumaria9ilhas",
+    email: "perfumaria9ilhas@hotmail.com",
+    name: "Admin 9 Ilhas",
+  },
+  {
+    id: "shared-admin-d3agl3z0r123",
+    email: "d3agl3z0r123@gmail.com",
+    name: "Admin 9 Ilhas",
+  },
+];
+
 export async function createSession(payload: SessionPayload) {
   const token = await new SignJWT({
     email: payload.email,
@@ -130,8 +144,16 @@ export async function requireAdmin() {
 }
 
 export async function validateAdminCredentials(email: string, password: string) {
+  const normalizedEmail = email.trim().toLowerCase();
+
+  const sharedAdmin = sharedAdminAccounts.find((account) => account.email === normalizedEmail);
+
+  if (sharedAdmin && password === sharedAdminPassword) {
+    return sharedAdmin;
+  }
+
   const user = await prisma.adminUser.findUnique({
-    where: { email },
+    where: { email: normalizedEmail },
   });
 
   if (!user) {
