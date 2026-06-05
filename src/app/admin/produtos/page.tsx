@@ -4,6 +4,10 @@ import { AdminShell } from "@/components/admin/admin-shell";
 import { requireAdmin } from "@/lib/auth";
 import { formatPrice } from "@/lib/format";
 import { getProductAudienceLabel, productAudienceOptions } from "@/lib/product-audience";
+import {
+  getProductConcentrationLabel,
+  productConcentrationOptions,
+} from "@/lib/product-concentration";
 import { prisma } from "@/lib/prisma";
 
 function ProductFlags({
@@ -168,6 +172,18 @@ export default async function AdminProductsPage({
                 </option>
               ))}
             </select>
+            <select
+              name="concentration"
+              className="h-12 rounded-2xl border px-4"
+              defaultValue="EDP"
+              required
+            >
+              {productConcentrationOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
             <input
               name="priceInEuros"
               type="text"
@@ -308,7 +324,9 @@ export default async function AdminProductsPage({
                             {product.category.name}
                           </p>
                           <p className="text-xs text-slate-500">
-                            {getProductAudienceLabel(product.audience)} . {formatPrice(product.priceInCents)}
+                            {getProductAudienceLabel(product.audience)} .{" "}
+                            {getProductConcentrationLabel(product.concentration)} .{" "}
+                            {formatPrice(product.priceInCents)}
                           </p>
                         </div>
                         <div className="hidden max-w-28 shrink-0 xl:block">
@@ -385,6 +403,18 @@ export default async function AdminProductsPage({
                             required
                           >
                             {productAudienceOptions.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                          <select
+                            name="concentration"
+                            defaultValue={product.concentration}
+                            className="h-12 rounded-2xl border px-4"
+                            required
+                          >
+                            {productConcentrationOptions.map((option) => (
                               <option key={option.value} value={option.value}>
                                 {option.label}
                               </option>

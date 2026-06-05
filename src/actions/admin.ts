@@ -1,7 +1,7 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { ProductAudience } from "@prisma/client";
+import { ProductAudience, ProductConcentration } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -48,6 +48,7 @@ const productSchema = z.object({
   salePriceInEuros: z.string().optional().nullable(),
   stock: z.coerce.number().int().min(0),
   audience: z.nativeEnum(ProductAudience),
+  concentration: z.nativeEnum(ProductConcentration),
   availableInFiveMl: z.boolean().default(false),
   active: z.boolean().default(false),
   featured: z.boolean().default(false),
@@ -280,6 +281,7 @@ export async function saveProduct(formData: FormData) {
     salePriceInEuros: formData.get("salePriceInEuros") || undefined,
     stock: formData.get("stock"),
     audience: formData.get("audience"),
+    concentration: formData.get("concentration"),
     availableInFiveMl: formData.get("availableInFiveMl") === "on",
     active: formData.get("active") === "on",
     featured: formData.get("featured") === "on",
@@ -317,6 +319,7 @@ export async function saveProduct(formData: FormData) {
     stock: parsed.stock,
     imageUrl: finalImageUrl,
     audience: parsed.audience,
+    concentration: parsed.concentration,
     availableInFiveMl: parsed.availableInFiveMl,
     active: parsed.active,
     featured: parsed.featured,

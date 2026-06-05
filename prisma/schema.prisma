@@ -59,6 +59,7 @@ model Product {
   salePriceInCents Int?
   stock            Int
   audience         ProductAudience   @default(UNISSEXO)
+  concentration    ProductConcentration @default(EDP)
   availableInFiveMl Boolean          @default(true)
   active           Boolean           @default(true)
   featured         Boolean           @default(false)
@@ -80,6 +81,14 @@ enum ProductAudience {
   FEMININO
   MASCULINO
   UNISSEXO
+}
+
+enum ProductConcentration {
+  EDT
+  EDP
+  PARFUM
+  EXTRAIT
+  ELIXIR
 }
 
 model SiteOrder {

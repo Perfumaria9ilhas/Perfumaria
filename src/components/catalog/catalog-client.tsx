@@ -7,6 +7,7 @@ import { useSearchParams } from "next/navigation";
 import { useCart } from "@/components/providers/cart-provider";
 import { formatPrice } from "@/lib/format";
 import { getProductAudienceLabel, productAudienceOptions, type ProductAudienceValue } from "@/lib/product-audience";
+import { getProductConcentrationDetails } from "@/lib/product-concentration";
 import {
   buildCartLineId,
   FIVE_ML_PRICE_IN_CENTS,
@@ -318,10 +319,14 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
     });
   }
 
+  const selectedConcentration = selectedProduct
+    ? getProductConcentrationDetails(selectedProduct.concentration)
+    : null;
+
   return (
     <div className="space-y-8">
       {toast ? <Toast message={toast.message} tone={toast.tone} /> : null}
-      {selectedProduct ? (
+      {selectedProduct && selectedConcentration ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(43,30,18,0.55)] px-4 py-6"
           onClick={() => setSelectedProduct(null)}
@@ -354,6 +359,14 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
               <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--atlantic)]">
                 {selectedProduct.category.name} · {getProductAudienceLabel(selectedProduct.audience)}
               </p>
+              <div className="rounded-[1.1rem] border border-[rgba(185,154,118,0.16)] bg-[rgba(255,250,243,0.76)] px-3 py-3">
+                <p className="text-sm font-semibold text-[color:var(--ink)]">
+                  {selectedConcentration.icon} {selectedConcentration.label}
+                </p>
+                <p className="mt-1 text-xs uppercase tracking-[0.18em] text-[color:var(--atlantic)]">
+                  {selectedConcentration.description}
+                </p>
+              </div>
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
@@ -531,6 +544,7 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
             product.salePriceInCents < product.priceInCents;
           const currentPrice = getDisplayPrice(product, selectedSize);
           const shouldPreloadImage = index < 8;
+          const concentration = getProductConcentrationDetails(product.concentration);
 
           return (
             <article
@@ -568,6 +582,14 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
                     <span className="rounded-full bg-[rgba(215,191,160,0.24)] px-2.5 py-1 text-[9px] uppercase tracking-[0.28em] text-[color:#8a623a] sm:text-[10px]">
                       {getProductAudienceLabel(product.audience)}
                     </span>
+                  </div>
+                  <div className="space-y-0.5">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[color:var(--atlantic)]">
+                      {concentration.icon} {concentration.label}
+                    </p>
+                    <p className="text-[11px] text-slate-500">
+                      {concentration.description}
+                    </p>
                   </div>
 
                   <h3 className="line-clamp-2 min-h-[2.4rem] font-serif text-[1.02rem] leading-tight text-[color:var(--ink)] sm:min-h-0 sm:text-[1.5rem]">
