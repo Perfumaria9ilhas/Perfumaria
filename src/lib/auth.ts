@@ -28,7 +28,7 @@ const sharedAdminAccounts = [
     id: "shared-admin-perfumaria9ilhas",
     email: "perfumaria9ilhas@hotmail.com",
     name: "Admin 9 Ilhas",
-    password: process.env.PERFUMARIA9ILHAS_ADMIN_PASSWORD ?? "ArabiaAçores",
+    password: process.env.PERFUMARIA9ILHAS_ADMIN_PASSWORD ?? "Casafeliz",
   },
   {
     id: "shared-admin-d3agl3z0r123",
