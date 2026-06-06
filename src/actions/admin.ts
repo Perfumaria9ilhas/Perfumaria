@@ -518,8 +518,26 @@ export async function loginCustomer(formData: FormData) {
     redirect("/conta?loginError=1");
   }
 
+  const normalizedEmail = normalizeCustomerEmail(parsed.data.email);
+
+  const admin = await validateAdminCredentials(
+    normalizedEmail,
+    parsed.data.password,
+  );
+
+  if (admin) {
+    await clearCustomerSession();
+    await createSession({
+      sub: admin.id,
+      email: admin.email,
+      name: admin.name,
+    });
+
+    redirect("/admin");
+  }
+
   const customer = await validateCustomerCredentials(
-    normalizeCustomerEmail(parsed.data.email),
+    normalizedEmail,
     parsed.data.password,
   );
 
@@ -527,6 +545,7 @@ export async function loginCustomer(formData: FormData) {
     redirect("/conta?loginError=1");
   }
 
+  await clearSession();
   await createCustomerSession({
     sub: customer.id,
     email: customer.email,
