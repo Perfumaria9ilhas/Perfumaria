@@ -61,6 +61,7 @@ model Product {
   audience         ProductAudience   @default(UNISSEXO)
   concentration    ProductConcentration @default(EDP)
   availableInFiveMl Boolean          @default(true)
+  availableInTenMl  Boolean          @default(false)
   active           Boolean           @default(true)
   featured         Boolean           @default(false)
   bestseller       Boolean           @default(false)

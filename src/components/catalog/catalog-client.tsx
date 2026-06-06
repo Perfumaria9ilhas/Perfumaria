@@ -11,6 +11,7 @@ import { getProductConcentrationDetails } from "@/lib/product-concentration";
 import {
   buildCartLineId,
   FIVE_ML_PRICE_IN_CENTS,
+  TEN_ML_PRICE_IN_CENTS,
   getProductSizeLabel,
   type ProductSizeValue,
 } from "@/lib/product-sizes";
@@ -233,6 +234,10 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
       return FIVE_ML_PRICE_IN_CENTS;
     }
 
+    if (size === "10ml") {
+      return TEN_ML_PRICE_IN_CENTS;
+    }
+
     return product.salePriceInCents && product.salePriceInCents < product.priceInCents
       ? product.salePriceInCents
       : product.priceInCents;
@@ -379,6 +384,19 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
                 >
                   100 ml
                 </button>
+                {selectedProduct.availableInTenMl ? (
+                  <button
+                    type="button"
+                    onClick={() => setProductSize(selectedProduct.id, "10ml")}
+                    className={`rounded-full border px-3 py-2 text-xs font-semibold transition ${
+                      getSelectedSize(selectedProduct) === "10ml"
+                        ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-white"
+                        : "border-[color:var(--line)] bg-[color:var(--sand-soft)] text-[color:var(--ink)]"
+                    }`}
+                  >
+                    10 ml · {formatPrice(TEN_ML_PRICE_IN_CENTS)}
+                  </button>
+                ) : null}
                 {selectedProduct.availableInFiveMl ? (
                   <button
                     type="button"
@@ -610,6 +628,19 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
                     >
                       100 ml
                     </button>
+                    {product.availableInTenMl ? (
+                      <button
+                        type="button"
+                        onClick={() => setProductSize(product.id, "10ml")}
+                        className={`rounded-full border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] transition ${
+                          selectedSize === "10ml"
+                            ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-white"
+                            : "border-[color:var(--line)] bg-white text-slate-600 hover:border-[rgba(185,154,118,0.4)]"
+                        }`}
+                      >
+                        10 ml
+                      </button>
+                    ) : null}
                     {product.availableInFiveMl ? (
                       <button
                         type="button"

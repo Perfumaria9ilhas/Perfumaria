@@ -16,12 +16,14 @@ function ProductFlags({
   bestseller,
   hasDiscount,
   availableInFiveMl,
+  availableInTenMl,
 }: {
   active: boolean;
   featured: boolean;
   bestseller: boolean;
   hasDiscount: boolean;
   availableInFiveMl: boolean;
+  availableInTenMl: boolean;
 }) {
   const items = [
     {
@@ -49,6 +51,11 @@ function ProductFlags({
       label: "5 ml",
       visible: availableInFiveMl,
       className: "bg-sky-50 text-sky-700",
+    },
+    {
+      label: "10 ml",
+      visible: availableInTenMl,
+      className: "bg-violet-50 text-violet-700",
     },
   ];
 
@@ -92,6 +99,23 @@ function centsToEuroInput(value: number | null) {
   }
 
   return (value / 100).toFixed(2).replace(".", ",");
+}
+
+function getMlStatusText(availableInFiveMl: boolean, availableInTenMl: boolean, imageUrl: string) {
+  if (availableInFiveMl || availableInTenMl) {
+    const activeSizes = [
+      availableInFiveMl ? "5 ml ativo a 3,50 €" : null,
+      availableInTenMl ? "10 ml ativo a 6,50 €" : null,
+    ].filter(Boolean);
+
+    return `${activeSizes.join(" · ")}.`;
+  }
+
+  if (imageUrl) {
+    return "Imagem guardada.";
+  }
+
+  return "Sem imagem. O logótipo da loja aparece como base até fazeres upload.";
 }
 
 export default async function AdminProductsPage({
@@ -215,7 +239,7 @@ export default async function AdminProductsPage({
               className="min-h-32 rounded-2xl border px-4 py-3 md:col-span-2"
               required
             />
-            <div className="grid gap-3 md:col-span-2 md:grid-cols-4">
+            <div className="grid gap-3 md:col-span-2 md:grid-cols-5">
               <label className="flex items-center gap-3 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-700">
                 <input
                   name="availableInFiveMl"
@@ -224,6 +248,10 @@ export default async function AdminProductsPage({
                   className="h-4 w-4"
                 />
                 Disponível em 5 ml
+              </label>
+              <label className="flex items-center gap-3 rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-700">
+                <input name="availableInTenMl" type="checkbox" className="h-4 w-4" />
+                Disponível em 10 ml
               </label>
               <label className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
                 <input name="active" type="checkbox" defaultChecked className="h-4 w-4" />
@@ -237,8 +265,8 @@ export default async function AdminProductsPage({
                 <input name="bestseller" type="checkbox" className="h-4 w-4" />
                 Bestseller
               </label>
-              <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--sand-soft)] px-4 py-3 text-sm text-slate-600">
-                Se ativares 5 ml, o valor na loja fica sempre a 3,50 €.
+              <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--sand-soft)] px-4 py-3 text-sm text-slate-600 md:col-span-2">
+                Se ativares 5 ml fica sempre a 3,50 € e 10 ml fica sempre a 6,50 €.
               </div>
             </div>
             <button className="rounded-full bg-[color:var(--atlantic)] px-5 py-3 text-sm font-semibold text-white md:col-span-2">
@@ -320,12 +348,10 @@ export default async function AdminProductsPage({
                           <h3 className="line-clamp-2 font-serif text-2xl leading-tight text-[color:var(--ink)]">
                             {product.name}
                           </h3>
+                          <p className="text-xs text-slate-500">{product.category.name}</p>
                           <p className="text-xs text-slate-500">
-                            {product.category.name}
-                          </p>
-                          <p className="text-xs text-slate-500">
-                            {getProductAudienceLabel(product.audience)} .{" "}
-                            {getProductConcentrationLabel(product.concentration)} .{" "}
+                            {getProductAudienceLabel(product.audience)} ·{" "}
+                            {getProductConcentrationLabel(product.concentration)} ·{" "}
                             {formatPrice(product.priceInCents)}
                           </p>
                         </div>
@@ -336,6 +362,7 @@ export default async function AdminProductsPage({
                             bestseller={product.bestseller}
                             hasDiscount={hasDiscount}
                             availableInFiveMl={product.availableInFiveMl}
+                            availableInTenMl={product.availableInTenMl}
                           />
                         </div>
                         <span className="text-sm font-semibold text-[color:var(--atlantic)] transition group-open:rotate-45">
@@ -351,6 +378,7 @@ export default async function AdminProductsPage({
                             bestseller={product.bestseller}
                             hasDiscount={hasDiscount}
                             availableInFiveMl={product.availableInFiveMl}
+                            availableInTenMl={product.availableInTenMl}
                           />
                         </div>
 
@@ -457,7 +485,7 @@ export default async function AdminProductsPage({
                             className="min-h-32 rounded-2xl border px-4 py-3 md:col-span-2"
                             required
                           />
-                          <div className="grid gap-3 md:col-span-2 md:grid-cols-4">
+                          <div className="grid gap-3 md:col-span-2 md:grid-cols-5">
                             <label className="flex items-center gap-3 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-700">
                               <input
                                 name="availableInFiveMl"
@@ -466,6 +494,15 @@ export default async function AdminProductsPage({
                                 className="h-4 w-4"
                               />
                               Disponível em 5 ml
+                            </label>
+                            <label className="flex items-center gap-3 rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-700">
+                              <input
+                                name="availableInTenMl"
+                                type="checkbox"
+                                defaultChecked={product.availableInTenMl}
+                                className="h-4 w-4"
+                              />
+                              Disponível em 10 ml
                             </label>
                             <label className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
                               <input
@@ -494,12 +531,12 @@ export default async function AdminProductsPage({
                               />
                               Bestseller
                             </label>
-                            <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--sand-soft)] px-4 py-3 text-sm text-slate-600">
-                              {product.availableInFiveMl
-                                ? "5 ml ativo a 3,50 €."
-                                : product.imageUrl
-                                  ? "Imagem guardada."
-                                  : "Sem imagem. O logótipo da loja aparece como base até fazeres upload."}
+                            <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--sand-soft)] px-4 py-3 text-sm text-slate-600 md:col-span-2">
+                              {getMlStatusText(
+                                product.availableInFiveMl,
+                                product.availableInTenMl,
+                                product.imageUrl,
+                              )}
                             </div>
                           </div>
                           <button className="rounded-full bg-[color:var(--atlantic)] px-5 py-3 text-sm font-semibold text-white md:col-span-2">
@@ -511,7 +548,7 @@ export default async function AdminProductsPage({
                           <p className="text-sm text-slate-500">
                             Preço base {formatPrice(product.priceInCents)}
                             {hasDiscount
-                              ? ` . desconto ${formatPrice(product.salePriceInCents ?? 0)}`
+                              ? ` · desconto ${formatPrice(product.salePriceInCents ?? 0)}`
                               : ""}
                           </p>
                           <form action={deleteProduct}>

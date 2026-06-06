@@ -10,6 +10,7 @@ import { getProductAudienceLabel } from "@/lib/product-audience";
 import {
   buildCartLineId,
   FIVE_ML_PRICE_IN_CENTS,
+  TEN_ML_PRICE_IN_CENTS,
   getProductSizeLabel,
   type ProductSizeValue,
 } from "@/lib/product-sizes";
@@ -97,6 +98,10 @@ export function FeaturedProductsSlider({
       return FIVE_ML_PRICE_IN_CENTS;
     }
 
+    if (size === "10ml") {
+      return TEN_ML_PRICE_IN_CENTS;
+    }
+
     return product.salePriceInCents && product.salePriceInCents < product.priceInCents
       ? product.salePriceInCents
       : product.priceInCents;
@@ -178,6 +183,19 @@ export function FeaturedProductsSlider({
                 >
                   100 ml
                 </button>
+                {selectedProduct.availableInTenMl ? (
+                  <button
+                    type="button"
+                    onClick={() => setProductSize(selectedProduct.id, "10ml")}
+                    className={`rounded-full border px-3 py-2 text-xs font-semibold transition ${
+                      getSelectedSize(selectedProduct) === "10ml"
+                        ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-white"
+                        : "border-[color:var(--line)] bg-[color:var(--sand-soft)] text-[color:var(--ink)]"
+                    }`}
+                  >
+                    10 ml Â· {formatPrice(TEN_ML_PRICE_IN_CENTS)}
+                  </button>
+                ) : null}
                 {selectedProduct.availableInFiveMl ? (
                   <button
                     type="button"
@@ -271,6 +289,19 @@ export function FeaturedProductsSlider({
                     >
                       Frasco Original 100ml
                     </button>
+                    {product.availableInTenMl ? (
+                      <button
+                        type="button"
+                        onClick={() => setProductSize(product.id, "10ml")}
+                        className={`rounded-md border px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.1em] transition ${
+                          selectedSize === "10ml"
+                            ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-white"
+                            : "border-[color:var(--line)] bg-[color:var(--sand-soft)] text-slate-600"
+                        }`}
+                      >
+                        Decant 10ml
+                      </button>
+                    ) : null}
                     {product.availableInFiveMl ? (
                       <button
                         type="button"
