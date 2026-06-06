@@ -104,6 +104,10 @@ const storeReviewSchema = z.object({
   comment: z.string().min(6).max(500),
 });
 
+function normalizeCustomerEmail(email: string) {
+  return email.trim().toLowerCase();
+}
+
 async function saveUploadedImage(file: File) {
   const bytes = Buffer.from(await file.arrayBuffer());
   const rawExtension =
@@ -469,13 +473,15 @@ export async function createCustomerAccount(formData: FormData) {
     redirect("/conta?registerError=1");
   }
 
+  const normalizedEmail = normalizeCustomerEmail(parsed.data.email);
   const passwordHash = await hash(parsed.data.password, 10);
 
   const customer = await prisma.customerAccount.upsert({
-    where: { email: parsed.data.email },
+    where: { email: normalizedEmail },
     update: {
       firstName: parsed.data.firstName,
       lastName: parsed.data.lastName,
+      email: normalizedEmail,
       phone: parsed.data.phone,
       address: parsed.data.address,
       passwordHash,
@@ -483,7 +489,7 @@ export async function createCustomerAccount(formData: FormData) {
     create: {
       firstName: parsed.data.firstName,
       lastName: parsed.data.lastName,
-      email: parsed.data.email,
+      email: normalizedEmail,
       phone: parsed.data.phone,
       address: parsed.data.address,
       passwordHash,
@@ -513,7 +519,7 @@ export async function loginCustomer(formData: FormData) {
   }
 
   const customer = await validateCustomerCredentials(
-    parsed.data.email,
+    normalizeCustomerEmail(parsed.data.email),
     parsed.data.password,
   );
 
