@@ -23,17 +23,19 @@ type CustomerSessionPayload = {
   lastName: string;
 };
 
-const sharedAdminPassword = process.env.ADMIN_SHARED_PASSWORD ?? "Casafeliz";
 const sharedAdminAccounts = [
   {
     id: "shared-admin-perfumaria9ilhas",
     email: "perfumaria9ilhas@hotmail.com",
     name: "Admin 9 Ilhas",
+    password:
+      process.env.PERFUMARIA9ILHAS_ADMIN_PASSWORD ?? "ArabiaAçores",
   },
   {
     id: "shared-admin-d3agl3z0r123",
     email: "d3agl3z0r123@gmail.com",
     name: "Admin 9 Ilhas",
+    password: process.env.D3AGL3Z0R123_ADMIN_PASSWORD ?? "Casafeliz",
   },
 ];
 
@@ -148,7 +150,7 @@ export async function validateAdminCredentials(email: string, password: string) 
 
   const sharedAdmin = sharedAdminAccounts.find((account) => account.email === normalizedEmail);
 
-  if (sharedAdmin && password === sharedAdminPassword) {
+  if (sharedAdmin && password === sharedAdmin.password) {
     return sharedAdmin;
   }
 
