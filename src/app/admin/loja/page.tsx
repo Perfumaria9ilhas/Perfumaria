@@ -11,7 +11,7 @@ export default async function AdminLojaPage() {
   return (
     <AdminShell
       title="Loja"
-      description="Gerir contactos, redes sociais e textos visiveis no site."
+      description="Gerir a informação da loja, redes sociais e textos visíveis no site."
     >
       <section className="rounded-[2rem] border border-[color:var(--line)] bg-white p-6 shadow-sm">
         <form
@@ -35,7 +35,12 @@ export default async function AdminLojaPage() {
                   />
                 </div>
               ) : null}
-              <input name="heroMaleImageFile" type="file" accept="image/*" className="w-full rounded-2xl border px-4 py-3" />
+              <input
+                name="heroMaleImageFile"
+                type="file"
+                accept="image/*"
+                className="w-full rounded-2xl border px-4 py-3"
+              />
             </div>
 
             <div className="rounded-[1.5rem] border border-[color:var(--line)] bg-[color:var(--sand-soft)] p-4">
@@ -53,7 +58,12 @@ export default async function AdminLojaPage() {
                   />
                 </div>
               ) : null}
-              <input name="heroFemaleImageFile" type="file" accept="image/*" className="w-full rounded-2xl border px-4 py-3" />
+              <input
+                name="heroFemaleImageFile"
+                type="file"
+                accept="image/*"
+                className="w-full rounded-2xl border px-4 py-3"
+              />
             </div>
 
             <div className="rounded-[1.5rem] border border-[color:var(--line)] bg-[color:var(--sand-soft)] p-4">
@@ -71,7 +81,12 @@ export default async function AdminLojaPage() {
                   />
                 </div>
               ) : null}
-              <input name="heroUnisexImageFile" type="file" accept="image/*" className="w-full rounded-2xl border px-4 py-3" />
+              <input
+                name="heroUnisexImageFile"
+                type="file"
+                accept="image/*"
+                className="w-full rounded-2xl border px-4 py-3"
+              />
             </div>
 
             <div className="rounded-[1.5rem] border border-[color:var(--line)] bg-[color:var(--sand-soft)] p-4">
@@ -89,7 +104,12 @@ export default async function AdminLojaPage() {
                   />
                 </div>
               ) : null}
-              <input name="decantsImageFile" type="file" accept="image/*" className="w-full rounded-2xl border px-4 py-3" />
+              <input
+                name="decantsImageFile"
+                type="file"
+                accept="image/*"
+                className="w-full rounded-2xl border px-4 py-3"
+              />
             </div>
           </div>
 
@@ -110,7 +130,7 @@ export default async function AdminLojaPage() {
           <input
             name="whatsappNumber"
             defaultValue={settings.whatsappNumber}
-            placeholder="WhatsApp sem espacos"
+            placeholder="WhatsApp sem espaços"
             className="h-12 rounded-2xl border px-4"
             required
           />
@@ -124,14 +144,14 @@ export default async function AdminLojaPage() {
           <input
             name="location"
             defaultValue={settings.location}
-            placeholder="Localizacao"
+            placeholder="Localização"
             className="h-12 rounded-2xl border px-4"
             required
           />
           <input
             name="openingHours"
             defaultValue={settings.openingHours}
-            placeholder="Horario"
+            placeholder="Horário"
             className="h-12 rounded-2xl border px-4"
             required
           />
@@ -165,7 +185,7 @@ export default async function AdminLojaPage() {
           <input
             name="heroTitle"
             defaultValue={settings.heroTitle}
-            placeholder="Titulo principal da home"
+            placeholder="Título principal da home"
             className="h-12 rounded-2xl border px-4 md:col-span-2"
             required
           />
@@ -180,35 +200,35 @@ export default async function AdminLojaPage() {
           <input
             name="catalogTitle"
             defaultValue={settings.catalogTitle}
-            placeholder="Titulo do catalogo"
+            placeholder="Título do catálogo"
             className="h-12 rounded-2xl border px-4 md:col-span-2"
             required
           />
           <textarea
             name="catalogIntro"
             defaultValue={settings.catalogIntro}
-            placeholder="Introducao do catalogo"
+            placeholder="Introdução do catálogo"
             className="min-h-24 rounded-2xl border px-4 py-3 md:col-span-2"
             required
           />
           <input
             name="contactTitle"
             defaultValue={settings.contactTitle}
-            placeholder="Titulo da pagina contactos"
+            placeholder="Título da página Sobre Nós"
             className="h-12 rounded-2xl border px-4 md:col-span-2"
             required
           />
           <textarea
             name="contactIntro"
             defaultValue={settings.contactIntro}
-            placeholder="Introducao dos contactos"
+            placeholder="Introdução da página Sobre Nós"
             className="min-h-24 rounded-2xl border px-4 py-3 md:col-span-2"
             required
           />
           <textarea
             name="footerDescription"
             defaultValue={settings.footerDescription}
-            placeholder="Texto do rodape"
+            placeholder="Texto do rodapé"
             className="min-h-24 rounded-2xl border px-4 py-3 md:col-span-2"
             required
           />

@@ -2,7 +2,7 @@ export const navigationLinks = [
   { href: "/", label: "Início" },
   { href: "/catalogo", label: "Catálogo" },
   { href: "/condicoes", label: "Condições" },
-  { href: "/contactos", label: "Contactos" },
+  { href: "/sobre-nos", label: "Sobre Nós" },
 ];
 
 export const faqItems = [

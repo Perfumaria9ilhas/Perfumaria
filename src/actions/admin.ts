@@ -455,6 +455,7 @@ export async function saveStoreSettings(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/catalogo");
   revalidatePath("/contactos");
+  revalidatePath("/sobre-nos");
   revalidatePath("/condicoes");
   revalidatePath("/admin");
   revalidatePath("/admin/loja");

@@ -17,7 +17,7 @@ export function SiteFooter({
             "Perfumes 100% Originais",
             "Entrega Local",
             "Apoio por WhatsApp",
-            "Decants Disponiveis",
+            "Decants Disponíveis",
             "Atendimento Personalizado",
           ].map((item) => (
             <div
@@ -61,11 +61,11 @@ export function SiteFooter({
 
           <div className="space-y-3">
             <h4 className="text-sm font-semibold uppercase tracking-[0.24em] text-white">
-              Links Rapidos
+              Links Rápidos
             </h4>
             <div className="space-y-2 text-sm text-[rgba(239,228,212,0.82)]">
               <Link className="block hover:text-white" href="/">
-                Inicio
+                Início
               </Link>
               <Link className="block hover:text-white" href="/catalogo">
                 Perfumes
@@ -76,8 +76,8 @@ export function SiteFooter({
               <Link className="block hover:text-white" href="/conta">
                 Conta
               </Link>
-              <Link className="block hover:text-white" href="/contactos">
-                Contactos
+              <Link className="block hover:text-white" href="/sobre-nos">
+                Sobre Nós
               </Link>
             </div>
           </div>
@@ -99,7 +99,7 @@ export function SiteFooter({
               Newsletter
             </h4>
             <p className="text-sm leading-7 text-[rgba(239,228,212,0.82)]">
-              Receba novidades e promocoes exclusivas.
+              Receba novidades e promoções exclusivas.
             </p>
             <div className="space-y-3">
               <input
@@ -122,10 +122,10 @@ export function SiteFooter({
             <p>© 2026 Perfumaria 9 Ilhas. Todos os direitos reservados.</p>
             <div className="flex gap-4">
               <Link href="/condicoes" className="hover:text-white">
-                Politica de Privacidade
+                Política de Privacidade
               </Link>
               <Link href="/condicoes" className="hover:text-white">
-                Termos e Condicoes
+                Termos e Condições
               </Link>
             </div>
           </div>
