@@ -62,18 +62,21 @@ const settingsSchema = z.object({
   heroDescription: z.string().min(10),
   catalogTitle: z.string().min(4),
   catalogIntro: z.string().min(10),
+  footerDescription: z.string().min(10),
+  instagramUrl: z.string().optional(),
+  facebookUrl: z.string().optional(),
+  tiktokUrl: z.string().optional(),
+});
+
+const aboutSettingsSchema = z.object({
   contactTitle: z.string().min(4),
   contactIntro: z.string().min(10),
-  footerDescription: z.string().min(10),
   location: z.string().min(2),
   phone: z.string().min(6),
   whatsappNumber: z.string().min(6),
   whatsappLabel: z.string().min(2),
   openingHours: z.string().min(4),
   contactEmail: z.string().optional(),
-  instagramUrl: z.string().optional(),
-  facebookUrl: z.string().optional(),
-  tiktokUrl: z.string().optional(),
 });
 
 const customerAccountSchema = z.object({
@@ -371,6 +374,14 @@ export async function saveStoreSettings(formData: FormData) {
       heroFemaleImageUrl: true,
       heroUnisexImageUrl: true,
       decantsImageUrl: true,
+      contactTitle: true,
+      contactIntro: true,
+      location: true,
+      phone: true,
+      whatsappNumber: true,
+      whatsappLabel: true,
+      openingHours: true,
+      contactEmail: true,
     },
   });
 
@@ -380,15 +391,7 @@ export async function saveStoreSettings(formData: FormData) {
     heroDescription: formData.get("heroDescription"),
     catalogTitle: formData.get("catalogTitle"),
     catalogIntro: formData.get("catalogIntro"),
-    contactTitle: formData.get("contactTitle"),
-    contactIntro: formData.get("contactIntro"),
     footerDescription: formData.get("footerDescription"),
-    location: formData.get("location"),
-    phone: formData.get("phone"),
-    whatsappNumber: formData.get("whatsappNumber"),
-    whatsappLabel: formData.get("whatsappLabel"),
-    openingHours: formData.get("openingHours"),
-    contactEmail: formData.get("contactEmail")?.toString().trim() || undefined,
     instagramUrl: formData.get("instagramUrl")?.toString().trim() || undefined,
     facebookUrl: formData.get("facebookUrl")?.toString().trim() || undefined,
     tiktokUrl: formData.get("tiktokUrl")?.toString().trim() || undefined,
@@ -449,6 +452,17 @@ export async function saveStoreSettings(formData: FormData) {
       heroFemaleImageUrl,
       heroUnisexImageUrl,
       decantsImageUrl,
+      contactTitle: currentSettings?.contactTitle ?? "Sobre Nós",
+      contactIntro:
+        currentSettings?.contactIntro ??
+        "Somos a Ana e o Carlos, da Ilha Terceira. Criámos a Perfumaria 9 Ilhas para trazer perfumes árabes originais aos Açores, com atendimento próximo, produtos originais e entrega rápida.",
+      location: currentSettings?.location ?? "Ilha Terceira, Açores",
+      phone: currentSettings?.phone ?? "+351 965420948",
+      whatsappNumber: currentSettings?.whatsappNumber ?? "351965420948",
+      whatsappLabel: currentSettings?.whatsappLabel ?? "Apoio por WhatsApp",
+      openingHours:
+        currentSettings?.openingHours ?? "Segunda a sábado, das 08h00 às 22h00",
+      contactEmail: currentSettings?.contactEmail ?? "perfumaria9ilhas@hotmail.com",
     },
   });
 
@@ -460,6 +474,45 @@ export async function saveStoreSettings(formData: FormData) {
   revalidatePath("/admin");
   revalidatePath("/admin/loja");
   redirect("/admin/loja?saved=1");
+}
+
+export async function saveAboutSettings(formData: FormData) {
+  await requireAdmin();
+
+  const parsed = aboutSettingsSchema.parse({
+    contactTitle: formData.get("contactTitle"),
+    contactIntro: formData.get("contactIntro"),
+    location: formData.get("location"),
+    phone: formData.get("phone"),
+    whatsappNumber: formData.get("whatsappNumber"),
+    whatsappLabel: formData.get("whatsappLabel"),
+    openingHours: formData.get("openingHours"),
+    contactEmail: formData.get("contactEmail")?.toString().trim() || undefined,
+  });
+
+  await prisma.storeSettings.upsert({
+    where: { id: "main" },
+    update: parsed,
+    create: {
+      id: "main",
+      storeName: "9 Ilhas Perfumaria",
+      heroTitle: "Perfumes árabes com presença, entrega próxima.",
+      heroDescription:
+        "Perfumes árabes, cosméticos e ambientadores com atendimento a partir da Ilha Terceira.",
+      catalogTitle: "Catálogo de perfumes árabes",
+      catalogIntro:
+        "Escolha por marca, pesquise rapidamente e adicione ao carrinho para finalizar no WhatsApp.",
+      footerDescription:
+        "Seleção cuidada de perfumes árabes, cosméticos e ambientadores com apoio a partir da Ilha Terceira.",
+      ...parsed,
+    },
+  });
+
+  revalidatePath("/sobre-nos");
+  revalidatePath("/contactos");
+  revalidatePath("/admin");
+  revalidatePath("/admin/sobre-nos");
+  redirect("/admin/sobre-nos?saved=1");
 }
 
 export async function createCustomerAccount(formData: FormData) {

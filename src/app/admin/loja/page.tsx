@@ -11,8 +11,26 @@ export default async function AdminLojaPage() {
   return (
     <AdminShell
       title="Loja"
-      description="Gerir a informação da loja, redes sociais e textos visíveis no site."
+      description="Gerir a informação principal da loja, imagens e redes sociais."
     >
+      <section className="mb-5 rounded-[1.8rem] border border-[color:var(--line)] bg-[color:var(--sand-soft)] p-5 shadow-sm">
+        <p className="text-xs uppercase tracking-[0.28em] text-[color:var(--gold)]">
+          Sobre Nós
+        </p>
+        <p className="mt-2 text-sm leading-7 text-slate-700">
+          Os textos institucionais, contactos e introdução da página Sobre Nós são
+          geridos na aba dedicada do admin.
+        </p>
+        <div className="mt-4">
+          <a
+            href="/admin/sobre-nos"
+            className="inline-flex rounded-full border border-[color:var(--line)] bg-white px-4 py-2 text-sm font-semibold text-[color:var(--ink)] transition hover:border-[color:var(--gold)]"
+          >
+            Abrir aba Sobre Nós
+          </a>
+        </div>
+      </section>
+
       <section className="rounded-[2rem] border border-[color:var(--line)] bg-white p-6 shadow-sm">
         <form
           action={saveStoreSettings}
@@ -120,47 +138,7 @@ export default async function AdminLojaPage() {
             className="h-12 rounded-2xl border px-4"
             required
           />
-          <input
-            name="phone"
-            defaultValue={settings.phone}
-            placeholder="Telefone"
-            className="h-12 rounded-2xl border px-4"
-            required
-          />
-          <input
-            name="whatsappNumber"
-            defaultValue={settings.whatsappNumber}
-            placeholder="WhatsApp sem espaços"
-            className="h-12 rounded-2xl border px-4"
-            required
-          />
-          <input
-            name="whatsappLabel"
-            defaultValue={settings.whatsappLabel}
-            placeholder="Texto do WhatsApp"
-            className="h-12 rounded-2xl border px-4"
-            required
-          />
-          <input
-            name="location"
-            defaultValue={settings.location}
-            placeholder="Localização"
-            className="h-12 rounded-2xl border px-4"
-            required
-          />
-          <input
-            name="openingHours"
-            defaultValue={settings.openingHours}
-            placeholder="Horário"
-            className="h-12 rounded-2xl border px-4"
-            required
-          />
-          <input
-            name="contactEmail"
-            defaultValue={settings.contactEmail ?? ""}
-            placeholder="Email"
-            className="h-12 rounded-2xl border px-4"
-          />
+
           <div className="grid gap-4 md:col-span-2 md:grid-cols-3">
             <input
               name="instagramUrl"
@@ -185,10 +163,11 @@ export default async function AdminLojaPage() {
           <input
             name="heroTitle"
             defaultValue={settings.heroTitle}
-            placeholder="Título principal da home"
+            placeholder="Titulo principal da home"
             className="h-12 rounded-2xl border px-4 md:col-span-2"
             required
           />
+
           <textarea
             name="heroDescription"
             defaultValue={settings.heroDescription}
@@ -200,35 +179,23 @@ export default async function AdminLojaPage() {
           <input
             name="catalogTitle"
             defaultValue={settings.catalogTitle}
-            placeholder="Título do catálogo"
+            placeholder="Titulo do catalogo"
             className="h-12 rounded-2xl border px-4 md:col-span-2"
             required
           />
+
           <textarea
             name="catalogIntro"
             defaultValue={settings.catalogIntro}
-            placeholder="Introdução do catálogo"
+            placeholder="Introducao do catalogo"
             className="min-h-24 rounded-2xl border px-4 py-3 md:col-span-2"
             required
           />
-          <input
-            name="contactTitle"
-            defaultValue={settings.contactTitle}
-            placeholder="Título da página Sobre Nós"
-            className="h-12 rounded-2xl border px-4 md:col-span-2"
-            required
-          />
-          <textarea
-            name="contactIntro"
-            defaultValue={settings.contactIntro}
-            placeholder="Introdução da página Sobre Nós"
-            className="min-h-24 rounded-2xl border px-4 py-3 md:col-span-2"
-            required
-          />
+
           <textarea
             name="footerDescription"
             defaultValue={settings.footerDescription}
-            placeholder="Texto do rodapé"
+            placeholder="Texto do rodape"
             className="min-h-24 rounded-2xl border px-4 py-3 md:col-span-2"
             required
           />

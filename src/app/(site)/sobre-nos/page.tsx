@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Check, Clock3, Mail, MapPin, MessageCircleMore } from "lucide-react";
+import { getStoreSettings } from "@/lib/store-settings";
 
 const trustPoints = [
   "Perfumes 100% Originais",
@@ -10,34 +11,41 @@ const trustPoints = [
   "Apoio por WhatsApp",
 ];
 
-const contacts = [
-  { icon: MapPin, label: "Localização", value: "Ilha Terceira, Açores" },
-  {
-    icon: MessageCircleMore,
-    label: "WhatsApp",
-    value: "+351 965420948",
-    href: "https://wa.me/351965420948",
-  },
-  {
-    icon: Mail,
-    label: "Email",
-    value: "perfumaria9ilhas@hotmail.com",
-    href: "mailto:perfumaria9ilhas@hotmail.com",
-  },
-  {
-    icon: Clock3,
-    label: "Horário",
-    value: "Segunda a sábado, das 08h00 às 22h00",
-  },
-];
+export default async function SobreNosPage() {
+  const settings = await getStoreSettings();
 
-export default function SobreNosPage() {
+  const contacts = [
+    { icon: MapPin, label: "Localização", value: settings.location },
+    {
+      icon: MessageCircleMore,
+      label: "WhatsApp",
+      value: settings.phone,
+      href: settings.whatsappNumber ? `https://wa.me/${settings.whatsappNumber}` : undefined,
+    },
+    {
+      icon: Mail,
+      label: "Email",
+      value: settings.contactEmail || "perfumaria9ilhas@hotmail.com",
+      href: `mailto:${settings.contactEmail || "perfumaria9ilhas@hotmail.com"}`,
+    },
+    {
+      icon: Clock3,
+      label: "Horário",
+      value: settings.openingHours,
+    },
+  ];
+
   return (
     <div className="mx-auto max-w-[1240px] px-4 py-4 lg:px-5 lg:py-6">
       <section className="rounded-[2.5rem] border border-[color:var(--line)] bg-[linear-gradient(180deg,_#ffffff,_#f6efe4)] p-8 shadow-sm lg:p-10">
-        <p className="text-xs uppercase tracking-[0.32em] text-[color:var(--gold)]">Sobre Nós</p>
-        <h1 className="mt-3 text-4xl text-[color:var(--ink)] md:text-5xl">Sobre Nós</h1>
+        <p className="text-xs uppercase tracking-[0.32em] text-[color:var(--gold)]">
+          Sobre Nós
+        </p>
+        <h1 className="mt-3 text-4xl text-[color:var(--ink)] md:text-5xl">
+          {settings.contactTitle}
+        </h1>
         <div className="mt-6 max-w-4xl space-y-4 text-base leading-8 text-slate-700">
+          <p>{settings.contactIntro}</p>
           <p>
             Somos a Ana e o Carlos, da Ilha Terceira. Criámos a Perfumaria 9 Ilhas para
             trazer perfumes árabes originais aos Açores, com atendimento próximo, produtos
@@ -86,7 +94,9 @@ export default function SobreNosPage() {
       </section>
 
       <section className="mt-6 rounded-[2.5rem] border border-[color:var(--line)] bg-[linear-gradient(180deg,_#ffffff,_#f6efe4)] p-8 shadow-sm lg:p-10">
-        <p className="text-xs uppercase tracking-[0.32em] text-[color:var(--green)]">Contactos</p>
+        <p className="text-xs uppercase tracking-[0.32em] text-[color:var(--green)]">
+          Contactos
+        </p>
         <h2 className="mt-3 text-3xl text-[color:var(--ink)] md:text-4xl">
           Estamos disponíveis para ajudar
         </h2>
