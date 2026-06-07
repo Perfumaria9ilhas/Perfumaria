@@ -13,8 +13,8 @@ import {
   createSession,
   getCurrentCustomer,
   requireAdmin,
-  validateCustomerCredentials,
   validateAdminCredentials,
+  validateCustomerCredentials,
 } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/utils";
@@ -60,6 +60,34 @@ const settingsSchema = z.object({
   storeName: z.string().min(2),
   heroTitle: z.string().min(4),
   heroDescription: z.string().min(10),
+  heroPrimaryButtonLabel: z.string().min(2),
+  heroSecondaryButtonLabel: z.string().min(2),
+  heroBenefitOne: z.string().min(2),
+  heroBenefitTwo: z.string().min(2),
+  heroBenefitThree: z.string().min(2),
+  heroBenefitFour: z.string().min(2),
+  homeFeaturedEyebrow: z.string().min(2),
+  homeFeaturedTitle: z.string().min(4),
+  homeFeaturedDescription: z.string().min(10),
+  homeFeaturedButtonLabel: z.string().min(2),
+  homeDecantsEyebrow: z.string().min(2),
+  homeDecantsTitle: z.string().min(4),
+  homeDecantsDescription: z.string().min(10),
+  homeDecantsButtonLabel: z.string().min(2),
+  homeWhyChooseEyebrow: z.string().min(2),
+  homeWhyChooseTitle: z.string().min(4),
+  whyChooseItemOneTitle: z.string().min(2),
+  whyChooseItemOneText: z.string().min(2),
+  whyChooseItemTwoTitle: z.string().min(2),
+  whyChooseItemTwoText: z.string().min(2),
+  whyChooseItemThreeTitle: z.string().min(2),
+  whyChooseItemThreeText: z.string().min(2),
+  whyChooseItemFourTitle: z.string().min(2),
+  whyChooseItemFourText: z.string().min(2),
+  whyChooseItemFiveTitle: z.string().min(2),
+  whyChooseItemFiveText: z.string().min(2),
+  homeTestimonialsEyebrow: z.string().min(2),
+  homeTestimonialsTitle: z.string().min(4),
   catalogTitle: z.string().min(4),
   catalogIntro: z.string().min(10),
   footerDescription: z.string().min(10),
@@ -79,18 +107,20 @@ const aboutSettingsSchema = z.object({
   contactEmail: z.string().optional(),
 });
 
-const customerAccountSchema = z.object({
-  firstName: z.string().min(2),
-  lastName: z.string().min(2),
-  email: z.email(),
-  phone: z.string().min(6),
-  address: z.string().min(6),
-  password: z.string().min(6),
-  confirmPassword: z.string().min(6),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "As palavras-passe não coincidem.",
-  path: ["confirmPassword"],
-});
+const customerAccountSchema = z
+  .object({
+    firstName: z.string().min(2),
+    lastName: z.string().min(2),
+    email: z.email(),
+    phone: z.string().min(6),
+    address: z.string().min(6),
+    password: z.string().min(6),
+    confirmPassword: z.string().min(6),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "As palavras-passe não coincidem.",
+    path: ["confirmPassword"],
+  });
 
 const customerLoginSchema = z.object({
   email: z.email(),
@@ -162,10 +192,7 @@ export async function loginAdmin(formData: FormData) {
     redirect("/admin/login?error=1");
   }
 
-  const user = await validateAdminCredentials(
-    parsed.data.email,
-    parsed.data.password,
-  );
+  const user = await validateAdminCredentials(parsed.data.email, parsed.data.password);
 
   if (!user) {
     redirect("/admin/login?error=1");
@@ -370,9 +397,6 @@ export async function saveStoreSettings(formData: FormData) {
   const currentSettings = await prisma.storeSettings.findUnique({
     where: { id: "main" },
     select: {
-      heroMaleImageUrl: true,
-      heroFemaleImageUrl: true,
-      heroUnisexImageUrl: true,
       decantsImageUrl: true,
       contactTitle: true,
       contactIntro: true,
@@ -389,6 +413,34 @@ export async function saveStoreSettings(formData: FormData) {
     storeName: formData.get("storeName"),
     heroTitle: formData.get("heroTitle"),
     heroDescription: formData.get("heroDescription"),
+    heroPrimaryButtonLabel: formData.get("heroPrimaryButtonLabel"),
+    heroSecondaryButtonLabel: formData.get("heroSecondaryButtonLabel"),
+    heroBenefitOne: formData.get("heroBenefitOne"),
+    heroBenefitTwo: formData.get("heroBenefitTwo"),
+    heroBenefitThree: formData.get("heroBenefitThree"),
+    heroBenefitFour: formData.get("heroBenefitFour"),
+    homeFeaturedEyebrow: formData.get("homeFeaturedEyebrow"),
+    homeFeaturedTitle: formData.get("homeFeaturedTitle"),
+    homeFeaturedDescription: formData.get("homeFeaturedDescription"),
+    homeFeaturedButtonLabel: formData.get("homeFeaturedButtonLabel"),
+    homeDecantsEyebrow: formData.get("homeDecantsEyebrow"),
+    homeDecantsTitle: formData.get("homeDecantsTitle"),
+    homeDecantsDescription: formData.get("homeDecantsDescription"),
+    homeDecantsButtonLabel: formData.get("homeDecantsButtonLabel"),
+    homeWhyChooseEyebrow: formData.get("homeWhyChooseEyebrow"),
+    homeWhyChooseTitle: formData.get("homeWhyChooseTitle"),
+    whyChooseItemOneTitle: formData.get("whyChooseItemOneTitle"),
+    whyChooseItemOneText: formData.get("whyChooseItemOneText"),
+    whyChooseItemTwoTitle: formData.get("whyChooseItemTwoTitle"),
+    whyChooseItemTwoText: formData.get("whyChooseItemTwoText"),
+    whyChooseItemThreeTitle: formData.get("whyChooseItemThreeTitle"),
+    whyChooseItemThreeText: formData.get("whyChooseItemThreeText"),
+    whyChooseItemFourTitle: formData.get("whyChooseItemFourTitle"),
+    whyChooseItemFourText: formData.get("whyChooseItemFourText"),
+    whyChooseItemFiveTitle: formData.get("whyChooseItemFiveTitle"),
+    whyChooseItemFiveText: formData.get("whyChooseItemFiveText"),
+    homeTestimonialsEyebrow: formData.get("homeTestimonialsEyebrow"),
+    homeTestimonialsTitle: formData.get("homeTestimonialsTitle"),
     catalogTitle: formData.get("catalogTitle"),
     catalogIntro: formData.get("catalogIntro"),
     footerDescription: formData.get("footerDescription"),
@@ -397,35 +449,8 @@ export async function saveStoreSettings(formData: FormData) {
     tiktokUrl: formData.get("tiktokUrl")?.toString().trim() || undefined,
   });
 
-  const heroMaleImageFile = formData.get("heroMaleImageFile");
-  const heroFemaleImageFile = formData.get("heroFemaleImageFile");
-  const heroUnisexImageFile = formData.get("heroUnisexImageFile");
   const decantsImageFile = formData.get("decantsImageFile");
-
-  let heroMaleImageUrl = currentSettings?.heroMaleImageUrl ?? null;
-  let heroFemaleImageUrl = currentSettings?.heroFemaleImageUrl ?? null;
-  let heroUnisexImageUrl = currentSettings?.heroUnisexImageUrl ?? null;
   let decantsImageUrl = currentSettings?.decantsImageUrl ?? null;
-
-  if (typeof heroMaleImageFile !== "string" && heroMaleImageFile && heroMaleImageFile.size > 0) {
-    heroMaleImageUrl = await saveUploadedImage(heroMaleImageFile);
-  }
-
-  if (
-    typeof heroFemaleImageFile !== "string" &&
-    heroFemaleImageFile &&
-    heroFemaleImageFile.size > 0
-  ) {
-    heroFemaleImageUrl = await saveUploadedImage(heroFemaleImageFile);
-  }
-
-  if (
-    typeof heroUnisexImageFile !== "string" &&
-    heroUnisexImageFile &&
-    heroUnisexImageFile.size > 0
-  ) {
-    heroUnisexImageUrl = await saveUploadedImage(heroUnisexImageFile);
-  }
 
   if (typeof decantsImageFile !== "string" && decantsImageFile && decantsImageFile.size > 0) {
     decantsImageUrl = await saveUploadedImage(decantsImageFile);
@@ -436,9 +461,6 @@ export async function saveStoreSettings(formData: FormData) {
     update: {
       ...parsed,
       heroImageUrl: null,
-      heroMaleImageUrl,
-      heroFemaleImageUrl,
-      heroUnisexImageUrl,
       decantsImageUrl,
       heroSlides: {
         deleteMany: {},
@@ -448,9 +470,6 @@ export async function saveStoreSettings(formData: FormData) {
       id: "main",
       ...parsed,
       heroImageUrl: null,
-      heroMaleImageUrl,
-      heroFemaleImageUrl,
-      heroUnisexImageUrl,
       decantsImageUrl,
       contactTitle: currentSettings?.contactTitle ?? "Sobre Nós",
       contactIntro:
@@ -499,11 +518,41 @@ export async function saveAboutSettings(formData: FormData) {
       heroTitle: "Perfumes árabes com presença, entrega próxima.",
       heroDescription:
         "Perfumes árabes, cosméticos e ambientadores com atendimento a partir da Ilha Terceira.",
+      heroPrimaryButtonLabel: "Ver Catálogo",
+      heroSecondaryButtonLabel: "Sobre Nós",
+      heroBenefitOne: "Perfumes 100% Originais",
+      heroBenefitTwo: "Entrega rápida na Ilha Terceira",
+      heroBenefitThree: "Atendimento personalizado por WhatsApp",
+      heroBenefitFour: "Amostras disponíveis em 5ml",
+      homeFeaturedEyebrow: "Mais vendidos",
+      homeFeaturedTitle: "Os Preferidos dos Nossos Clientes",
+      homeFeaturedDescription:
+        "As fragrâncias mais procuradas e recomendadas pelos nossos clientes.",
+      homeFeaturedButtonLabel: "Ver todos",
+      homeDecantsEyebrow: "Serviço complementar",
+      homeDecantsTitle: "Experimente antes de comprar",
+      homeDecantsDescription:
+        "Decants de 5ml e 10ml disponíveis em perfumes selecionados.",
+      homeDecantsButtonLabel: "Ver Decants",
+      homeWhyChooseEyebrow: "Confiança",
+      homeWhyChooseTitle: "Porque Comprar na Perfumaria 9 Ilhas?",
+      whyChooseItemOneTitle: "Entrega rápida na Ilha Terceira",
+      whyChooseItemOneText: "Receba com rapidez e acompanhamento próximo.",
+      whyChooseItemTwoTitle: "Envio para Açores, Madeira e Portugal Continental",
+      whyChooseItemTwoText: "Preparamos cada encomenda com atenção e segurança.",
+      whyChooseItemThreeTitle: "Perfumes 100% Originais",
+      whyChooseItemThreeText: "Selecionamos referências autênticas e confiáveis.",
+      whyChooseItemFourTitle: "Atendimento via WhatsApp",
+      whyChooseItemFourText: "Respondemos de forma próxima e personalizada.",
+      whyChooseItemFiveTitle: "Pagamento Seguro",
+      whyChooseItemFiveText: "Confirmação clara antes de finalizar a encomenda.",
+      homeTestimonialsEyebrow: "Testemunhos",
+      homeTestimonialsTitle: "O que dizem os nossos clientes",
       catalogTitle: "Catálogo de perfumes árabes",
       catalogIntro:
         "Escolha por marca, pesquise rapidamente e adicione ao carrinho para finalizar no WhatsApp.",
       footerDescription:
-        "Seleção cuidada de perfumes árabes, cosméticos e ambientadores com apoio a partir da Ilha Terceira.",
+        "Seleção cuidada de perfumes árabes, cosméticos e ambientadores com envio para Terceira, Açores e Portugal Continental.",
       ...parsed,
     },
   });
@@ -577,10 +626,7 @@ export async function loginCustomer(formData: FormData) {
 
   const normalizedEmail = normalizeCustomerEmail(parsed.data.email);
 
-  const admin = await validateAdminCredentials(
-    normalizedEmail,
-    parsed.data.password,
-  );
+  const admin = await validateAdminCredentials(normalizedEmail, parsed.data.password);
 
   if (admin) {
     await clearCustomerSession();
@@ -593,10 +639,7 @@ export async function loginCustomer(formData: FormData) {
     redirect("/admin");
   }
 
-  const customer = await validateCustomerCredentials(
-    normalizedEmail,
-    parsed.data.password,
-  );
+  const customer = await validateCustomerCredentials(normalizedEmail, parsed.data.password);
 
   if (!customer) {
     redirect("/conta?loginError=1");

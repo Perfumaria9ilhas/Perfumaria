@@ -26,7 +26,21 @@ function DecantBottle({
   );
 }
 
-export function SampleHome({ imageUrl }: { imageUrl?: string | null }) {
+type SampleHomeProps = {
+  imageUrl?: string | null;
+  eyebrow: string;
+  title: string;
+  description: string;
+  buttonLabel: string;
+};
+
+export function SampleHome({
+  imageUrl,
+  eyebrow,
+  title,
+  description,
+  buttonLabel,
+}: SampleHomeProps) {
   return (
     <section className="rounded-[2.2rem] border border-[rgba(194,162,119,0.16)] bg-[linear-gradient(180deg,_rgba(255,255,255,0.95),_rgba(250,243,234,0.94))] p-6 shadow-[0_18px_38px_rgba(95,71,49,0.06)]">
       <div className="grid items-center gap-6 lg:grid-cols-[0.7fr_1.3fr]">
@@ -48,14 +62,14 @@ export function SampleHome({ imageUrl }: { imageUrl?: string | null }) {
 
         <div className="space-y-4">
           <p className="text-xs uppercase tracking-[0.34em] text-[color:var(--gold)]">
-            Serviço complementar
+            {eyebrow}
           </p>
           <div>
             <h2 className="text-[1.9rem] leading-tight text-[color:var(--ink)] sm:text-[2.5rem]">
-              Experimente antes de comprar
+              {title}
             </h2>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">
-              Decants de 5ml e 10ml disponíveis em perfumes selecionados.
+              {description}
             </p>
           </div>
           <div>
@@ -63,7 +77,7 @@ export function SampleHome({ imageUrl }: { imageUrl?: string | null }) {
               href="/catalogo"
               className="inline-flex items-center justify-center rounded-full border border-[rgba(183,146,107,0.22)] bg-white px-5 py-3 text-sm font-semibold text-[color:var(--ink)] transition hover:border-[color:var(--gold)] hover:text-[color:var(--gold)]"
             >
-              Ver Decants
+              {buttonLabel}
             </Link>
           </div>
         </div>

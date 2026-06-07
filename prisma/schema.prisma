@@ -145,12 +145,40 @@ model StoreSettings {
   storeName        String
   heroTitle        String
   heroDescription  String
+  heroPrimaryButtonLabel String @default("Ver Catálogo")
+  heroSecondaryButtonLabel String @default("Sobre Nós")
+  heroBenefitOne   String   @default("Perfumes 100% Originais")
+  heroBenefitTwo   String   @default("Entrega rápida na Ilha Terceira")
+  heroBenefitThree String   @default("Atendimento personalizado por WhatsApp")
+  heroBenefitFour  String   @default("Amostras disponíveis em 5ml")
   heroImageUrl     String?
   heroMaleImageUrl String?
   heroFemaleImageUrl String?
   heroUnisexImageUrl String?
   decantsImageUrl  String?
   heroSlides       HeroSlide[]
+  homeFeaturedEyebrow String @default("Mais vendidos")
+  homeFeaturedTitle String @default("Os Preferidos dos Nossos Clientes")
+  homeFeaturedDescription String @default("As fragrâncias mais procuradas e recomendadas pelos nossos clientes.")
+  homeFeaturedButtonLabel String @default("Ver todos")
+  homeDecantsEyebrow String @default("Serviço complementar")
+  homeDecantsTitle String @default("Experimente antes de comprar")
+  homeDecantsDescription String @default("Decants de 5ml e 10ml disponíveis em perfumes selecionados.")
+  homeDecantsButtonLabel String @default("Ver Decants")
+  homeWhyChooseEyebrow String @default("Confiança")
+  homeWhyChooseTitle String @default("Porque Comprar na Perfumaria 9 Ilhas?")
+  whyChooseItemOneTitle String @default("Entrega rápida na Ilha Terceira")
+  whyChooseItemOneText String @default("Receba com rapidez e acompanhamento próximo.")
+  whyChooseItemTwoTitle String @default("Envio para Açores, Madeira e Portugal Continental")
+  whyChooseItemTwoText String @default("Preparamos cada encomenda com atenção e segurança.")
+  whyChooseItemThreeTitle String @default("Perfumes 100% Originais")
+  whyChooseItemThreeText String @default("Selecionamos referências autênticas e confiáveis.")
+  whyChooseItemFourTitle String @default("Atendimento via WhatsApp")
+  whyChooseItemFourText String @default("Respondemos de forma próxima e personalizada.")
+  whyChooseItemFiveTitle String @default("Pagamento Seguro")
+  whyChooseItemFiveText String @default("Confirmação clara antes de finalizar a encomenda.")
+  homeTestimonialsEyebrow String @default("Testemunhos")
+  homeTestimonialsTitle String @default("O que dizem os nossos clientes")
   catalogTitle     String
   catalogIntro     String
   contactTitle     String

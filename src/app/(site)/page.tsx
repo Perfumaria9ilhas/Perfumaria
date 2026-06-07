@@ -14,11 +14,64 @@ export default async function Home() {
 
   return (
     <div className="mx-auto flex max-w-[1320px] flex-col gap-8 px-4 py-5 lg:px-5 lg:py-6">
-      <HeroHome />
-      <FeaturedProductsSlider products={featuredProducts} />
-      <SampleHome imageUrl={settings.decantsImageUrl} />
-      <WhyChooseHome />
-      <TrustHome reviews={reviews} stats={stats} />
+      <HeroHome
+        title={settings.heroTitle}
+        description={settings.heroDescription}
+        primaryButtonLabel={settings.heroPrimaryButtonLabel}
+        secondaryButtonLabel={settings.heroSecondaryButtonLabel}
+        benefits={[
+          settings.heroBenefitOne,
+          settings.heroBenefitTwo,
+          settings.heroBenefitThree,
+          settings.heroBenefitFour,
+        ]}
+      />
+      <FeaturedProductsSlider
+        products={featuredProducts}
+        eyebrow={settings.homeFeaturedEyebrow}
+        title={settings.homeFeaturedTitle}
+        description={settings.homeFeaturedDescription}
+        buttonLabel={settings.homeFeaturedButtonLabel}
+      />
+      <SampleHome
+        imageUrl={settings.decantsImageUrl}
+        eyebrow={settings.homeDecantsEyebrow}
+        title={settings.homeDecantsTitle}
+        description={settings.homeDecantsDescription}
+        buttonLabel={settings.homeDecantsButtonLabel}
+      />
+      <WhyChooseHome
+        eyebrow={settings.homeWhyChooseEyebrow}
+        title={settings.homeWhyChooseTitle}
+        items={[
+          {
+            title: settings.whyChooseItemOneTitle,
+            text: settings.whyChooseItemOneText,
+          },
+          {
+            title: settings.whyChooseItemTwoTitle,
+            text: settings.whyChooseItemTwoText,
+          },
+          {
+            title: settings.whyChooseItemThreeTitle,
+            text: settings.whyChooseItemThreeText,
+          },
+          {
+            title: settings.whyChooseItemFourTitle,
+            text: settings.whyChooseItemFourText,
+          },
+          {
+            title: settings.whyChooseItemFiveTitle,
+            text: settings.whyChooseItemFiveText,
+          },
+        ]}
+      />
+      <TrustHome
+        reviews={reviews}
+        stats={stats}
+        eyebrow={settings.homeTestimonialsEyebrow}
+        title={settings.homeTestimonialsTitle}
+      />
     </div>
   );
 }

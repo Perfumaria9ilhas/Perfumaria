@@ -49,11 +49,21 @@ function FeaturedProductImage({
   );
 }
 
+type FeaturedProductsSliderProps = {
+  products: CatalogProduct[];
+  eyebrow: string;
+  title: string;
+  description: string;
+  buttonLabel: string;
+};
+
 export function FeaturedProductsSlider({
   products,
-}: {
-  products: CatalogProduct[];
-}) {
+  eyebrow,
+  title,
+  description,
+  buttonLabel,
+}: FeaturedProductsSliderProps) {
   const { addItem } = useCart();
   const [feedback, setFeedback] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
@@ -219,7 +229,7 @@ export function FeaturedProductsSlider({
                         : "border-[color:var(--line)] bg-[color:var(--sand-soft)] text-[color:var(--ink)]"
                     }`}
                   >
-                    10 ml Â· {formatPrice(TEN_ML_PRICE_IN_CENTS)}
+                    10 ml · {formatPrice(TEN_ML_PRICE_IN_CENTS)}
                   </button>
                 ) : null}
                 {selectedProduct.availableInFiveMl ? (
@@ -258,13 +268,13 @@ export function FeaturedProductsSlider({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-2">
             <p className="text-xs uppercase tracking-[0.34em] text-[color:var(--gold)]">
-              Mais vendidos
+              {eyebrow}
             </p>
             <h2 className="text-[2rem] leading-tight text-[color:var(--ink)] sm:text-[2.7rem]">
-              Os Preferidos dos Nossos Clientes
+              {title}
             </h2>
             <p className="max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
-              As fragrâncias mais procuradas e recomendadas pelos nossos clientes.
+              {description}
             </p>
           </div>
 
@@ -272,7 +282,7 @@ export function FeaturedProductsSlider({
             href="/catalogo"
             className="inline-flex items-center justify-center rounded-full border border-[rgba(194,162,119,0.2)] bg-white px-5 py-3 text-sm font-semibold text-[color:var(--ink)] shadow-[0_10px_24px_rgba(95,71,49,0.05)] transition hover:border-[color:var(--gold)] hover:text-[color:var(--gold)]"
           >
-            Ver todos
+            {buttonLabel}
           </Link>
         </div>
 
@@ -388,9 +398,7 @@ export function FeaturedProductsSlider({
           })}
         </div>
 
-        {feedback ? (
-          <p className="text-center text-sm text-[color:#8a623a]">{feedback}</p>
-        ) : null}
+        {feedback ? <p className="text-center text-sm text-[color:#8a623a]">{feedback}</p> : null}
       </section>
     </>
   );

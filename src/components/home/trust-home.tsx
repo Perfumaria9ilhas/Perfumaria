@@ -17,6 +17,8 @@ type TrustHomeProps = {
     productsCount: number;
     islandsLabel: string;
   };
+  eyebrow: string;
+  title: string;
 };
 
 function renderStars(rating: number) {
@@ -24,7 +26,7 @@ function renderStars(rating: number) {
   return "★★★★★".slice(0, safeRating) + "☆☆☆☆☆".slice(0, 5 - safeRating);
 }
 
-export function TrustHome({ reviews }: TrustHomeProps) {
+export function TrustHome({ reviews, eyebrow, title }: TrustHomeProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
@@ -98,10 +100,10 @@ export function TrustHome({ reviews }: TrustHomeProps) {
       <section className="space-y-6">
         <div className="space-y-3 text-center">
           <p className="text-xs uppercase tracking-[0.34em] text-[color:var(--gold)]">
-            Testemunhos
+            {eyebrow}
           </p>
           <h2 className="text-[2rem] leading-tight text-[color:var(--ink)] sm:text-[2.6rem]">
-            O que dizem os nossos clientes
+            {title}
           </h2>
         </div>
 
