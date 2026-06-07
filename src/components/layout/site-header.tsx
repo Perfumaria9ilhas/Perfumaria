@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import {
@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { CartDrawer } from "@/components/cart/cart-drawer";
+import { TrackedWhatsAppLink } from "@/components/analytics/tracked-whatsapp-link";
 import { BrandLogo } from "@/components/layout/brand-logo";
 import { useCart } from "@/components/providers/cart-provider";
 import { navigationLinks } from "@/lib/constants";
@@ -40,8 +41,8 @@ export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeade
         <div className="hidden border-b border-[rgba(255,255,255,0.16)] bg-[linear-gradient(90deg,_#ba8a48,_#d5ad6b)] lg:block">
           <div className="mx-auto flex max-w-[1320px] items-center justify-center gap-8 px-5 py-2 text-[11px] font-medium text-white">
             <span>Entrega rápida na Ilha Terceira</span>
-            <span>Todos os dias das 08h00 as 22h00</span>
-            <span>Envio para todas as ilhas dos Acores</span>
+            <span>Todos os dias das 08h00 às 22h00</span>
+            <span>Envio para todas as ilhas dos Açores</span>
           </div>
         </div>
         <div className="mx-auto max-w-[1320px] px-4 py-2 lg:px-5 lg:py-2.5">
@@ -90,23 +91,35 @@ export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeade
               <div className="flex items-center gap-2.5">
                 {socialLinks.map(({ href, label }) =>
                   href ? (
-                    <Link
-                      key={label}
-                      href={href}
-                      target="_blank"
-                      className="rounded-full border border-[color:var(--line)] p-2 text-slate-500 transition hover:border-[color:var(--gold)] hover:text-[color:var(--atlantic)]"
-                      aria-label={label}
-                    >
-                      {label === "Instagram" ? (
-                        <Camera className="h-4 w-4" />
-                      ) : label === "Facebook" ? (
-                        <Globe2 className="h-4 w-4" />
-                      ) : label === "TikTok" ? (
-                        <Music2 className="h-4 w-4" />
-                      ) : (
+                    label === "WhatsApp" ? (
+                      <TrackedWhatsAppLink
+                        key={label}
+                        href={href}
+                        ariaLabel={label}
+                        contentName="WhatsApp header"
+                        className="rounded-full border border-[color:var(--line)] p-2 text-slate-500 transition hover:border-[color:var(--gold)] hover:text-[color:var(--atlantic)]"
+                      >
                         <MessageCircleMore className="h-4 w-4" />
-                      )}
-                    </Link>
+                      </TrackedWhatsAppLink>
+                    ) : (
+                      <Link
+                        key={label}
+                        href={href}
+                        target="_blank"
+                        className="rounded-full border border-[color:var(--line)] p-2 text-slate-500 transition hover:border-[color:var(--gold)] hover:text-[color:var(--atlantic)]"
+                        aria-label={label}
+                      >
+                        {label === "Instagram" ? (
+                          <Camera className="h-4 w-4" />
+                        ) : label === "Facebook" ? (
+                          <Globe2 className="h-4 w-4" />
+                        ) : label === "TikTok" ? (
+                          <Music2 className="h-4 w-4" />
+                        ) : (
+                          <MessageCircleMore className="h-4 w-4" />
+                        )}
+                      </Link>
+                    )
                   ) : null,
                 )}
               </div>
@@ -130,7 +143,7 @@ export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeade
                 ))}
                 <Link
                   href="/conta"
-                className="rounded-full px-3 py-1.25 text-sm font-medium text-slate-600 transition hover:bg-[color:var(--sand-soft)] hover:text-[color:var(--ink)]"
+                  className="rounded-full px-3 py-1.25 text-sm font-medium text-slate-600 transition hover:bg-[color:var(--sand-soft)] hover:text-[color:var(--ink)]"
                 >
                   {currentCustomer ? `Olá, ${currentCustomer.firstName}` : "Login"}
                 </Link>

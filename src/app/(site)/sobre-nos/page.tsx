@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Check, Clock3, Mail, MapPin, MessageCircleMore } from "lucide-react";
+import { TrackedWhatsAppLink } from "@/components/analytics/tracked-whatsapp-link";
 import { getStoreSettings } from "@/lib/store-settings";
 
 const trustPoints = [
@@ -116,6 +117,19 @@ export default async function SobreNosPage() {
                 </div>
               </div>
             );
+
+            if (label === "WhatsApp" && href) {
+              return (
+                <TrackedWhatsAppLink
+                  key={label}
+                  href={href}
+                  contentName="WhatsApp sobre nós"
+                  className="block"
+                >
+                  {content}
+                </TrackedWhatsAppLink>
+              );
+            }
 
             return href ? (
               <Link key={label} href={href} target="_blank" className="block">

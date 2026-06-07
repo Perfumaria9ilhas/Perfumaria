@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { TrackedWhatsAppLink } from "@/components/analytics/tracked-whatsapp-link";
 import type { PublicStoreSettings } from "@/lib/types";
 
 export function SiteFooter({
@@ -46,14 +47,25 @@ export function SiteFooter({
             <div className="flex flex-wrap gap-3 pt-1 text-sm text-[rgba(239,228,212,0.84)]">
               {socialLinks.map((link) =>
                 link.href ? (
-                  <Link
-                    key={link.label}
-                    href={link.href}
-                    target="_blank"
-                    className="hover:text-white"
-                  >
-                    {link.label}
-                  </Link>
+                  link.label === "WhatsApp" ? (
+                    <TrackedWhatsAppLink
+                      key={link.label}
+                      href={link.href}
+                      contentName="WhatsApp footer"
+                      className="hover:text-white"
+                    >
+                      {link.label}
+                    </TrackedWhatsAppLink>
+                  ) : (
+                    <Link
+                      key={link.label}
+                      href={link.href}
+                      target="_blank"
+                      className="hover:text-white"
+                    >
+                      {link.label}
+                    </Link>
+                  )
                 ) : null,
               )}
             </div>
