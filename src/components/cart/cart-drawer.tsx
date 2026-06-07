@@ -5,7 +5,7 @@ import Image from "next/image";
 import { CreditCard, Lock, MapPinned, Minus, Plus, Truck, Trash2, X } from "lucide-react";
 import { useCart } from "@/components/providers/cart-provider";
 import { formatPrice } from "@/lib/format";
-import { trackMetaEvent } from "@/lib/meta-pixel";
+import { buildMetaContentId, trackMetaEvent } from "@/lib/meta-pixel";
 
 const trustPoints = [
   {
@@ -58,7 +58,7 @@ export function CartDrawer() {
 
     try {
       trackMetaEvent("InitiateCheckout", {
-        content_ids: items.map((item) => item.productId),
+        content_ids: items.map((item) => buildMetaContentId(item.name, item.brand)),
         content_type: "product",
         currency: "EUR",
         num_items: items.reduce((sum, item) => sum + item.quantity, 0),
@@ -91,14 +91,6 @@ export function CartDrawer() {
         return;
       }
 
-      trackMetaEvent("Purchase", {
-        content_ids: items.map((item) => item.productId),
-        content_type: "product",
-        currency: "EUR",
-        num_items: items.reduce((sum, item) => sum + item.quantity, 0),
-        value: total / 100,
-        order_id: data.orderId,
-      });
       trackMetaEvent("Contact", {
         content_name: "WhatsApp checkout",
         content_type: "contact",

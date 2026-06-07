@@ -3,10 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Flame } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useCart } from "@/components/providers/cart-provider";
 import { formatPrice } from "@/lib/format";
-import { trackMetaEvent } from "@/lib/meta-pixel";
+import { buildMetaProductPayload, trackMetaEvent } from "@/lib/meta-pixel";
 import { getProductAudienceLabel } from "@/lib/product-audience";
 import {
   buildCartLineId,
@@ -58,6 +58,7 @@ export function FeaturedProductsSlider({
   const [feedback, setFeedback] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
   const [selectedSizes, setSelectedSizes] = useState<Record<string, ProductSizeValue>>({});
+  const trackedViewContentId = useRef<string | null>(null);
   const selectedProductSize = selectedProduct
     ? selectedSizes[selectedProduct.id] ?? "100ml"
     : "100ml";
@@ -75,17 +76,29 @@ export function FeaturedProductsSlider({
 
   useEffect(() => {
     if (!selectedProduct) {
+      trackedViewContentId.current = null;
       return;
     }
 
-    trackMetaEvent("ViewContent", {
-      content_ids: [selectedProduct.id],
-      content_name: selectedProduct.name,
-      content_category: selectedProduct.category.name,
-      content_type: "product",
-      currency: "EUR",
-      value: getDisplayPrice(selectedProduct, selectedProductSize) / 100,
-    });
+    if (trackedViewContentId.current !== selectedProduct.id) {
+      trackedViewContentId.current = selectedProduct.id;
+
+      trackMetaEvent(
+        "ViewContent",
+        buildMetaProductPayload({
+          name: selectedProduct.name,
+          brand: selectedProduct.brand.name,
+          category: selectedProduct.category.name,
+          value: getDisplayPrice(selectedProduct, selectedProductSize) / 100,
+        }),
+      );
+    }
+  }, [selectedProduct, selectedProductSize]);
+
+  useEffect(() => {
+    if (!selectedProduct) {
+      return;
+    }
 
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -93,7 +106,7 @@ export function FeaturedProductsSlider({
     return () => {
       document.body.style.overflow = previousOverflow;
     };
-  }, [selectedProduct, selectedProductSize]);
+  }, [selectedProduct]);
 
   function getSelectedSize(product: CatalogProduct) {
     return selectedSizes[product.id] ?? "100ml";

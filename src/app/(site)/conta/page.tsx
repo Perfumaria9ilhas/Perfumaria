@@ -4,6 +4,7 @@ import {
   loginCustomer,
   logoutCustomer,
 } from "@/actions/admin";
+import { CompleteRegistrationTracker } from "@/components/analytics/complete-registration-tracker";
 import { getCurrentCustomer } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -29,6 +30,7 @@ export default async function ContaPage({
 
   return (
     <div className="mx-auto max-w-[1240px] px-4 py-4 lg:px-5 lg:py-6">
+      <CompleteRegistrationTracker enabled={params.registered === "1"} />
       <section className="rounded-[2.4rem] border border-[color:var(--line)] bg-[linear-gradient(180deg,_#fffdf9,_#f5eadb)] p-6 shadow-[0_24px_70px_rgba(74,51,32,0.1)] lg:p-8">
         <div className="max-w-3xl">
           <p className="text-xs uppercase tracking-[0.35em] text-[color:var(--atlantic)]">

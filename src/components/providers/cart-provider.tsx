@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { formatPrice } from "@/lib/format";
-import { trackMetaEvent } from "@/lib/meta-pixel";
+import { buildMetaProductPayload, trackMetaEvent } from "@/lib/meta-pixel";
 import type { CartLine } from "@/lib/types";
 
 type CartItemInput = Omit<CartLine, "quantity">;
@@ -174,15 +174,16 @@ export function CartProvider({
       });
 
       if (result === "added" || result === "limited") {
-        trackMetaEvent("AddToCart", {
-          content_ids: [item.productId],
-          content_name: item.name,
-          content_category: item.sizeLabel,
-          content_type: "product",
-          currency: "EUR",
-          value: item.priceInCents / 100,
-          quantity: trackedQuantity,
-        });
+        trackMetaEvent(
+          "AddToCart",
+          buildMetaProductPayload({
+            name: item.name,
+            brand: item.brand,
+            category: item.sizeLabel,
+            value: item.priceInCents / 100,
+            quantity: trackedQuantity,
+          }),
+        );
       }
 
       return result ?? "added";

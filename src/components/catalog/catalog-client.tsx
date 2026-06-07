@@ -1,12 +1,12 @@
 ﻿"use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { ChevronDown, Search } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useCart } from "@/components/providers/cart-provider";
 import { formatPrice } from "@/lib/format";
-import { trackMetaEvent } from "@/lib/meta-pixel";
+import { buildMetaProductPayload, trackMetaEvent } from "@/lib/meta-pixel";
 import { getProductAudienceLabel, productAudienceOptions, type ProductAudienceValue } from "@/lib/product-audience";
 import { getProductConcentrationDetails } from "@/lib/product-concentration";
 import {
@@ -98,6 +98,7 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
   const [selectedSizes, setSelectedSizes] = useState<Record<string, ProductSizeValue>>({});
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const trackedViewContentId = useRef<string | null>(null);
   const [toast, setToast] = useState<{
     message: string;
     tone: "warning" | "success";
@@ -159,17 +160,29 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
 
   useEffect(() => {
     if (!selectedProduct) {
+      trackedViewContentId.current = null;
       return;
     }
 
-    trackMetaEvent("ViewContent", {
-      content_ids: [selectedProduct.id],
-      content_name: selectedProduct.name,
-      content_category: selectedProduct.category.name,
-      content_type: "product",
-      currency: "EUR",
-      value: getDisplayPrice(selectedProduct, selectedProductSize) / 100,
-    });
+    if (trackedViewContentId.current !== selectedProduct.id) {
+      trackedViewContentId.current = selectedProduct.id;
+
+      trackMetaEvent(
+        "ViewContent",
+        buildMetaProductPayload({
+          name: selectedProduct.name,
+          brand: selectedProduct.brand.name,
+          category: selectedProduct.category.name,
+          value: getDisplayPrice(selectedProduct, selectedProductSize) / 100,
+        }),
+      );
+    }
+  }, [selectedProduct, selectedProductSize]);
+
+  useEffect(() => {
+    if (!selectedProduct) {
+      return;
+    }
 
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -177,7 +190,7 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
     return () => {
       document.body.style.overflow = previousOverflow;
     };
-  }, [selectedProduct, selectedProductSize]);
+  }, [selectedProduct]);
 
   const filteredProducts = useMemo(() => {
     const query = search.toLowerCase().trim();
