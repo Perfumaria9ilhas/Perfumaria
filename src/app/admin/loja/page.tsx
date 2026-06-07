@@ -107,6 +107,28 @@ export default async function AdminLojaPage() {
             title="Hero principal"
             description="Controla o bloco de boas-vindas do topo da homepage."
           >
+            <div className="rounded-[1.5rem] border border-[color:var(--line)] bg-white p-4 md:col-span-2">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--gold)]">
+                Imagem do hero principal
+              </p>
+              {settings.heroImageUrl ? (
+                <div className="relative mb-3 aspect-[16/10] overflow-hidden rounded-2xl bg-[color:var(--sand-soft)]">
+                  <Image
+                    src={settings.heroImageUrl}
+                    alt="Imagem do hero principal"
+                    fill
+                    unoptimized
+                    className="object-cover"
+                  />
+                </div>
+              ) : null}
+              <input
+                name="heroImageFile"
+                type="file"
+                accept="image/*"
+                className="w-full rounded-2xl border px-4 py-3"
+              />
+            </div>
             <TextInput
               name="storeName"
               defaultValue={settings.storeName}

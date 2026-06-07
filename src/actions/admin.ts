@@ -397,6 +397,7 @@ export async function saveStoreSettings(formData: FormData) {
   const currentSettings = await prisma.storeSettings.findUnique({
     where: { id: "main" },
     select: {
+      heroImageUrl: true,
       decantsImageUrl: true,
       contactTitle: true,
       contactIntro: true,
@@ -449,8 +450,14 @@ export async function saveStoreSettings(formData: FormData) {
     tiktokUrl: formData.get("tiktokUrl")?.toString().trim() || undefined,
   });
 
+  const heroImageFile = formData.get("heroImageFile");
   const decantsImageFile = formData.get("decantsImageFile");
+  let heroImageUrl = currentSettings?.heroImageUrl ?? null;
   let decantsImageUrl = currentSettings?.decantsImageUrl ?? null;
+
+  if (typeof heroImageFile !== "string" && heroImageFile && heroImageFile.size > 0) {
+    heroImageUrl = await saveUploadedImage(heroImageFile);
+  }
 
   if (typeof decantsImageFile !== "string" && decantsImageFile && decantsImageFile.size > 0) {
     decantsImageUrl = await saveUploadedImage(decantsImageFile);
@@ -460,7 +467,7 @@ export async function saveStoreSettings(formData: FormData) {
     where: { id: "main" },
     update: {
       ...parsed,
-      heroImageUrl: null,
+      heroImageUrl,
       decantsImageUrl,
       heroSlides: {
         deleteMany: {},
@@ -469,7 +476,7 @@ export async function saveStoreSettings(formData: FormData) {
     create: {
       id: "main",
       ...parsed,
-      heroImageUrl: null,
+      heroImageUrl,
       decantsImageUrl,
       contactTitle: currentSettings?.contactTitle ?? "Sobre Nós",
       contactIntro:

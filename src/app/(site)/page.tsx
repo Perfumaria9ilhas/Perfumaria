@@ -19,6 +19,7 @@ export default async function Home() {
         description={settings.heroDescription}
         primaryButtonLabel={settings.heroPrimaryButtonLabel}
         secondaryButtonLabel={settings.heroSecondaryButtonLabel}
+        imageUrl={settings.heroImageUrl}
         benefits={[
           settings.heroBenefitOne,
           settings.heroBenefitTwo,
