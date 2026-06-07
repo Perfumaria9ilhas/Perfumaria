@@ -2,74 +2,67 @@
 
 import {
   MessageCircleMore,
+  PackageCheck,
   ShieldCheck,
-  Star,
-  TestTubeDiagonal,
   Truck,
 } from "lucide-react";
 
 const trustItems = [
   {
-    icon: ShieldCheck,
-    title: "Perfumes 100% Originais",
-    text: "Produtos autenticos",
+    icon: Truck,
+    title: "Entrega rápida na Ilha Terceira",
+    text: "Receba com rapidez e acompanhamento próximo.",
   },
   {
     icon: Truck,
-    title: "Entrega Rapida",
-    text: "Ilha Terceira",
-  },
-  {
-    icon: MessageCircleMore,
-    title: "Apoio por WhatsApp",
-    text: "Resposta proxima",
-  },
-  {
-    icon: TestTubeDiagonal,
-    title: "Decants 5ml",
-    text: "Experimente primeiro",
-  },
-  {
-    icon: Star,
-    title: "Selecao Premium",
-    text: "Escolha cuidada",
+    title: "Envio para Açores, Madeira e Portugal Continental",
+    text: "Preparamos cada encomenda com atenção e segurança.",
   },
   {
     icon: ShieldCheck,
-    title: "Compra Segura",
-    text: "Mais confianca",
+    title: "Perfumes 100% Originais",
+    text: "Selecionamos referências autênticas e confiáveis.",
+  },
+  {
+    icon: MessageCircleMore,
+    title: "Atendimento via WhatsApp",
+    text: "Respondemos de forma próxima e personalizada.",
+  },
+  {
+    icon: PackageCheck,
+    title: "Pagamento Seguro",
+    text: "Confirmação clara antes de finalizar a encomenda.",
   },
 ];
 
 export function WhyChooseHome() {
   return (
-    <section className="px-0 py-0.5">
-      <div className="mb-4 flex items-center gap-3">
-        <span className="h-px flex-1 bg-[rgba(194,162,119,0.24)]" />
-        <h2 className="text-center text-[0.95rem] uppercase tracking-[0.14em] text-[color:var(--ink)]">
-          Porque nos escolher?
+    <section className="space-y-6">
+      <div className="space-y-3 text-center">
+        <p className="text-xs uppercase tracking-[0.34em] text-[color:var(--gold)]">
+          Confiança
+        </p>
+        <h2 className="text-[2rem] leading-tight text-[color:var(--ink)] sm:text-[2.6rem]">
+          Porque Comprar na Perfumaria 9 Ilhas?
         </h2>
-        <span className="h-px flex-1 bg-[rgba(194,162,119,0.24)]" />
       </div>
 
-      <div className="grid grid-cols-3 gap-x-3 gap-y-4 lg:grid-cols-6 lg:gap-x-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {trustItems.map((item) => {
           const Icon = item.icon;
 
           return (
             <article
               key={item.title}
-              className="flex flex-col items-center justify-start gap-1.5 px-1 py-1.5 text-center"
+              className="rounded-[1.8rem] border border-[rgba(194,162,119,0.18)] bg-white/92 p-5 shadow-[0_14px_34px_rgba(95,71,49,0.06)]"
             >
-              <span className="flex h-8 w-8 items-center justify-center text-[color:var(--gold)]">
-                <Icon className="h-4 w-4" />
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[rgba(183,146,107,0.12)] text-[color:var(--gold)]">
+                <Icon className="h-5 w-5" />
               </span>
-              <h3 className="text-[0.73rem] leading-tight text-[color:var(--ink)] sm:text-[0.82rem]">
+              <h3 className="mt-4 text-[1.05rem] leading-snug text-[color:var(--ink)]">
                 {item.title}
               </h3>
-              <p className="text-[10px] leading-4 text-slate-600 sm:text-[11px]">
-                {item.text}
-              </p>
+              <p className="mt-2 text-sm leading-6 text-slate-600">{item.text}</p>
             </article>
           );
         })}

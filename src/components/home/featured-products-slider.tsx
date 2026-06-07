@@ -254,13 +254,26 @@ export function FeaturedProductsSlider({
         </div>
       ) : null}
 
-      <section className="space-y-4">
-        <div className="flex items-center gap-4">
-          <span className="h-px flex-1 bg-[color:var(--line)]" />
-          <h2 className="text-center text-[1.35rem] uppercase tracking-[0.08em] text-[color:var(--ink)] sm:text-[1.55rem]">
-            Destaques
-          </h2>
-          <span className="h-px flex-1 bg-[color:var(--line)]" />
+      <section className="space-y-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-2">
+            <p className="text-xs uppercase tracking-[0.34em] text-[color:var(--gold)]">
+              Mais vendidos
+            </p>
+            <h2 className="text-[2rem] leading-tight text-[color:var(--ink)] sm:text-[2.7rem]">
+              Os Preferidos dos Nossos Clientes
+            </h2>
+            <p className="max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
+              As fragrâncias mais procuradas e recomendadas pelos nossos clientes.
+            </p>
+          </div>
+
+          <Link
+            href="/catalogo"
+            className="inline-flex items-center justify-center rounded-full border border-[rgba(194,162,119,0.2)] bg-white px-5 py-3 text-sm font-semibold text-[color:var(--ink)] shadow-[0_10px_24px_rgba(95,71,49,0.05)] transition hover:border-[color:var(--gold)] hover:text-[color:var(--gold)]"
+          >
+            Ver todos
+          </Link>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
@@ -276,30 +289,28 @@ export function FeaturedProductsSlider({
             return (
               <article
                 key={product.id}
-                className="group relative flex h-full flex-col rounded-[1.3rem] border border-[rgba(194,162,119,0.14)] bg-white p-3 shadow-[0_10px_20px_rgba(78,55,34,0.04)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_16px_28px_rgba(78,55,34,0.08)]"
+                className="group relative flex h-full flex-col rounded-[1.9rem] border border-[rgba(194,162,119,0.16)] bg-[linear-gradient(180deg,_rgba(255,255,255,1),_rgba(252,246,238,0.96))] p-3 shadow-[0_14px_32px_rgba(95,71,49,0.06)] transition duration-300 hover:-translate-y-1.5 hover:shadow-[0_24px_42px_rgba(95,71,49,0.12)]"
               >
-                {product.bestseller ? (
-                  <div className="absolute left-3 top-3 z-20 rounded-full bg-[linear-gradient(135deg,_#b3472d,_#df8a46)] px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.2em] text-white shadow-[0_8px_18px_rgba(179,71,45,0.18)]">
-                    Best Seller
-                  </div>
-                ) : null}
+                <div className="absolute left-3 top-3 z-20 rounded-full bg-[linear-gradient(135deg,_#b88746,_#d8b06f)] px-3 py-1 text-[9px] font-bold uppercase tracking-[0.22em] text-white shadow-[0_8px_18px_rgba(184,135,70,0.2)]">
+                  ⭐ Mais Procurado
+                </div>
 
                 <button
                   type="button"
                   onClick={() => setSelectedProduct(product)}
-                  className="relative block aspect-[4/4.6] overflow-hidden rounded-[1rem] border border-[rgba(194,162,119,0.1)] bg-[linear-gradient(180deg,_#fffaf3,_#f3e8d8)]"
+                  className="relative block aspect-[4/4.9] overflow-hidden rounded-[1.45rem] border border-[rgba(194,162,119,0.1)] bg-[linear-gradient(180deg,_#fffaf3,_#f3e8d8)]"
                 >
                   <FeaturedProductImage imageUrl={product.imageUrl} name={product.name} />
                 </button>
 
                 <div className="mt-4 flex flex-1 flex-col">
-                  <p className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--atlantic)]">
+                  <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--atlantic)]">
                     {product.brand.name}
                   </p>
-                  <h3 className="mt-1.5 text-[1.25rem] leading-tight text-[color:var(--ink)]">
+                  <h3 className="mt-1.5 text-[1.45rem] leading-tight text-[color:var(--ink)]">
                     {product.name}
                   </h3>
-                  <p className="mt-1 text-[10px] uppercase tracking-[0.22em] text-[color:var(--gold)]">
+                  <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-[color:var(--gold)]">
                     {audience}
                   </p>
 
@@ -343,47 +354,38 @@ export function FeaturedProductsSlider({
                     ) : null}
                   </div>
 
-                  <div className="mt-3">
+                  <div className="mt-4">
                     {hasDiscount ? (
                       <p className="text-xs text-slate-400 line-through">
                         {formatPrice(product.priceInCents)}
                       </p>
                     ) : null}
-                    <p className="text-[1.25rem] leading-none text-[color:var(--ink)]">
+                    <p className="text-[1.5rem] leading-none text-[color:var(--ink)]">
                       {formatPrice(currentPrice)}
                     </p>
                   </div>
 
-                  <div className="mt-4 grid gap-2">
+                  <div className="mt-5 grid gap-2">
                     <button
                       type="button"
                       onClick={() => setSelectedProduct(product)}
-                      className="inline-flex items-center justify-center rounded-md border border-[rgba(194,162,119,0.18)] bg-white px-4 py-2 text-xs font-semibold text-[color:var(--ink)] transition hover:border-[color:var(--gold)] hover:text-[color:var(--gold)]"
+                      className="inline-flex items-center justify-center rounded-full border border-[rgba(194,162,119,0.18)] bg-white px-4 py-2.5 text-xs font-semibold text-[color:var(--ink)] transition hover:border-[color:var(--gold)] hover:text-[color:var(--gold)]"
                     >
-                      Ver opcoes
+                      Ver opções
                     </button>
                     <button
                       type="button"
                       onClick={() => handleAddToCart(product, selectedSize)}
-                      className="inline-flex items-center justify-center gap-2 rounded-md bg-[linear-gradient(135deg,_#b88746,_#d1a15f)] px-4 py-2 text-xs font-semibold text-white shadow-[0_8px_16px_rgba(184,135,70,0.16)]"
+                      className="inline-flex items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,_#b88746,_#d1a15f)] px-4 py-2.5 text-xs font-semibold text-white shadow-[0_10px_18px_rgba(184,135,70,0.16)]"
                     >
                       <Flame className="h-4 w-4" />
-                      Adicionar
+                      Comprar
                     </button>
                   </div>
                 </div>
               </article>
             );
           })}
-        </div>
-
-        <div className="flex justify-center">
-          <Link
-            href="/catalogo"
-            className="inline-flex items-center justify-center rounded-md border border-[rgba(194,162,119,0.2)] bg-white px-5 py-2.5 text-xs font-medium text-[color:var(--ink)] shadow-[0_8px_16px_rgba(78,55,34,0.04)]"
-          >
-            Ver opcoes
-          </Link>
         </div>
 
         {feedback ? (

@@ -1,140 +1,170 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import type { PublicStoreSettings } from "@/lib/types";
+import type { CatalogProduct, PublicStoreSettings } from "@/lib/types";
 
 type HeroHomeProps = {
   settings: PublicStoreSettings;
+  products: CatalogProduct[];
 };
 
-export function HeroHome({ settings }: HeroHomeProps) {
-  const slides = useMemo(
-    () =>
-      [
-        {
-          key: "MASCULINO",
-          label: "Masculino",
-          href: "/catalogo?audience=masculino",
-          imageUrl: settings.heroMaleImageUrl,
-        },
-        {
-          key: "FEMININO",
-          label: "Feminino",
-          href: "/catalogo?audience=feminino",
-          imageUrl: settings.heroFemaleImageUrl,
-        },
-        {
-          key: "UNISSEXO",
-          label: "Unissexo",
-          href: "/catalogo?audience=unissexo",
-          imageUrl: settings.heroUnisexImageUrl,
-        },
-      ].filter((slide) => Boolean(slide.imageUrl)),
-    [settings.heroFemaleImageUrl, settings.heroMaleImageUrl, settings.heroUnisexImageUrl],
+type HeroVisual = {
+  key: string;
+  imageUrl: string;
+  alt: string;
+  label: string;
+  size: "large" | "small";
+};
+
+function HeroVisualCard({ visual }: { visual: HeroVisual }) {
+  return (
+    <div
+      className={`group relative overflow-hidden rounded-[2rem] border border-[rgba(194,162,119,0.18)] bg-[linear-gradient(180deg,_rgba(255,255,255,0.88),_rgba(249,240,228,0.92))] shadow-[0_18px_38px_rgba(95,71,49,0.1)] ${
+        visual.size === "large" ? "aspect-[1.08/1]" : "aspect-[1.06/0.86]"
+      }`}
+    >
+      <Image
+        src={visual.imageUrl}
+        alt={visual.alt}
+        fill
+        unoptimized
+        priority={visual.size === "large"}
+        sizes={visual.size === "large" ? "(max-width: 1024px) 100vw, 42vw" : "(max-width: 1024px) 50vw, 20vw"}
+        className="object-contain p-6 transition duration-500 group-hover:scale-[1.03]"
+      />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-[linear-gradient(180deg,_transparent,_rgba(255,248,240,0.85))]" />
+      <span className="absolute left-4 top-4 rounded-full border border-[rgba(183,146,107,0.24)] bg-white/90 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[color:var(--atlantic)] shadow-sm">
+        {visual.label}
+      </span>
+    </div>
   );
+}
 
-  const [activeSlideIndex, setActiveSlideIndex] = useState(0);
-  const activeSlide = slides[activeSlideIndex] ?? null;
+export function HeroHome({ settings, products }: HeroHomeProps) {
+  const fallbackProducts = products.slice(0, 3);
 
-  function moveSlide(direction: "prev" | "next") {
-    if (slides.length < 2) {
-      return;
-    }
-
-    setActiveSlideIndex((current) => {
-      if (direction === "prev") {
-        return current === 0 ? slides.length - 1 : current - 1;
-      }
-
-      return current === slides.length - 1 ? 0 : current + 1;
-    });
-  }
+  const visuals: HeroVisual[] = [
+    settings.heroMaleImageUrl
+      ? {
+          key: "male",
+          imageUrl: settings.heroMaleImageUrl,
+          alt: "Perfumes masculinos",
+          label: "Masculino",
+          size: "large",
+        }
+      : fallbackProducts[0]?.imageUrl
+        ? {
+            key: fallbackProducts[0].id,
+            imageUrl: fallbackProducts[0].imageUrl,
+            alt: fallbackProducts[0].name,
+            label: fallbackProducts[0].brand.name,
+            size: "large",
+          }
+        : null,
+    settings.heroFemaleImageUrl
+      ? {
+          key: "female",
+          imageUrl: settings.heroFemaleImageUrl,
+          alt: "Perfumes femininos",
+          label: "Feminino",
+          size: "small",
+        }
+      : fallbackProducts[1]?.imageUrl
+        ? {
+            key: fallbackProducts[1].id,
+            imageUrl: fallbackProducts[1].imageUrl,
+            alt: fallbackProducts[1].name,
+            label: fallbackProducts[1].brand.name,
+            size: "small",
+          }
+        : null,
+    settings.heroUnisexImageUrl
+      ? {
+          key: "unisex",
+          imageUrl: settings.heroUnisexImageUrl,
+          alt: "Perfumes unissexo",
+          label: "Unissexo",
+          size: "small",
+        }
+      : fallbackProducts[2]?.imageUrl
+        ? {
+            key: fallbackProducts[2].id,
+            imageUrl: fallbackProducts[2].imageUrl,
+            alt: fallbackProducts[2].name,
+            label: fallbackProducts[2].brand.name,
+            size: "small",
+          }
+        : null,
+  ].filter((item): item is HeroVisual => Boolean(item));
 
   return (
-    <section className="bg-transparent">
-      <div className="relative px-0 py-0">
-        <div className="relative overflow-visible">
-          <div className="relative aspect-[16/6.7] sm:aspect-[16/6.3]">
-            {slides.length ? (
-              slides.map((slide, index) => (
-                <Image
-                  key={slide.key}
-                  src={slide.imageUrl!}
-                  alt={slide.label}
-                  fill
-                  unoptimized
-                  priority={index === 0}
-                  loading={index === 0 ? "eager" : "eager"}
-                  sizes="100vw"
-                  className={`object-cover transition-opacity duration-500 ${
-                    index === activeSlideIndex ? "opacity-100" : "pointer-events-none opacity-0"
-                  }`}
-                />
-              ))
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-white/60 p-6">
-                <Image
-                  src="/logo-9-ilhas.svg"
-                  alt="9 Ilhas Perfumaria"
-                  width={320}
-                  height={120}
-                  className="h-auto w-40 opacity-85"
-                />
-              </div>
-            )}
-
-            {slides.length > 1 ? (
-              <div className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex items-center justify-between px-3 md:px-4">
-                <button
-                  type="button"
-                  onClick={() => moveSlide("prev")}
-                  className="pointer-events-auto flex h-9 w-9 items-center justify-center text-white drop-shadow-[0_6px_16px_rgba(78,55,34,0.35)] transition hover:scale-105 md:rounded-full md:bg-white/90 md:text-[color:var(--ink)] md:shadow-[0_10px_22px_rgba(78,55,34,0.14)] md:drop-shadow-none animate-pulse md:animate-none"
-                  aria-label="Slide anterior"
-                >
-                  <ChevronLeft className="h-4.5 w-4.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => moveSlide("next")}
-                  className="pointer-events-auto flex h-9 w-9 items-center justify-center text-white drop-shadow-[0_6px_16px_rgba(78,55,34,0.35)] transition hover:scale-105 md:rounded-full md:bg-white/90 md:text-[color:var(--ink)] md:shadow-[0_10px_22px_rgba(78,55,34,0.14)] md:drop-shadow-none animate-pulse md:animate-none"
-                  aria-label="Slide seguinte"
-                >
-                  <ChevronRight className="h-4.5 w-4.5" />
-                </button>
-              </div>
-            ) : null}
-
-            {activeSlide ? (
-              <Link
-                href={activeSlide.href}
-                className="absolute bottom-3 left-1/2 z-20 inline-flex max-w-[calc(100%-2.5rem)] -translate-x-1/2 items-center justify-center whitespace-nowrap rounded-full border border-[rgba(255,255,255,0.38)] bg-[rgba(73,46,24,0.9)] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-white shadow-[0_14px_28px_rgba(73,46,24,0.3)] backdrop-blur-sm transition hover:bg-[rgba(73,46,24,0.96)] hover:text-white sm:max-w-none sm:px-5 sm:text-[11px] md:bottom-5 md:px-6 md:py-2.5"
-              >
-                Catálogo {activeSlide.label}
-              </Link>
-            ) : null}
-          </div>
+    <section className="grid gap-6 lg:grid-cols-[0.98fr_1.02fr] lg:items-center">
+      <div className="space-y-6 rounded-[2.4rem] bg-[linear-gradient(180deg,_rgba(255,255,255,0.96),_rgba(249,242,232,0.94))] p-7 shadow-[0_24px_54px_rgba(95,71,49,0.08)] sm:p-9 lg:p-10">
+        <div className="space-y-4">
+          <p className="text-xs uppercase tracking-[0.34em] text-[color:var(--gold)]">
+            Bem-vindo à 9 Ilhas
+          </p>
+          <h1 className="max-w-[12ch] text-[2.65rem] leading-[0.92] text-[color:var(--ink)] sm:text-[3.6rem] lg:text-[4.3rem]">
+            Perfumes Árabes Originais
+          </h1>
+          <p className="max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
+            Fragrâncias selecionadas com entrega rápida na Ilha Terceira e envios
+            para Açores, Madeira e Portugal Continental.
+          </p>
         </div>
 
-        {slides.length > 1 ? (
-          <div className="mt-2.5 flex justify-center gap-2">
-            {slides.map((slide, index) => (
-              <button
-                key={slide.key}
-                type="button"
-                onClick={() => setActiveSlideIndex(index)}
-                className={`h-2.5 rounded-full transition ${
-                  index === activeSlideIndex
-                    ? "w-8 bg-[color:var(--gold)]"
-                    : "w-2.5 bg-[rgba(194,162,119,0.35)]"
-                }`}
-                aria-label={slide.label}
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href="/catalogo"
+            className="inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,_#b88746,_#d2a35f)] px-6 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(184,135,70,0.22)] transition hover:opacity-95"
+          >
+            Ver Catálogo
+          </Link>
+          <Link
+            href="/sobre-nos"
+            className="inline-flex items-center justify-center rounded-full border border-[rgba(183,146,107,0.28)] bg-white px-6 py-3 text-sm font-semibold text-[color:var(--ink)] transition hover:border-[color:var(--gold)] hover:text-[color:var(--gold)]"
+          >
+            Sobre Nós
+          </Link>
+        </div>
+
+        <div className="grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
+          {[
+            "Perfumes 100% Originais",
+            "Entrega rápida na Ilha Terceira",
+            "Atendimento personalizado por WhatsApp",
+            "Amostras disponíveis em 5ml",
+          ].map((item) => (
+            <div
+              key={item}
+              className="flex items-center gap-3 rounded-[1.3rem] border border-[rgba(194,162,119,0.18)] bg-white/78 px-4 py-3"
+            >
+              <span className="text-[color:var(--gold)]">✓</span>
+              <span>{item}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-[1.15fr_0.85fr]">
+        {visuals[0] ? <HeroVisualCard visual={visuals[0]} /> : null}
+        <div className="grid gap-4">
+          {visuals.slice(1, 3).map((visual) => (
+            <HeroVisualCard key={visual.key} visual={visual} />
+          ))}
+          {!visuals.length ? (
+            <div className="flex min-h-[18rem] items-center justify-center rounded-[2rem] border border-[rgba(194,162,119,0.18)] bg-[linear-gradient(180deg,_rgba(255,255,255,0.88),_rgba(249,240,228,0.92))] p-6 shadow-[0_18px_38px_rgba(95,71,49,0.1)]">
+              <Image
+                src="/logo-9-ilhas.svg"
+                alt="9 Ilhas Perfumaria"
+                width={280}
+                height={80}
+                className="h-auto w-44 opacity-85"
               />
-            ))}
-          </div>
-        ) : null}
+            </div>
+          ) : null}
+        </div>
       </div>
     </section>
   );
