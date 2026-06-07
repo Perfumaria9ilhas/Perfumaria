@@ -21,10 +21,10 @@ export function HeroHome({
   imageUrl,
 }: HeroHomeProps) {
   return (
-    <section className="overflow-hidden rounded-[2.4rem] border border-[rgba(194,162,119,0.16)] bg-[linear-gradient(180deg,_rgba(255,255,255,0.98),_rgba(249,242,232,0.95))] px-6 py-10 shadow-[0_22px_48px_rgba(95,71,49,0.07)] sm:px-8 sm:py-12 lg:px-14 lg:py-16">
+    <section className="overflow-hidden rounded-[2.4rem] border border-[rgba(194,162,119,0.16)] bg-[linear-gradient(180deg,_rgba(255,255,255,0.98),_rgba(249,242,232,0.95))] px-6 py-10 shadow-[0_22px_48px_rgba(95,71,49,0.07)] sm:px-8 sm:py-12 lg:px-12 lg:py-14">
       <div
         className={`mx-auto grid items-center gap-8 ${
-          imageUrl ? "max-w-6xl lg:grid-cols-[1fr_0.92fr]" : "max-w-4xl"
+          imageUrl ? "max-w-6xl lg:grid-cols-[0.86fr_1.14fr]" : "max-w-4xl"
         }`}
       >
         <div className="flex flex-col items-start gap-6 text-left">
@@ -33,10 +33,10 @@ export function HeroHome({
           </p>
 
           <div className="space-y-4">
-            <h1 className="max-w-[12ch] text-[2.8rem] leading-[0.9] text-[color:var(--ink)] sm:text-[3.8rem] lg:text-[5rem]">
+            <h1 className="max-w-[9ch] text-[2.8rem] leading-[0.9] text-[color:var(--ink)] sm:text-[3.5rem] lg:text-[4.35rem]">
               {title}
             </h1>
-            <p className="max-w-3xl text-base leading-8 text-slate-600 sm:text-lg">{description}</p>
+            <p className="max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">{description}</p>
           </div>
 
           <div className="flex flex-wrap gap-3">
@@ -68,14 +68,14 @@ export function HeroHome({
         </div>
 
         {imageUrl ? (
-          <div className="relative aspect-[4/3] overflow-hidden rounded-[2rem] border border-[rgba(194,162,119,0.16)] bg-[linear-gradient(180deg,_rgba(255,255,255,0.92),_rgba(245,235,221,0.92))] shadow-[0_18px_40px_rgba(95,71,49,0.08)]">
+          <div className="relative min-h-[320px] overflow-hidden rounded-[2rem] border border-[rgba(194,162,119,0.16)] bg-[linear-gradient(180deg,_rgba(255,255,255,0.92),_rgba(245,235,221,0.92))] shadow-[0_18px_40px_rgba(95,71,49,0.08)] sm:min-h-[360px] lg:min-h-[430px]">
             <Image
               src={imageUrl}
               alt={title}
               fill
               unoptimized
               priority
-              className="object-cover"
+              className="object-cover object-center"
             />
           </div>
         ) : null}
