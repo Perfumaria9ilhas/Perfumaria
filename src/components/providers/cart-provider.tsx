@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { formatPrice } from "@/lib/format";
+import { trackMetaEvent } from "@/lib/meta-pixel";
 import type { CartLine } from "@/lib/types";
 
 type CartItemInput = Omit<CartLine, "quantity">;
@@ -145,6 +146,7 @@ export function CartProvider({
         return "out-of-stock";
       }
       let result: AddItemResult | null = null;
+      let trackedQuantity = 0;
 
       setItems((current) => {
         const existingItem = current.find((entry) => entry.id === item.id);
@@ -158,6 +160,7 @@ export function CartProvider({
 
         const safeQuantity = Math.max(1, Math.min(quantity, availableQuantity));
         result = safeQuantity < quantity ? "limited" : "added";
+        trackedQuantity = safeQuantity;
 
         if (existingItem) {
           return current.map((entry) =>
@@ -169,6 +172,18 @@ export function CartProvider({
 
         return [...current, { ...item, quantity: safeQuantity }];
       });
+
+      if (result === "added" || result === "limited") {
+        trackMetaEvent("AddToCart", {
+          content_ids: [item.productId],
+          content_name: item.name,
+          content_category: item.sizeLabel,
+          content_type: "product",
+          currency: "EUR",
+          value: item.priceInCents / 100,
+          quantity: trackedQuantity,
+        });
+      }
 
       return result ?? "added";
     },

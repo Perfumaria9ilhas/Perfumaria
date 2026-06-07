@@ -5,6 +5,7 @@ import Image from "next/image";
 import { CreditCard, Lock, MapPinned, Minus, Plus, Truck, Trash2, X } from "lucide-react";
 import { useCart } from "@/components/providers/cart-provider";
 import { formatPrice } from "@/lib/format";
+import { trackMetaEvent } from "@/lib/meta-pixel";
 
 const trustPoints = [
   {
@@ -56,6 +57,14 @@ export function CartDrawer() {
     setIsSubmitting(true);
 
     try {
+      trackMetaEvent("InitiateCheckout", {
+        content_ids: items.map((item) => item.productId),
+        content_type: "product",
+        currency: "EUR",
+        num_items: items.reduce((sum, item) => sum + item.quantity, 0),
+        value: total / 100,
+      });
+
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -72,11 +81,28 @@ export function CartDrawer() {
         }),
       });
 
-      const data = (await response.json()) as { whatsappUrl?: string };
+      const data = (await response.json()) as {
+        whatsappUrl?: string;
+        orderId?: string;
+        reference?: string;
+      };
 
       if (!response.ok || !data.whatsappUrl) {
         return;
       }
+
+      trackMetaEvent("Purchase", {
+        content_ids: items.map((item) => item.productId),
+        content_type: "product",
+        currency: "EUR",
+        num_items: items.reduce((sum, item) => sum + item.quantity, 0),
+        value: total / 100,
+        order_id: data.orderId,
+      });
+      trackMetaEvent("Contact", {
+        content_name: "WhatsApp checkout",
+        content_type: "contact",
+      });
 
       clearCart();
       closeCart();

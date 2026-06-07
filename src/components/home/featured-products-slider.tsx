@@ -6,6 +6,7 @@ import { Flame } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/components/providers/cart-provider";
 import { formatPrice } from "@/lib/format";
+import { trackMetaEvent } from "@/lib/meta-pixel";
 import { getProductAudienceLabel } from "@/lib/product-audience";
 import {
   buildCartLineId,
@@ -57,6 +58,9 @@ export function FeaturedProductsSlider({
   const [feedback, setFeedback] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
   const [selectedSizes, setSelectedSizes] = useState<Record<string, ProductSizeValue>>({});
+  const selectedProductSize = selectedProduct
+    ? selectedSizes[selectedProduct.id] ?? "100ml"
+    : "100ml";
 
   const visibleProducts = useMemo(() => products.slice(0, 5), [products]);
 
@@ -74,13 +78,22 @@ export function FeaturedProductsSlider({
       return;
     }
 
+    trackMetaEvent("ViewContent", {
+      content_ids: [selectedProduct.id],
+      content_name: selectedProduct.name,
+      content_category: selectedProduct.category.name,
+      content_type: "product",
+      currency: "EUR",
+      value: getDisplayPrice(selectedProduct, selectedProductSize) / 100,
+    });
+
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
     return () => {
       document.body.style.overflow = previousOverflow;
     };
-  }, [selectedProduct]);
+  }, [selectedProduct, selectedProductSize]);
 
   function getSelectedSize(product: CatalogProduct) {
     return selectedSizes[product.id] ?? "100ml";
@@ -176,7 +189,7 @@ export function FeaturedProductsSlider({
                   type="button"
                   onClick={() => setProductSize(selectedProduct.id, "100ml")}
                   className={`rounded-full border px-3 py-2 text-xs font-semibold transition ${
-                    getSelectedSize(selectedProduct) === "100ml"
+                    selectedProductSize === "100ml"
                       ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-white"
                       : "border-[color:var(--line)] bg-[color:var(--sand-soft)] text-[color:var(--ink)]"
                   }`}
@@ -188,7 +201,7 @@ export function FeaturedProductsSlider({
                     type="button"
                     onClick={() => setProductSize(selectedProduct.id, "10ml")}
                     className={`rounded-full border px-3 py-2 text-xs font-semibold transition ${
-                      getSelectedSize(selectedProduct) === "10ml"
+                      selectedProductSize === "10ml"
                         ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-white"
                         : "border-[color:var(--line)] bg-[color:var(--sand-soft)] text-[color:var(--ink)]"
                     }`}
@@ -201,7 +214,7 @@ export function FeaturedProductsSlider({
                     type="button"
                     onClick={() => setProductSize(selectedProduct.id, "5ml")}
                     className={`rounded-full border px-3 py-2 text-xs font-semibold transition ${
-                      getSelectedSize(selectedProduct) === "5ml"
+                      selectedProductSize === "5ml"
                         ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-white"
                         : "border-[color:var(--line)] bg-[color:var(--sand-soft)] text-[color:var(--ink)]"
                     }`}
@@ -211,7 +224,7 @@ export function FeaturedProductsSlider({
                 ) : null}
               </div>
               <p className="text-2xl text-[color:var(--ink)]">
-                {formatPrice(getDisplayPrice(selectedProduct, getSelectedSize(selectedProduct)))}
+                {formatPrice(getDisplayPrice(selectedProduct, selectedProductSize))}
               </p>
               <div className="whitespace-pre-line text-sm leading-7 text-slate-600">
                 {selectedProduct.description}
