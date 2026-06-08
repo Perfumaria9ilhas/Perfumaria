@@ -113,8 +113,11 @@ export function CartDrawer() {
           onClick={closeCart}
         />
       ) : null}
+
       <aside
-        className={`cart-drawer fixed right-0 top-0 z-50 flex h-[100dvh] w-full max-w-md flex-col overflow-hidden border-l border-[color:var(--line)] bg-[color:var(--sand-soft)] shadow-2xl backdrop-blur transition-transform duration-300 ${isOpen ? "translate-x-0" : "translate-x-full"}`}
+        className={`cart-drawer fixed right-0 top-0 z-50 flex h-[100dvh] w-full max-w-md flex-col overflow-hidden border-l border-[color:var(--line)] bg-[color:var(--sand-soft)] shadow-2xl backdrop-blur transition-transform duration-300 ${
+          isOpen ? "translate-x-0" : "translate-x-full"
+        }`}
       >
         <div className="border-b border-[color:var(--line)] bg-gradient-to-b from-white via-white to-[color:var(--sand-soft)]/70 px-6 py-5">
           <div className="flex items-start justify-between gap-4">
@@ -135,9 +138,11 @@ export function CartDrawer() {
                 Revise os perfumes antes de finalizar a encomenda.
               </p>
             </div>
+
             <button
               className="rounded-full border border-[color:var(--line)] bg-white p-2 text-[color:var(--ink)] transition hover:border-[color:var(--gold)] hover:text-[color:var(--gold)]"
               onClick={closeCart}
+              aria-label="Fechar carrinho"
             >
               <X className="h-4 w-4" />
             </button>
@@ -189,6 +194,7 @@ export function CartDrawer() {
                         </h3>
                         <p className="text-xs text-slate-500">{item.sizeLabel}</p>
                       </div>
+
                       <div className="text-right">
                         {item.originalPriceInCents &&
                         item.originalPriceInCents > item.priceInCents ? (
@@ -207,16 +213,20 @@ export function CartDrawer() {
                         <button
                           className="rounded-full p-1 text-[color:var(--ink)] transition hover:bg-[color:var(--sand-soft)]"
                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          aria-label="Diminuir quantidade"
                         >
                           <Minus className="h-4 w-4" />
                         </button>
+
                         <span className="min-w-6 text-center text-sm font-semibold">
                           {item.quantity}
                         </span>
+
                         <button
                           className="rounded-full p-1 text-[color:var(--ink)] transition hover:bg-[color:var(--sand-soft)] disabled:opacity-40"
                           onClick={() => updateQuantity(item.id, item.quantity + 1)}
                           disabled={item.quantity >= item.stock}
+                          aria-label="Aumentar quantidade"
                         >
                           <Plus className="h-4 w-4" />
                         </button>
@@ -225,6 +235,7 @@ export function CartDrawer() {
                       <button
                         className="rounded-full p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-500"
                         onClick={() => removeItem(item.id)}
+                        aria-label="Remover produto"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
