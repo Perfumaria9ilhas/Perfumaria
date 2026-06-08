@@ -4,8 +4,8 @@ import { ArrowUpRight, Check, ChevronUp, MapPinHouse, MessageCircleMore, Package
 
 const accountBenefits = [
   "Guardar moradas de entrega",
-  "Historico de encomendas",
-  "Contacto mais rapido",
+  "Histórico de encomendas",
+  "Contacto mais rápido",
   "Entregas mais simples",
   "Acompanhamento personalizado",
 ];
@@ -14,17 +14,17 @@ const accountSignals = [
   {
     icon: MapPinHouse,
     title: "Moradas guardadas",
-    text: "Termina a encomenda com muito menos passos nas proximas compras.",
+    text: "Termina a encomenda com muito menos passos nas próximas compras.",
   },
   {
     icon: PackageCheck,
     title: "Pedidos ligados ao perfil",
-    text: "Fica mais facil acompanhar o que ja encomendou e repetir fragrancias.",
+    text: "Fica mais fácil acompanhar o que já encomendou e repetir fragrâncias.",
   },
   {
     icon: MessageCircleMore,
-    title: "Resposta mais rapida",
-    text: "O apoio por WhatsApp fica mais simples quando os dados ja estao associados.",
+    title: "Resposta mais rápida",
+    text: "O apoio por WhatsApp fica mais simples quando os dados já estão associados.",
   },
 ];
 
@@ -36,14 +36,14 @@ export function AccountInviteHome() {
         <div className="space-y-5">
           <div className="space-y-3">
             <p className="text-xs uppercase tracking-[0.34em] text-[color:var(--gold)]">
-              Acesso rapido
+              Acesso rápido
             </p>
             <h2 className="max-w-[13ch] font-serif text-[2.4rem] leading-[1.02] text-[color:var(--ink)] sm:text-[3rem]">
               Crie a sua conta em segundos.
             </h2>
             <p className="max-w-2xl text-base leading-8 text-slate-600">
-              Entre uma vez e deixe os proximos pedidos muito mais simples, organizados e
-              confortaveis para si.
+              Entre uma vez e deixe os próximos pedidos muito mais simples, organizados e
+              confortáveis para si.
             </p>
           </div>
 
@@ -81,7 +81,7 @@ export function AccountInviteHome() {
               <div>
                 <p className="text-xs uppercase tracking-[0.26em] text-slate-500">Acesso cliente</p>
                 <p className="text-sm font-semibold text-[color:var(--ink)]">
-                  Use o botao Login no menu superior
+                  Use o botão Login no menu superior
                 </p>
               </div>
             </div>
