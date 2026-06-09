@@ -271,12 +271,14 @@ export function CartDrawer() {
           </div>
 
           <button
-            onClick={handleCheckout}
-            disabled={!items.length || isSubmitting}
-            className="h-[54px] w-full rounded-full bg-[color:var(--atlantic)] px-5 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(30,82,116,0.25)] transition hover:bg-[color:var(--atlantic-deep)] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isSubmitting ? "A guardar pedido..." : "Finalizar encomenda no WhatsApp"}
-          </button>
+  type="button"
+  data-fb-event-ignore="true"
+  onClick={handleCheckout}
+  disabled={!items.length || isSubmitting}
+  className="h-[54px] w-full rounded-full bg-[color:var(--atlantic)] px-5 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(30,82,116,0.25)] transition hover:bg-[color:var(--atlantic-deep)] disabled:cursor-not-allowed disabled:opacity-50"
+>
+  {isSubmitting ? "A guardar pedido..." : "Finalizar encomenda no WhatsApp"}
+</button>
         </div>
       </aside>
     </>
