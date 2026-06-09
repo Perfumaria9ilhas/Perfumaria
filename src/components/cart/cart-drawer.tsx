@@ -8,22 +8,10 @@ import { formatPrice } from "@/lib/format";
 import { buildMetaContentId, trackMetaEvent } from "@/lib/meta-pixel";
 
 const trustPoints = [
-  {
-    icon: MapPinned,
-    label: "Entrega Local Ilha Terceira",
-  },
-  {
-    icon: Truck,
-    label: "Envio CTT",
-  },
-  {
-    icon: CreditCard,
-    label: "Pagamento por MBWay ou Transferência",
-  },
-  {
-    icon: Lock,
-    label: "Perfumes Originais",
-  },
+  { icon: MapPinned, label: "Entrega Local Ilha Terceira" },
+  { icon: Truck, label: "Envio CTT" },
+  { icon: CreditCard, label: "Pagamento por MBWay ou Transferência" },
+  { icon: Lock, label: "Perfumes Originais" },
 ];
 
 export function CartDrawer() {
@@ -50,9 +38,7 @@ export function CartDrawer() {
   }, [isOpen]);
 
   async function handleCheckout() {
-    if (!items.length || isSubmitting) {
-      return;
-    }
+    if (!items.length || isSubmitting) return;
 
     setIsSubmitting(true);
 
@@ -87,9 +73,7 @@ export function CartDrawer() {
         reference?: string;
       };
 
-      if (!response.ok || !data.whatsappUrl) {
-        return;
-      }
+      if (!response.ok || !data.whatsappUrl) return;
 
       trackMetaEvent("Contact", {
         content_name: "WhatsApp checkout",
@@ -108,6 +92,7 @@ export function CartDrawer() {
     <>
       {isOpen ? (
         <button
+          type="button"
           aria-label="Fechar carrinho"
           className="fixed inset-0 z-40 bg-slate-950/50"
           onClick={closeCart}
@@ -130,16 +115,20 @@ export function CartDrawer() {
                 className="h-auto w-36"
                 priority
               />
+
               <p className="text-[11px] uppercase tracking-[0.4em] text-[color:var(--atlantic)]">
                 Carrinho
               </p>
+
               <h2 className="font-serif text-3xl text-[color:var(--ink)]">A sua seleção</h2>
+
               <p className="mt-1 text-sm text-slate-500">
                 Revise os perfumes antes de finalizar a encomenda.
               </p>
             </div>
 
             <button
+              type="button"
               className="rounded-full border border-[color:var(--line)] bg-white p-2 text-[color:var(--ink)] transition hover:border-[color:var(--gold)] hover:text-[color:var(--gold)]"
               onClick={closeCart}
               aria-label="Fechar carrinho"
@@ -189,9 +178,11 @@ export function CartDrawer() {
                         <p className="text-[11px] uppercase tracking-[0.25em] text-[color:var(--atlantic)]">
                           {item.brand}
                         </p>
+
                         <h3 className="truncate pr-2 font-medium text-[color:var(--ink)]">
                           {item.name}
                         </h3>
+
                         <p className="text-xs text-slate-500">{item.sizeLabel}</p>
                       </div>
 
@@ -202,6 +193,7 @@ export function CartDrawer() {
                             {formatPrice(item.originalPriceInCents)}
                           </p>
                         ) : null}
+
                         <p className="text-sm font-semibold text-[color:var(--ink)]">
                           {formatPrice(item.priceInCents)}
                         </p>
@@ -211,6 +203,7 @@ export function CartDrawer() {
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2 rounded-full border border-[color:var(--line)] bg-[color:var(--sand-soft)]/45 px-2 py-1">
                         <button
+                          type="button"
                           className="rounded-full p-1 text-[color:var(--ink)] transition hover:bg-[color:var(--sand-soft)]"
                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
                           aria-label="Diminuir quantidade"
@@ -223,6 +216,7 @@ export function CartDrawer() {
                         </span>
 
                         <button
+                          type="button"
                           className="rounded-full p-1 text-[color:var(--ink)] transition hover:bg-[color:var(--sand-soft)] disabled:opacity-40"
                           onClick={() => updateQuantity(item.id, item.quantity + 1)}
                           disabled={item.quantity >= item.stock}
@@ -233,6 +227,7 @@ export function CartDrawer() {
                       </div>
 
                       <button
+                        type="button"
                         className="rounded-full p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-500"
                         onClick={() => removeItem(item.id)}
                         aria-label="Remover produto"
@@ -271,14 +266,13 @@ export function CartDrawer() {
           </div>
 
           <button
-  type="button"
-  data-fb-event-ignore="true"
-  onClick={handleCheckout}
-  disabled={!items.length || isSubmitting}
-  className="h-[54px] w-full rounded-full bg-[color:var(--atlantic)] px-5 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(30,82,116,0.25)] transition hover:bg-[color:var(--atlantic-deep)] disabled:cursor-not-allowed disabled:opacity-50"
->
-  {isSubmitting ? "A guardar pedido..." : "Finalizar encomenda no WhatsApp"}
-</button>
+            type="button"
+            onClick={handleCheckout}
+            disabled={!items.length || isSubmitting}
+            className="h-[54px] w-full rounded-full bg-[color:var(--atlantic)] px-5 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(30,82,116,0.25)] transition hover:bg-[color:var(--atlantic-deep)] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isSubmitting ? "A guardar pedido..." : "Finalizar encomenda no WhatsApp"}
+          </button>
         </div>
       </aside>
     </>
