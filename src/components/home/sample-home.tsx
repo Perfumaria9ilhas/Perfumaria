@@ -37,7 +37,13 @@ export function SampleHome({
 
         <div className="relative flex min-h-[430px] flex-col px-6 py-7 text-white lg:min-h-[360px] lg:px-12">
           <div className="max-w-2xl">
-            <h2 className="text-[2.2rem] font-semibold leading-[1.05] text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] sm:text-[2.8rem]">
+            <h2
+  className="text-[2.2rem] font-semibold leading-[1.05] sm:text-[2.8rem]"
+  style={{
+    color: "#ffffff",
+    textShadow: "0 4px 12px rgba(0,0,0,0.8)",
+  }}
+>
               {title}
             </h2>
           </div>
