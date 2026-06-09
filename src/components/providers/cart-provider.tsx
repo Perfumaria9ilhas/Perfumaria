@@ -36,30 +36,29 @@ const CartContext = createContext<CartContextValue | null>(null);
 const storageKey = "nineilhas-cart";
 
 function readStoredCart(): CartLine[] {
-  if (typeof window === "undefined") {
-    return [];
-  }
+  if (typeof window === "undefined") return [];
 
   const storedValue = window.localStorage.getItem(storageKey);
-
-  if (!storedValue) {
-    return [];
-  }
+  if (!storedValue) return [];
 
   try {
     const parsed = JSON.parse(storedValue) as Partial<CartLine>[];
 
     return parsed
-      .filter((item): item is Partial<CartLine> & Pick<CartLine, "id" | "name" | "brand" | "priceInCents" | "imageUrl" | "quantity"> =>
-        Boolean(
-          item &&
-            item.id &&
-            item.name &&
-            item.brand &&
-            typeof item.priceInCents === "number" &&
-            item.imageUrl &&
-            typeof item.quantity === "number",
-        ),
+      .filter(
+        (
+          item,
+        ): item is Partial<CartLine> &
+          Pick<CartLine, "id" | "name" | "brand" | "priceInCents" | "imageUrl" | "quantity"> =>
+          Boolean(
+            item &&
+              item.id &&
+              item.name &&
+              item.brand &&
+              typeof item.priceInCents === "number" &&
+              item.imageUrl &&
+              typeof item.quantity === "number",
+          ),
       )
       .map((item) => ({
         id: item.id,
@@ -103,10 +102,7 @@ export function CartProvider({
   }, []);
 
   useEffect(() => {
-    if (!hasHydrated) {
-      return;
-    }
-
+    if (!hasHydrated) return;
     window.localStorage.setItem(storageKey, JSON.stringify(items));
   }, [hasHydrated, items]);
 
@@ -124,14 +120,67 @@ export function CartProvider({
     const lines = items
       .map(
         (item) =>
-          `- ${item.name} ${item.sizeLabel} (${item.brand}) x${item.quantity} | ${formatPrice(item.priceInCents * item.quantity)}`,
+          `- ${item.name} ${item.sizeLabel} (${item.brand}) x${item.quantity} | ${formatPrice(
+            item.priceInCents * item.quantity,
+          )}`,
       )
       .join("\n");
 
-    const text = `Olá, quero encomendar estes produtos da 9 Ilhas Perfumaria\n\n${lines}\n\nTotal: ${formatPrice(total)}`;
+    const text = `Olá, quero encomendar estes produtos da 9 Ilhas Perfumaria\n\n${lines}\n\nTotal: ${formatPrice(
+      total,
+    )}`;
 
     return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(text)}`;
   }, [items, total, whatsappNumber]);
+
+  function addItem(item: CartItemInput, quantity: number): AddItemResult {
+    if (item.stock < 1) {
+      return "out-of-stock";
+    }
+
+    let result: AddItemResult = "added";
+    let trackedQuantity = 0;
+
+    setItems((current) => {
+      const existingItem = current.find((entry) => entry.id === item.id);
+      const existingQuantity = existingItem?.quantity ?? 0;
+      const availableQuantity = Math.max(item.stock - existingQuantity, 0);
+
+      if (availableQuantity < 1) {
+        result = "out-of-stock";
+        return current;
+      }
+
+      const safeQuantity = Math.max(1, Math.min(quantity, availableQuantity));
+      result = safeQuantity < quantity ? "limited" : "added";
+      trackedQuantity = safeQuantity;
+
+      if (existingItem) {
+        return current.map((entry) =>
+          entry.id === item.id
+            ? { ...entry, quantity: Math.min(entry.quantity + safeQuantity, entry.stock) }
+            : entry,
+        );
+      }
+
+      return [...current, { ...item, quantity: safeQuantity }];
+    });
+
+    if ((result === "added" || result === "limited") && trackedQuantity > 0) {
+      trackMetaEvent(
+        "AddToCart",
+        buildMetaProductPayload({
+          name: item.name,
+          brand: item.brand,
+          category: item.sizeLabel,
+          value: item.priceInCents / 100,
+          quantity: trackedQuantity,
+        }),
+      );
+    }
+
+    return result;
+  }
 
   const value: CartContextValue = {
     items,
@@ -141,53 +190,7 @@ export function CartProvider({
     hasHydrated,
     openCart: () => setIsOpen(true),
     closeCart: () => setIsOpen(false),
-    addItem: (item, quantity) => {
-      if (item.stock < 1) {
-        return "out-of-stock";
-      }
-      let result: AddItemResult | null = null;
-      let trackedQuantity = 0;
-
-      setItems((current) => {
-        const existingItem = current.find((entry) => entry.id === item.id);
-        const existingQuantity = existingItem?.quantity ?? 0;
-        const availableQuantity = Math.max(item.stock - existingQuantity, 0);
-
-        if (availableQuantity < 1) {
-          result = "out-of-stock";
-          return current;
-        }
-
-        const safeQuantity = Math.max(1, Math.min(quantity, availableQuantity));
-        result = safeQuantity < quantity ? "limited" : "added";
-        trackedQuantity = safeQuantity;
-
-        if (existingItem) {
-          return current.map((entry) =>
-            entry.id === item.id
-              ? { ...entry, quantity: Math.min(entry.quantity + safeQuantity, entry.stock) }
-              : entry,
-          );
-        }
-
-        return [...current, { ...item, quantity: safeQuantity }];
-      });
-
-      if (result === "added" || result === "limited") {
-        trackMetaEvent(
-          "AddToCart",
-          buildMetaProductPayload({
-            name: item.name,
-            brand: item.brand,
-            category: item.sizeLabel,
-            value: item.priceInCents / 100,
-            quantity: trackedQuantity,
-          }),
-        );
-      }
-
-      return result ?? "added";
-    },
+    addItem,
     updateQuantity: (id, quantity) => {
       setItems((current) =>
         current
