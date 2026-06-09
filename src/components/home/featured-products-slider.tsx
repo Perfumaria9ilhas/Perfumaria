@@ -283,7 +283,7 @@ export function FeaturedProductsSlider({
           </Link>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-5">
           {visibleProducts.map((product) => {
             const selectedSize = getSelectedSize(product);
             const currentPrice = getDisplayPrice(product, selectedSize);
