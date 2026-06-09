@@ -69,6 +69,7 @@ export function FeaturedProductsSlider({
   const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
   const [selectedSizes, setSelectedSizes] = useState<Record<string, ProductSizeValue>>({});
   const trackedViewContentId = useRef<string | null>(null);
+
   const selectedProductSize = selectedProduct
     ? selectedSizes[selectedProduct.id] ?? "100ml"
     : "100ml";
@@ -76,9 +77,7 @@ export function FeaturedProductsSlider({
   const visibleProducts = useMemo(() => products.slice(0, 5), [products]);
 
   useEffect(() => {
-    if (!feedback) {
-      return;
-    }
+    if (!feedback) return;
 
     const timer = window.setTimeout(() => setFeedback(null), 2200);
     return () => window.clearTimeout(timer);
@@ -106,9 +105,7 @@ export function FeaturedProductsSlider({
   }, [selectedProduct, selectedProductSize]);
 
   useEffect(() => {
-    if (!selectedProduct) {
-      return;
-    }
+    if (!selectedProduct) return;
 
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -130,13 +127,8 @@ export function FeaturedProductsSlider({
   }
 
   function getDisplayPrice(product: CatalogProduct, size: ProductSizeValue) {
-    if (size === "5ml") {
-      return FIVE_ML_PRICE_IN_CENTS;
-    }
-
-    if (size === "10ml") {
-      return TEN_ML_PRICE_IN_CENTS;
-    }
+    if (size === "5ml") return FIVE_ML_PRICE_IN_CENTS;
+    if (size === "10ml") return TEN_ML_PRICE_IN_CENTS;
 
     return product.salePriceInCents && product.salePriceInCents < product.priceInCents
       ? product.salePriceInCents
@@ -174,9 +166,7 @@ export function FeaturedProductsSlider({
     setFeedback(`${product.name} ${getProductSizeLabel(size)} foi adicionado ao carrinho.`);
   }
 
-  if (!visibleProducts.length) {
-    return null;
-  }
+  if (!visibleProducts.length) return null;
 
   return (
     <>
@@ -199,6 +189,7 @@ export function FeaturedProductsSlider({
                 Fechar
               </button>
             </div>
+
             <div className="min-h-0 space-y-3 overflow-y-auto overscroll-contain p-4 sm:p-5">
               <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--atlantic)]">
                 {selectedProduct.brand.name}
@@ -207,6 +198,7 @@ export function FeaturedProductsSlider({
               <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--atlantic)]">
                 {selectedProduct.category.name} · {getProductAudienceLabel(selectedProduct.audience)}
               </p>
+
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
@@ -219,6 +211,7 @@ export function FeaturedProductsSlider({
                 >
                   100 ml
                 </button>
+
                 {selectedProduct.availableInTenMl ? (
                   <button
                     type="button"
@@ -232,6 +225,7 @@ export function FeaturedProductsSlider({
                     10 ml · {formatPrice(TEN_ML_PRICE_IN_CENTS)}
                   </button>
                 ) : null}
+
                 {selectedProduct.availableInFiveMl ? (
                   <button
                     type="button"
@@ -246,12 +240,15 @@ export function FeaturedProductsSlider({
                   </button>
                 ) : null}
               </div>
+
               <p className="text-2xl text-[color:var(--ink)]">
                 {formatPrice(getDisplayPrice(selectedProduct, selectedProductSize))}
               </p>
+
               <div className="whitespace-pre-line text-sm leading-7 text-slate-600">
                 {selectedProduct.description}
               </div>
+
               <button
                 type="button"
                 onClick={() => handleAddToCart(selectedProduct)}
@@ -299,16 +296,12 @@ export function FeaturedProductsSlider({
             return (
               <article
                 key={product.id}
-                className="group relative flex h-full flex-col rounded-[1.9rem] border border-[rgba(194,162,119,0.16)] bg-[linear-gradient(180deg,_rgba(255,255,255,1),_rgba(252,246,238,0.96))] p-3 shadow-[0_14px_32px_rgba(95,71,49,0.06)] transition duration-300 hover:-translate-y-1.5 hover:shadow-[0_24px_42px_rgba(95,71,49,0.12)]"
+                className="group relative flex h-full flex-col rounded-[1.5rem] border border-[rgba(194,162,119,0.16)] bg-[linear-gradient(180deg,_rgba(255,255,255,1),_rgba(252,246,238,0.96))] p-3 shadow-[0_14px_32px_rgba(95,71,49,0.06)] transition duration-300 hover:-translate-y-1.5 hover:shadow-[0_24px_42px_rgba(95,71,49,0.12)]"
               >
-                <div className="absolute left-3 top-3 z-20 rounded-full bg-[linear-gradient(135deg,_#b88746,_#d8b06f)] px-3 py-1 text-[9px] font-bold uppercase tracking-[0.22em] text-white shadow-[0_8px_18px_rgba(184,135,70,0.2)]">
-                  ⭐ Mais Procurado
-                </div>
-
                 <button
                   type="button"
                   onClick={() => setSelectedProduct(product)}
-                  className="relative block aspect-[4/4.9] overflow-hidden rounded-[1.45rem] border border-[rgba(194,162,119,0.1)] bg-[linear-gradient(180deg,_#fffaf3,_#f3e8d8)]"
+                  className="relative block aspect-square overflow-hidden rounded-[1.45rem] border border-[rgba(194,162,119,0.1)] bg-[linear-gradient(180deg,_#fffaf3,_#f3e8d8)]"
                 >
                   <FeaturedProductImage imageUrl={product.imageUrl} name={product.name} />
                 </button>
@@ -317,9 +310,11 @@ export function FeaturedProductsSlider({
                   <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--atlantic)]">
                     {product.brand.name}
                   </p>
-                  <h3 className="mt-1.5 text-[1.45rem] leading-tight text-[color:var(--ink)]">
+
+                  <h3 className="mt-1.5 text-lg leading-tight text-[color:var(--ink)]">
                     {product.name}
                   </h3>
+
                   <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-[color:var(--gold)]">
                     {audience}
                   </p>
@@ -336,6 +331,7 @@ export function FeaturedProductsSlider({
                     >
                       Frasco Original 100ml
                     </button>
+
                     {product.availableInTenMl ? (
                       <button
                         type="button"
@@ -349,6 +345,7 @@ export function FeaturedProductsSlider({
                         Decant 10ml
                       </button>
                     ) : null}
+
                     {product.availableInFiveMl ? (
                       <button
                         type="button"
@@ -383,6 +380,7 @@ export function FeaturedProductsSlider({
                     >
                       Ver opções
                     </button>
+
                     <button
                       type="button"
                       onClick={() => handleAddToCart(product, selectedSize)}
