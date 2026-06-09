@@ -16,6 +16,14 @@ type MetaProductPayloadInput = {
   quantity?: number;
 };
 
+type AllowedMetaEvent =
+  | "PageView"
+  | "ViewContent"
+  | "AddToCart"
+  | "InitiateCheckout"
+  | "Contact"
+  | "CompleteRegistration";
+
 type MetaPixelFunction = {
   (...args: unknown[]): void;
   callMethod?: (...args: unknown[]) => void;
@@ -56,6 +64,7 @@ function readCurrentMetaUtmParams(): MetaUtmParams {
   }
 
   const searchParams = new URLSearchParams(window.location.search);
+
   const utm_source = searchParams.get("utm_source")?.trim();
   const utm_medium = searchParams.get("utm_medium")?.trim();
   const utm_campaign = searchParams.get("utm_campaign")?.trim();
@@ -72,7 +81,10 @@ function getPersistedMetaUtmParams(): MetaUtmParams {
 
   if (Object.keys(currentParams).length > 0) {
     if (typeof window !== "undefined") {
-      window.localStorage.setItem(META_UTM_STORAGE_KEY, JSON.stringify(currentParams));
+      window.localStorage.setItem(
+        META_UTM_STORAGE_KEY,
+        JSON.stringify(currentParams)
+      );
     }
 
     return currentParams;
@@ -136,7 +148,10 @@ export function trackMetaPageView() {
   window.fbq("track", "PageView");
 }
 
-export function trackMetaEvent(eventName: string, params?: MetaPixelParams) {
+export function trackMetaEvent(
+  eventName: AllowedMetaEvent,
+  params?: MetaPixelParams
+) {
   if (typeof window === "undefined" || typeof window.fbq !== "function") {
     return;
   }
