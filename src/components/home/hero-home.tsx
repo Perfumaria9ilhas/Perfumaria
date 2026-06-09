@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+
 type HeroHomeProps = {
   title: string;
   description: string;
@@ -21,66 +22,64 @@ export function HeroHome({
   imageUrl,
 }: HeroHomeProps) {
   return (
-    <section className="relative overflow-hidden rounded-[2.4rem] border border-[rgba(194,162,119,0.16)] shadow-[0_22px_48px_rgba(95,71,49,0.07)]">
-      <div className="relative h-[420px] sm:h-[480px] md:h-[540px] lg:h-[580px] xl:h-[620px]">
+    <section className="overflow-hidden rounded-[1.8rem] border border-[rgba(194,162,119,0.16)] bg-white shadow-[0_22px_48px_rgba(95,71,49,0.07)] sm:relative sm:rounded-[2.4rem]">
+      <div className="relative h-[270px] sm:absolute sm:inset-0 sm:h-full">
         {imageUrl ? (
-          <div className="absolute inset-0">
-            <Image
-              src={imageUrl}
-              alt={title}
-              fill
-              unoptimized
-              priority
-              className="h-full w-full object-cover object-center"
-            />
-          </div>
+          <Image
+            src={imageUrl}
+            alt={title}
+            fill
+            unoptimized
+            priority
+            className="h-full w-full object-cover object-center"
+          />
         ) : (
-          <div className="absolute inset-0 bg-slate-900/10" />
+          <div className="h-full w-full bg-slate-900/10" />
         )}
 
-        <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/35 to-transparent" />
+        <div className="absolute inset-0 hidden bg-gradient-to-r from-black/65 via-black/35 to-transparent sm:block" />
+      </div>
 
-        <div className="relative flex h-full flex-col justify-center px-6 py-8 pl-8 text-left text-white sm:px-8 sm:pl-10 lg:px-12 lg:pl-16 xl:pl-24">
-          <div className="max-w-[520px]">
-            <p className="mb-3 text-xs uppercase tracking-[0.34em] text-slate-100/80">
-              Bem-vindo à 9 Ilhas
-            </p>
+      <div className="relative bg-[color:var(--sand-soft)] px-5 py-7 text-left sm:flex sm:h-[480px] sm:flex-col sm:justify-center sm:bg-transparent sm:px-8 sm:py-8 sm:pl-10 sm:text-white md:h-[540px] lg:h-[580px] lg:px-12 lg:pl-16 xl:h-[620px] xl:pl-24">
+        <div className="max-w-[520px]">
+          <p className="mb-2 text-[10px] uppercase tracking-[0.28em] text-[color:var(--gold)] sm:mb-3 sm:text-xs sm:tracking-[0.34em] sm:text-slate-100/80">
+            Bem-vindo à 9 Ilhas
+          </p>
 
-            <h1 className="text-[2.4rem] leading-[0.95] text-white sm:text-[3rem] lg:text-[3.8rem]">
-              {title}
-            </h1>
+          <h1 className="text-[2.05rem] leading-[0.95] text-[color:var(--ink)] sm:text-[3rem] sm:text-white lg:text-[3.8rem]">
+            {title}
+          </h1>
 
-            <p className="mt-5 max-w-lg text-base leading-7 text-slate-100/85 sm:text-lg">
-              {description}
-            </p>
+          <p className="mt-4 max-w-lg text-sm leading-6 text-slate-600 sm:mt-5 sm:text-lg sm:leading-7 sm:text-slate-100/85">
+            {description}
+          </p>
 
-            <div className="mt-7 flex flex-wrap gap-3">
-              <Link
-                href="/catalogo"
-                className="inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,_#b88746,_#d2a35f)] px-6 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(184,135,70,0.22)] transition hover:opacity-95"
+          <div className="mt-5 flex flex-wrap gap-2.5 sm:mt-7 sm:gap-3">
+            <Link
+              href="/catalogo"
+              className="inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,_#b88746,_#d2a35f)] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(184,135,70,0.22)] transition hover:opacity-95 sm:px-6 sm:py-3"
+            >
+              {primaryButtonLabel}
+            </Link>
+
+            <Link
+              href="/sobre-nos"
+              className="inline-flex items-center justify-center rounded-full border border-[rgba(194,162,119,0.32)] bg-white px-5 py-2.5 text-sm font-semibold text-[color:var(--ink)] transition hover:border-[color:var(--gold)] sm:border-white/25 sm:bg-white/10 sm:px-6 sm:py-3 sm:text-white sm:hover:border-white/40 sm:hover:text-white/90"
+            >
+              {secondaryButtonLabel}
+            </Link>
+          </div>
+
+          <div className="mt-5 grid w-full gap-2.5 text-sm text-[color:var(--ink)] sm:mt-7 sm:grid-cols-2 sm:gap-3 sm:text-slate-100">
+            {benefits.filter(Boolean).map((item) => (
+              <div
+                key={item}
+                className="flex items-center gap-2.5 rounded-[1rem] border border-[rgba(194,162,119,0.18)] bg-white px-3.5 py-2.5 shadow-sm sm:gap-3 sm:rounded-[1.25rem] sm:border-white/15 sm:bg-slate-950/40 sm:px-4 sm:py-3 sm:shadow-none sm:backdrop-blur"
               >
-                {primaryButtonLabel}
-              </Link>
-
-              <Link
-                href="/sobre-nos"
-                className="inline-flex items-center justify-center rounded-full border border-white/25 bg-white/10 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/40 hover:text-white/90"
-              >
-                {secondaryButtonLabel}
-              </Link>
-            </div>
-
-            <div className="mt-7 grid w-full gap-3 text-sm text-slate-100 sm:grid-cols-2">
-              {benefits.filter(Boolean).map((item) => (
-                <div
-                  key={item}
-                  className="flex items-center gap-3 rounded-[1.25rem] border border-white/15 bg-slate-950/40 px-4 py-3 backdrop-blur"
-                >
-                  <span className="text-[color:var(--gold)]">✓</span>
-                  <span>{item}</span>
-                </div>
-              ))}
-            </div>
+                <span className="text-[color:var(--gold)]">✓</span>
+                <span>{item}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
