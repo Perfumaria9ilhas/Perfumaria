@@ -13,7 +13,6 @@ type SampleHomeProps = {
 
 export function SampleHome({
   imageUrl,
-  eyebrow,
   title,
   description,
   buttonLabel,
@@ -33,29 +32,23 @@ export function SampleHome({
           <div className="absolute inset-0 bg-[linear-gradient(180deg,_rgba(255,255,255,0.95),_rgba(250,243,234,0.94))]" />
         )}
 
-        <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/35 to-black/10" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent lg:hidden" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-black/15" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent" />
 
-        <div className="relative flex min-h-[430px] flex-col justify-end px-6 py-7 text-white lg:min-h-[360px] lg:justify-center lg:px-12">
-          <div className="max-w-2xl space-y-4">
-            <p className="text-xs uppercase tracking-[0.34em] text-white/80">
-              {eyebrow}
+        <div className="relative flex min-h-[430px] flex-col justify-start px-6 pt-8 pb-7 text-white lg:min-h-[360px] lg:justify-center lg:px-12">
+          <div className="max-w-2xl">
+            <h2 className="text-[2.2rem] font-semibold leading-[1.05] text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] sm:text-[2.8rem]">
+              {title}
+            </h2>
+
+            <p className="mt-4 max-w-3xl text-sm leading-7 text-white/95 sm:text-base">
+              {description}
             </p>
 
-            <div>
-              <h2 className="text-[2rem] leading-tight text-white sm:text-[2.5rem]">
-                {title}
-              </h2>
-
-              <p className="mt-3 max-w-3xl text-sm leading-7 text-white/85 sm:text-base">
-                {description}
-              </p>
-            </div>
-
-            <div>
+            <div className="mt-5">
               <Link
                 href="/catalogo"
-                className="inline-flex items-center justify-center rounded-full border border-white/30 bg-white/12 px-5 py-3 text-sm font-semibold text-white backdrop-blur transition hover:border-white/60 hover:bg-white/18"
+                className="inline-flex items-center justify-center rounded-full border border-white/40 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur transition hover:border-white/70 hover:bg-white/20"
               >
                 {buttonLabel}
               </Link>
