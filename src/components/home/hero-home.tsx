@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 
-
 type HeroHomeProps = {
   title: string;
   description: string;
@@ -18,7 +17,6 @@ export function HeroHome({
   description,
   primaryButtonLabel,
   secondaryButtonLabel,
-  benefits,
   imageUrl,
 }: HeroHomeProps) {
   return (
@@ -68,18 +66,6 @@ export function HeroHome({
             >
               {secondaryButtonLabel}
             </Link>
-          </div>
-
-          <div className="mt-5 grid w-full gap-2.5 text-sm text-[color:var(--ink)] sm:mt-7 sm:grid-cols-2 sm:gap-3 sm:text-slate-100">
-            {benefits.filter(Boolean).map((item) => (
-              <div
-                key={item}
-                className="flex items-center gap-2.5 rounded-[1rem] border border-[rgba(194,162,119,0.18)] bg-white px-3.5 py-2.5 shadow-sm sm:gap-3 sm:rounded-[1.25rem] sm:border-white/15 sm:bg-slate-950/40 sm:px-4 sm:py-3 sm:shadow-none sm:backdrop-blur"
-              >
-                <span className="text-[color:var(--gold)]">✓</span>
-                <span>{item}</span>
-              </div>
-            ))}
           </div>
         </div>
       </div>
