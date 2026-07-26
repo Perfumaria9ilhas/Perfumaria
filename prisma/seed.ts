@@ -32,6 +32,18 @@ const categories = [
   },
 ];
 
+const productTypes = [
+  { name: "EDP", slug: "edp" },
+  { name: "EDT", slug: "edt" },
+  { name: "Parfum", slug: "parfum" },
+  { name: "Extrait", slug: "extrait" },
+  { name: "Elixir", slug: "elixir" },
+  { name: "Pasta Corporal", slug: "pasta-corporal" },
+  { name: "Ambientador", slug: "ambientador" },
+  { name: "Gift Set", slug: "gift-set" },
+  { name: "Óleo Perfumado", slug: "oleo-perfumado" },
+];
+
 const products = [
   {
     name: "9PM",
@@ -443,6 +455,18 @@ async function main() {
     });
   }
 
+  for (const productType of productTypes) {
+    await prisma.productType.upsert({
+      where: { slug: productType.slug },
+      update: productType,
+      create: productType,
+    });
+  }
+
+  const defaultProductType = await prisma.productType.findUniqueOrThrow({
+    where: { slug: "edp" },
+  });
+
   for (const product of products) {
     const brand = await prisma.brand.findUniqueOrThrow({
       where: { slug: product.brandSlug },
@@ -474,6 +498,7 @@ async function main() {
           bestseller: product.bestseller,
           brandId: brand.id,
           categoryId: category.id,
+          productTypeId: defaultProductType.id,
         },
       });
     }

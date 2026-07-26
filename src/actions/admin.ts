@@ -1,7 +1,7 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { ProductAudience, ProductConcentration } from "@prisma/client";
+import { ProductAudience, ProductConcentration, StockMovementType } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -36,6 +36,11 @@ const categorySchema = z.object({
   description: z.string().optional(),
 });
 
+const productTypeSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(2),
+});
+
 const defaultProductImage = "";
 
 const productSchema = z.object({
@@ -44,16 +49,34 @@ const productSchema = z.object({
   brandId: z.string().min(1),
   categoryId: z.string().min(1),
   description: z.string().min(10),
+  inspiredBy: z.string().optional(),
+  durationLabel: z.string().optional(),
   priceInEuros: z.string().min(1),
   salePriceInEuros: z.string().optional().nullable(),
   stock: z.coerce.number().int().min(0),
   audience: z.nativeEnum(ProductAudience),
-  concentration: z.nativeEnum(ProductConcentration),
+  productTypeId: z.string().min(1),
   availableInFiveMl: z.boolean().default(false),
   availableInTenMl: z.boolean().default(false),
   active: z.boolean().default(false),
   featured: z.boolean().default(false),
   bestseller: z.boolean().default(false),
+});
+
+const stockSettingsSchema = z.object({
+  productId: z.string().min(1),
+  stock: z.coerce.number().int().min(0),
+  purchaseCostInEuros: z.string().optional().default(""),
+  lowStockAlert: z.coerce.number().int().min(0),
+  stockNotes: z.string().optional().default(""),
+});
+
+const stockMovementSchema = z.object({
+  productId: z.string().min(1),
+  type: z.nativeEnum(StockMovementType),
+  quantity: z.coerce.number().int().positive(),
+  unitCostInEuros: z.string().optional().default(""),
+  notes: z.string().optional().default(""),
 });
 
 const settingsSchema = z.object({
@@ -182,6 +205,28 @@ function parseEuroPriceToCents(value?: null | string) {
   return Math.round(parsed * 100);
 }
 
+function getLegacyConcentrationForProductTypeName(name: string) {
+  const normalized = name.trim().toUpperCase();
+
+  if (normalized === "EDT") {
+    return ProductConcentration.EDT;
+  }
+
+  if (normalized === "PARFUM") {
+    return ProductConcentration.PARFUM;
+  }
+
+  if (normalized === "EXTRAIT") {
+    return ProductConcentration.EXTRAIT;
+  }
+
+  if (normalized === "ELIXIR") {
+    return ProductConcentration.ELIXIR;
+  }
+
+  return ProductConcentration.EDP;
+}
+
 export async function loginAdmin(formData: FormData) {
   const parsed = loginSchema.safeParse({
     email: formData.get("email"),
@@ -300,6 +345,55 @@ export async function deleteCategory(formData: FormData) {
   revalidatePath("/catalogo");
 }
 
+export async function saveProductType(formData: FormData) {
+  await requireAdmin();
+
+  const parsed = productTypeSchema.parse({
+    id: formData.get("id") || undefined,
+    name: formData.get("name"),
+  });
+
+  const slug = slugify(parsed.name);
+
+  if (parsed.id) {
+    await prisma.productType.update({
+      where: { id: parsed.id },
+      data: {
+        name: parsed.name,
+        slug,
+      },
+    });
+  } else {
+    await prisma.productType.create({
+      data: {
+        name: parsed.name,
+        slug,
+      },
+    });
+  }
+
+  revalidatePath("/admin/produtos");
+  revalidatePath("/admin/tipos-produto");
+}
+
+export async function deleteProductType(formData: FormData) {
+  await requireAdmin();
+  const id = z.string().parse(formData.get("id"));
+
+  const productsUsingType = await prisma.product.count({
+    where: { productTypeId: id },
+  });
+
+  if (productsUsingType > 0) {
+    throw new Error("Este tipo está a ser usado em produtos existentes e não pode ser removido.");
+  }
+
+  await prisma.productType.delete({ where: { id } });
+
+  revalidatePath("/admin/produtos");
+  revalidatePath("/admin/tipos-produto");
+}
+
 export async function saveProduct(formData: FormData) {
   await requireAdmin();
 
@@ -312,17 +406,28 @@ export async function saveProduct(formData: FormData) {
     brandId: formData.get("brandId"),
     categoryId: formData.get("categoryId"),
     description: formData.get("description"),
+    inspiredBy: formData.get("inspiredBy") || undefined,
+    durationLabel: formData.get("durationLabel") || undefined,
     priceInEuros: formData.get("priceInEuros"),
     salePriceInEuros: formData.get("salePriceInEuros") || undefined,
     stock: formData.get("stock"),
     audience: formData.get("audience"),
-    concentration: formData.get("concentration"),
+    productTypeId: formData.get("productTypeId"),
     availableInFiveMl: formData.get("availableInFiveMl") === "on",
     availableInTenMl: formData.get("availableInTenMl") === "on",
     active: formData.get("active") === "on",
     featured: formData.get("featured") === "on",
     bestseller: formData.get("bestseller") === "on",
   });
+
+  const productType = await prisma.productType.findUnique({
+    where: { id: parsed.productTypeId },
+    select: { name: true },
+  });
+
+  if (!productType) {
+    throw new Error("Tipo de produto não encontrado");
+  }
 
   const priceInCents = parseEuroPriceToCents(parsed.priceInEuros);
   const rawSalePriceInCents = parseEuroPriceToCents(parsed.salePriceInEuros ?? undefined);
@@ -350,12 +455,15 @@ export async function saveProduct(formData: FormData) {
     brandId: parsed.brandId,
     categoryId: parsed.categoryId,
     description: parsed.description,
+    inspiredBy: parsed.inspiredBy?.toString().trim() || null,
+    durationLabel: parsed.durationLabel?.toString().trim() || null,
     priceInCents,
     salePriceInCents,
     stock: parsed.stock,
     imageUrl: finalImageUrl,
     audience: parsed.audience,
-    concentration: parsed.concentration,
+    concentration: getLegacyConcentrationForProductTypeName(productType.name),
+    productTypeId: parsed.productTypeId,
     availableInFiveMl: parsed.availableInFiveMl,
     availableInTenMl: parsed.availableInTenMl,
     active: parsed.active,
@@ -389,6 +497,94 @@ export async function deleteProduct(formData: FormData) {
   revalidatePath("/admin/produtos");
   revalidatePath("/catalogo");
   revalidatePath("/");
+}
+
+export async function saveStockSettings(formData: FormData) {
+  await requireAdmin();
+
+  const parsed = stockSettingsSchema.parse({
+    productId: formData.get("productId"),
+    stock: formData.get("stock"),
+    purchaseCostInEuros: formData.get("purchaseCostInEuros")?.toString() ?? "",
+    lowStockAlert: formData.get("lowStockAlert"),
+    stockNotes: formData.get("stockNotes")?.toString() ?? "",
+  });
+
+  const purchaseCostInCents = parseEuroPriceToCents(parsed.purchaseCostInEuros) ?? 0;
+
+  await prisma.product.update({
+    where: { id: parsed.productId },
+    data: {
+      stock: parsed.stock,
+      purchaseCostInCents,
+      lowStockAlert: parsed.lowStockAlert,
+      stockNotes: parsed.stockNotes.trim() || null,
+    },
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/stock");
+  redirect("/admin/stock?saved=1");
+}
+
+export async function saveStockMovement(formData: FormData) {
+  await requireAdmin();
+
+  const parsed = stockMovementSchema.parse({
+    productId: formData.get("productId"),
+    type: formData.get("type"),
+    quantity: formData.get("quantity"),
+    unitCostInEuros: formData.get("unitCostInEuros")?.toString() ?? "",
+    notes: formData.get("notes")?.toString() ?? "",
+  });
+
+  const unitCostInCents = parseEuroPriceToCents(parsed.unitCostInEuros);
+
+  await prisma.$transaction(async (tx) => {
+    const product = await tx.product.findUnique({
+      where: { id: parsed.productId },
+      select: { stock: true, purchaseCostInCents: true },
+    });
+
+    if (!product) {
+      throw new Error("Produto não encontrado");
+    }
+
+    const previousStock = product.stock;
+    const nextStock =
+      parsed.type === StockMovementType.ENTRY
+        ? previousStock + parsed.quantity
+        : parsed.type === StockMovementType.SALE
+          ? Math.max(0, previousStock - parsed.quantity)
+          : parsed.quantity;
+
+    await tx.product.update({
+      where: { id: parsed.productId },
+      data: {
+        stock: nextStock,
+        purchaseCostInCents:
+          parsed.type === StockMovementType.ENTRY && unitCostInCents !== null
+            ? unitCostInCents
+            : product.purchaseCostInCents,
+      },
+    });
+
+    await tx.stockMovement.create({
+      data: {
+        productId: parsed.productId,
+        type: parsed.type,
+        quantity: parsed.quantity,
+        previousStock,
+        resultingStock: nextStock,
+        unitCostInCents,
+        notes: parsed.notes.trim() || null,
+      },
+    });
+  });
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/stock");
+  redirect("/admin/stock?moved=1");
 }
 
 export async function saveStoreSettings(formData: FormData) {

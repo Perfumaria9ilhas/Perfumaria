@@ -217,9 +217,8 @@ export function CartDrawer() {
 
                         <button
                           type="button"
-                          className="rounded-full p-1 text-[color:var(--ink)] transition hover:bg-[color:var(--sand-soft)] disabled:opacity-40"
+                          className="rounded-full p-1 text-[color:var(--ink)] transition hover:bg-[color:var(--sand-soft)]"
                           onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          disabled={item.quantity >= item.stock}
                           aria-label="Aumentar quantidade"
                         >
                           <Plus className="h-4 w-4" />

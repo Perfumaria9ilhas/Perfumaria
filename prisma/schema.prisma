@@ -49,15 +49,29 @@ model Category {
   updatedAt   DateTime  @updatedAt
 }
 
+model ProductType {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  slug      String    @unique
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
 model Product {
   id               String            @id @default(cuid())
   name             String
   slug             String            @unique
   description      String
+  inspiredBy       String?
+  durationLabel    String?
   imageUrl         String
   priceInCents     Int
   salePriceInCents Int?
   stock            Int
+  purchaseCostInCents Int           @default(0)
+  lowStockAlert    Int               @default(3)
+  stockNotes       String?
   audience         ProductAudience   @default(UNISSEXO)
   concentration    ProductConcentration @default(EDP)
   availableInFiveMl Boolean          @default(true)
@@ -67,15 +81,19 @@ model Product {
   bestseller       Boolean           @default(false)
   brandId          String
   categoryId       String
+  productTypeId    String
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   brand            Brand             @relation(fields: [brandId], references: [id], onDelete: Cascade)
   category         Category          @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  productType      ProductType       @relation(fields: [productTypeId], references: [id], onDelete: Restrict)
   wishes           OutOfStockWish[]
   orderItems       SiteOrderItem[]
+  stockMovements   StockMovement[]
 
   @@index([brandId])
   @@index([categoryId])
+  @@index([productTypeId])
 }
 
 enum ProductAudience {
@@ -247,4 +265,41 @@ model StoredImage {
   data        Bytes
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model StockMovement {
+  id                String            @id @default(cuid())
+  productId         String
+  type              StockMovementType
+  reason            StockMovementReason?
+  customerName      String?
+  saleUnitPriceInCents Int?
+  quantity          Int
+  previousStock     Int
+  resultingStock    Int
+  unitCostInCents   Int?
+  supplier          String?
+  notes             String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  product           Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, createdAt])
+  @@index([type, createdAt])
+}
+
+enum StockMovementType {
+  ENTRY
+  SALE
+  ADJUSTMENT
+}
+
+enum StockMovementReason {
+  SALE
+  GIFT
+  LOSS
+  DECANT
+  INTERNAL_USE
+  OTHER
+  MANUAL
 }

@@ -14,7 +14,7 @@ import { buildMetaProductPayload, trackMetaEvent } from "@/lib/meta-pixel";
 import type { CartLine } from "@/lib/types";
 
 type CartItemInput = Omit<CartLine, "quantity">;
-type AddItemResult = "added" | "limited" | "out-of-stock";
+type AddItemResult = "added";
 
 type CartContextValue = {
   items: CartLine[];
@@ -134,31 +134,15 @@ export function CartProvider({
   }, [items, total, whatsappNumber]);
 
   function addItem(item: CartItemInput, quantity: number): AddItemResult {
-    if (item.stock < 1) {
-      return "out-of-stock";
-    }
-
-    let result: AddItemResult = "added";
-    let trackedQuantity = 0;
+    const safeQuantity = Math.max(1, quantity);
 
     setItems((current) => {
       const existingItem = current.find((entry) => entry.id === item.id);
-      const existingQuantity = existingItem?.quantity ?? 0;
-      const availableQuantity = Math.max(item.stock - existingQuantity, 0);
-
-      if (availableQuantity < 1) {
-        result = "out-of-stock";
-        return current;
-      }
-
-      const safeQuantity = Math.max(1, Math.min(quantity, availableQuantity));
-      result = safeQuantity < quantity ? "limited" : "added";
-      trackedQuantity = safeQuantity;
 
       if (existingItem) {
         return current.map((entry) =>
           entry.id === item.id
-            ? { ...entry, quantity: Math.min(entry.quantity + safeQuantity, entry.stock) }
+            ? { ...entry, quantity: entry.quantity + safeQuantity }
             : entry,
         );
       }
@@ -166,20 +150,18 @@ export function CartProvider({
       return [...current, { ...item, quantity: safeQuantity }];
     });
 
-    if ((result === "added" || result === "limited") && trackedQuantity > 0) {
-      trackMetaEvent(
-        "AddToCart",
-        buildMetaProductPayload({
-          name: item.name,
-          brand: item.brand,
-          category: item.sizeLabel,
-          value: item.priceInCents / 100,
-          quantity: trackedQuantity,
-        }),
-      );
-    }
+    trackMetaEvent(
+      "AddToCart",
+      buildMetaProductPayload({
+        name: item.name,
+        brand: item.brand,
+        category: item.sizeLabel,
+        value: item.priceInCents / 100,
+        quantity: safeQuantity,
+      }),
+    );
 
-    return result;
+    return "added";
   }
 
   const value: CartContextValue = {
@@ -195,9 +177,7 @@ export function CartProvider({
       setItems((current) =>
         current
           .map((item) =>
-            item.id === id
-              ? { ...item, quantity: Math.min(Math.max(quantity, 0), item.stock) }
-              : item,
+            item.id === id ? { ...item, quantity: Math.max(quantity, 0) } : item,
           )
           .filter((item) => item.quantity > 0),
       );

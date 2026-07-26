@@ -4,10 +4,7 @@ import { AdminShell } from "@/components/admin/admin-shell";
 import { requireAdmin } from "@/lib/auth";
 import { formatPrice } from "@/lib/format";
 import { getProductAudienceLabel, productAudienceOptions } from "@/lib/product-audience";
-import {
-  getProductConcentrationLabel,
-  productConcentrationOptions,
-} from "@/lib/product-concentration";
+import { getProductConcentrationLabel } from "@/lib/product-concentration";
 import { prisma } from "@/lib/prisma";
 
 function ProductFlags({
@@ -127,11 +124,12 @@ export default async function AdminProductsPage({
   const params = (await searchParams) ?? {};
   const selectedBrandSlug = params.marca ?? "";
 
-  const [brands, categories, products] = await Promise.all([
+  const [brands, categories, productTypes, products] = await Promise.all([
     prisma.brand.findMany({ orderBy: { name: "asc" } }),
     prisma.category.findMany({ orderBy: { name: "asc" } }),
+    prisma.productType.findMany({ orderBy: { name: "asc" } }),
     prisma.product.findMany({
-      include: { brand: true, category: true },
+      include: { brand: true, category: true, productType: true },
       orderBy: [
         { brand: { name: "asc" } },
         { bestseller: "desc" },
@@ -196,15 +194,11 @@ export default async function AdminProductsPage({
                 </option>
               ))}
             </select>
-            <select
-              name="concentration"
-              className="h-12 rounded-2xl border px-4"
-              defaultValue="EDP"
-              required
-            >
-              {productConcentrationOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
+            <select name="productTypeId" className="h-12 rounded-2xl border px-4" required>
+              <option value="">Selecionar tipo de produto</option>
+              {productTypes.map((productType) => (
+                <option key={productType.id} value={productType.id}>
+                  {productType.name}
                 </option>
               ))}
             </select>
@@ -238,6 +232,16 @@ export default async function AdminProductsPage({
               placeholder="Descrição do produto"
               className="min-h-32 rounded-2xl border px-4 py-3 md:col-span-2"
               required
+            />
+            <input
+              name="inspiredBy"
+              placeholder="Inspirado em (opcional)"
+              className="h-12 rounded-2xl border px-4 md:col-span-2"
+            />
+            <input
+              name="durationLabel"
+              placeholder="DuraÃ§Ã£o / relÃ³gio (ex: 6-8h)"
+              className="h-12 rounded-2xl border px-4 md:col-span-2"
             />
             <div className="grid gap-3 md:col-span-2 md:grid-cols-5">
               <label className="flex items-center gap-3 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-700">
@@ -351,7 +355,9 @@ export default async function AdminProductsPage({
                           <p className="text-xs text-slate-500">{product.category.name}</p>
                           <p className="text-xs text-slate-500">
                             {getProductAudienceLabel(product.audience)} ·{" "}
-                            {getProductConcentrationLabel(product.concentration)} ·{" "}
+                            {product.productType?.name ??
+                              getProductConcentrationLabel(product.concentration)}{" "}
+                            ·{" "}
                             {formatPrice(product.priceInCents)}
                           </p>
                         </div>
@@ -437,14 +443,14 @@ export default async function AdminProductsPage({
                             ))}
                           </select>
                           <select
-                            name="concentration"
-                            defaultValue={product.concentration}
+                            name="productTypeId"
+                            defaultValue={product.productTypeId}
                             className="h-12 rounded-2xl border px-4"
                             required
                           >
-                            {productConcentrationOptions.map((option) => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
+                            {productTypes.map((productType) => (
+                              <option key={productType.id} value={productType.id}>
+                                {productType.name}
                               </option>
                             ))}
                           </select>
@@ -484,6 +490,18 @@ export default async function AdminProductsPage({
                             defaultValue={product.description}
                             className="min-h-32 rounded-2xl border px-4 py-3 md:col-span-2"
                             required
+                          />
+                          <input
+                            name="inspiredBy"
+                            defaultValue={product.inspiredBy ?? ""}
+                            placeholder="Inspirado em"
+                            className="h-12 rounded-2xl border px-4 md:col-span-2"
+                          />
+                          <input
+                            name="durationLabel"
+                            defaultValue={product.durationLabel ?? ""}
+                            placeholder="DuraÃ§Ã£o / relÃ³gio (ex: 6-8h)"
+                            className="h-12 rounded-2xl border px-4 md:col-span-2"
                           />
                           <div className="grid gap-3 md:col-span-2 md:grid-cols-5">
                             <label className="flex items-center gap-3 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-700">

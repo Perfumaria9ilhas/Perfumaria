@@ -138,7 +138,7 @@ export function FeaturedProductsSlider({
   function handleAddToCart(product: CatalogProduct, size = getSelectedSize(product)) {
     const currentPrice = getDisplayPrice(product, size);
 
-    const result = addItem(
+    addItem(
       {
         id: buildCartLineId(product.id, size),
         productId: product.id,
@@ -152,16 +152,6 @@ export function FeaturedProductsSlider({
       },
       1,
     );
-
-    if (result === "out-of-stock") {
-      setFeedback(`Sem stock de momento para ${product.name}.`);
-      return;
-    }
-
-    if (result === "limited") {
-      setFeedback(`So existem ${product.stock} unidade(s) de ${product.name}.`);
-      return;
-    }
 
     setFeedback(`${product.name} ${getProductSizeLabel(size)} foi adicionado ao carrinho.`);
   }

@@ -1,6 +1,7 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { getAzoresDateKey } from "@/lib/date";
 import { prisma } from "@/lib/prisma";
+import { getAdminStockTableData } from "@/lib/stock-server";
 
 export async function getCatalogData() {
   noStore();
@@ -16,6 +17,7 @@ export async function getCatalogData() {
       include: {
         brand: true,
         category: true,
+        productType: true,
       },
       orderBy: [
         { bestseller: "desc" },
@@ -40,6 +42,7 @@ export async function getHomeData() {
       include: {
         brand: true,
         category: true,
+        productType: true,
       },
       orderBy: [{ bestseller: "desc" }, { featured: "desc" }, { updatedAt: "desc" }],
       take: 18,
@@ -89,6 +92,7 @@ export async function getAdminDashboardData() {
         include: {
           brand: true,
           category: true,
+          productType: true,
         },
         orderBy: { updatedAt: "desc" },
       }),
@@ -161,4 +165,9 @@ export async function getAdminReviewsData() {
   return prisma.storeReview.findMany({
     orderBy: { createdAt: "desc" },
   });
+}
+
+export async function getAdminStockData() {
+  const data = await getAdminStockTableData();
+  return data.rows;
 }

@@ -1,22 +1,4 @@
-export const productConcentrationOptions = [
-  { value: "EDT", label: "Eau de Toilette (EDT)" },
-  { value: "EDP", label: "Eau de Parfum (EDP)" },
-  { value: "PARFUM", label: "Parfum / Pure Parfum" },
-  { value: "EXTRAIT", label: "Extrait de Parfum" },
-  { value: "ELIXIR", label: "Elixir" },
-] as const;
-
-export type ProductConcentrationValue =
-  (typeof productConcentrationOptions)[number]["value"];
-
-const concentrationDetails: Record<
-  ProductConcentrationValue,
-  {
-    icon: string;
-    label: string;
-    description: string;
-  }
-> = {
+const knownProductTypeDetails = {
   EDT: {
     icon: "🥉",
     label: "Eau de Toilette (EDT)",
@@ -42,15 +24,40 @@ const concentrationDetails: Record<
     label: "Elixir",
     description: "Versão Intensa e de Longa Duração",
   },
+} as const;
+
+type KnownProductTypeKey = keyof typeof knownProductTypeDetails;
+
+type ProductTypePresentation = {
+  icon: string;
+  label: string;
+  description: string;
 };
 
-export function getProductConcentrationLabel(value: string) {
-  return (
-    productConcentrationOptions.find((option) => option.value === value)?.label ??
-    "Eau de Parfum (EDP)"
-  );
+function normalizeProductTypeKey(value?: string | null) {
+  return value?.trim().toUpperCase() ?? "";
 }
 
-export function getProductConcentrationDetails(value: string) {
-  return concentrationDetails[(value as ProductConcentrationValue) ?? "EDP"] ?? concentrationDetails.EDP;
+export function getProductConcentrationLabel(value?: string | null) {
+  const normalized = normalizeProductTypeKey(value);
+
+  if (normalized in knownProductTypeDetails) {
+    return knownProductTypeDetails[normalized as KnownProductTypeKey].label;
+  }
+
+  return value?.trim() || knownProductTypeDetails.EDP.label;
+}
+
+export function getProductConcentrationDetails(value?: string | null): ProductTypePresentation {
+  const normalized = normalizeProductTypeKey(value);
+
+  if (normalized in knownProductTypeDetails) {
+    return knownProductTypeDetails[normalized as KnownProductTypeKey];
+  }
+
+  return {
+    icon: "•",
+    label: value?.trim() || knownProductTypeDetails.EDP.label,
+    description: "",
+  };
 }

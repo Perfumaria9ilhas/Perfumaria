@@ -4,12 +4,14 @@ import type {
   HeroSlide,
   OutOfStockWish,
   Product,
+  ProductType,
   StoreSettings,
 } from "@prisma/client";
 
 export type CatalogProduct = Product & {
   brand: Brand;
   category: Category;
+  productType: ProductType;
 };
 
 export type CartLine = {
