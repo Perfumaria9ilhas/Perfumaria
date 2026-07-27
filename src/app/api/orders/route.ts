@@ -1,4 +1,4 @@
-import { revalidatePath } from "next/cache";
+﻿import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentCustomer } from "@/lib/auth";
@@ -25,16 +25,24 @@ function buildWhatsappMessage(
   totalInCents: number,
   customerName?: string,
 ) {
-  const lines = items
+  const productBlocks = items
     .map(
       (item) =>
-        `• ${item.brand} ${item.name} (${item.sizeLabel}) - ${formatPrice(item.priceInCents * item.quantity)}`,
+        `${item.brand} ${item.name} \u2014 ${item.sizeLabel}\n${item.quantity} \u00D7 ${formatPrice(item.priceInCents)}`,
     )
-    .join("\n");
+    .join("\n\n");
 
-  return `Olá!\n\nGostaria de encomendar:\n\n${lines}\n\nTotal: ${formatPrice(
-    totalInCents,
-  )}\n\nNome: ${customerName ?? ""}\nIlha:\nMétodo de entrega:\n( ) Entrega local Ilha Terceira\n( ) Envio CTT\n\nObrigado.`;
+  return (
+    `\u{1F6CD}\uFE0F Novo Pedido \u2014 Perfumaria 9 Ilhas\n\n` +
+    `Ol\u00E1! Gostaria de fazer a seguinte encomenda:\n\n` +
+    `${productBlocks}\n\n` +
+    `\u{1F4B0} Total: ${formatPrice(totalInCents)}\n\n` +
+    `Os meus dados:\n` +
+    `\u{1F464} Nome: ${customerName ?? ""}\n` +
+    `\u{1F3DD}\uFE0F Ilha:\n` +
+    `\u{1F69A} M\u00E9todo de entrega: Entrega em m\u00E3o / Envio CTT\n\n` +
+    `Obrigado! \u{1F60A}`
+  );
 }
 
 function buildReference() {
@@ -49,7 +57,7 @@ export async function POST(request: Request) {
   const parsed = createOrderSchema.safeParse(json);
 
   if (!parsed.success) {
-    return NextResponse.json({ error: "Pedido inválido." }, { status: 400 });
+    return NextResponse.json({ error: "Pedido inv\u00E1lido." }, { status: 400 });
   }
 
   const totalInCents = parsed.data.items.reduce(
@@ -63,7 +71,7 @@ export async function POST(request: Request) {
   });
 
   if (!settings?.whatsappNumber) {
-    return NextResponse.json({ error: "WhatsApp não configurado." }, { status: 400 });
+    return NextResponse.json({ error: "WhatsApp n\u00E3o configurado." }, { status: 400 });
   }
 
   const loggedCustomer = await getCurrentCustomer();
@@ -136,9 +144,7 @@ export async function POST(request: Request) {
     return createdOrder;
   });
 
-  const whatsappUrl = `https://wa.me/${settings.whatsappNumber}?text=${encodeURIComponent(
-    `${whatsappMessage}\n\nReferência do pedido: ${order.reference}`,
-  )}`;
+  const whatsappUrl = `https://wa.me/${settings.whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`;
 
   revalidatePath("/");
 
