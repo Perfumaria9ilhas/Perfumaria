@@ -49,7 +49,7 @@ const products = [
     name: "9PM",
     slug: "9pm",
     description:
-      "Para homens que gostam de marcar presenca e deixar rasto.\n\nNotas de topo: bergamota, maca, canela e lavanda.\nNotas de coracao: flor de laranjeira e lirio-do-vale.\nNotas de fundo: baunilha, fava tonka, ambar e patchouli.\n\nDoce, sedutor, ideal para noite e inverno.\nDuracao: 9/10.\nProjecao: 9/10.",
+      "Para homens que gostam de marcar presença e deixar rasto.\n\nNotas de topo: bergamota, maçã, canela e lavanda.\nNotas de coração: flor de laranjeira e lírio-do-vale.\nNotas de fundo: baunilha, fava tonka, âmbar e patchouli.\n\nDoce, sedutor, ideal para noite e inverno.\nDuração: 9/10.\nProjeção: 9/10.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 3490,
     salePriceInCents: 3190,
@@ -65,7 +65,7 @@ const products = [
     name: "9PM Femme",
     slug: "9pm-femme",
     description:
-      "Feminino, elegante e envolvente.\n\nNotas de topo: frutas citricas e frutos vermelhos.\nNotas de coracao: flores brancas e rosa.\nNotas de fundo: baunilha, almiscar e ambar.\n\nRomantico, doce e feminino.\nDuracao: 8/10.",
+      "Feminino, elegante e envolvente.\n\nNotas de topo: frutas cítricas e frutos vermelhos.\nNotas de coração: flores brancas e rosa.\nNotas de fundo: baunilha, almíscar e âmbar.\n\nRomântico, doce e feminino.\nDuração: 8/10.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 3490,
     salePriceInCents: null,
@@ -81,7 +81,7 @@ const products = [
     name: "9AM Dive",
     slug: "9am-dive",
     description:
-      "Fragrancia fresca e aquatica com citrinos vibrantes, maca verde e notas amadeiradas modernas.",
+      "Fragrância fresca e aquática com citrinos vibrantes, maçã verde e notas amadeiradas modernas.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 2990,
     salePriceInCents: null,
@@ -97,7 +97,7 @@ const products = [
     name: "Sabah Al Ward",
     slug: "sabah-al-ward",
     description:
-      "Delicadeza floral com toque oriental luxuoso.\n\nNotas de topo: mandarina e frutas.\nNotas de coracao: rosa e flores brancas.\nNotas de fundo: baunilha e almiscar.\n\nFeminino, elegante e sofisticado.",
+      "Delicadeza floral com toque oriental luxuoso.\n\nNotas de topo: mandarina e frutas.\nNotas de coração: rosa e flores brancas.\nNotas de fundo: baunilha e almíscar.\n\nFeminino, elegante e sofisticado.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 2990,
     salePriceInCents: null,
@@ -113,7 +113,7 @@ const products = [
     name: "Club de Nuit Intense Man",
     slug: "club-de-nuit-intense-man",
     description:
-      "Um dos perfumes arabes masculinos mais procurados do mundo.\n\nNotas de topo: limao, bergamota, ananas, maca e groselha negra.\nNotas de coracao: jasmim, rosa e vidoeiro.\nNotas de fundo: ambar cinzento, almiscar, baunilha e patchouli.\n\nMasculino, luxuoso e marcante.\nDuracao: 10/10.\nProjecao: 10/10.",
+      "Um dos perfumes árabes masculinos mais procurados do mundo.\n\nNotas de topo: limão, bergamota, ananás, maçã e groselha negra.\nNotas de coração: jasmim, rosa e vidoeiro.\nNotas de fundo: âmbar cinzento, almíscar, baunilha e patchouli.\n\nMasculino, luxuoso e marcante.\nDuração: 10/10.\nProjeção: 10/10.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 4490,
     salePriceInCents: 4190,
@@ -129,7 +129,7 @@ const products = [
     name: "Club de Nuit EDP",
     slug: "club-de-nuit-edp",
     description:
-      "Luxo, feminilidade e sofisticacao.\n\nNotas de topo: laranja, toranja, bergamota e pessego.\nNotas de coracao: rosa, jasmim, geranio e lichia.\nNotas de fundo: baunilha, almiscar, patchouli e vetiver.\n\nElegante, pensado para mulher confiante.\nDuracao: 9/10.",
+      "Luxo, feminilidade e sofisticação.\n\nNotas de topo: laranja, toranja, bergamota e pêssego.\nNotas de coração: rosa, jasmim, gerânio e lichia.\nNotas de fundo: baunilha, almíscar, patchouli e vetiver.\n\nElegante, pensado para mulher confiante.\nDuração: 9/10.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 4990,
     salePriceInCents: null,
@@ -145,7 +145,7 @@ const products = [
     name: "Ameerat Al Arab Sugar Crown",
     slug: "ameerat-al-arab-sugar-crown",
     description:
-      "Perfume feminino gourmand com baunilha cremosa, acucar caramelizado e flores delicadas.",
+      "Perfume feminino gourmand com baunilha cremosa, açúcar caramelizado e flores delicadas.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 3290,
     salePriceInCents: null,
@@ -161,7 +161,7 @@ const products = [
     name: "Liquid Brun",
     slug: "liquid-brun",
     description:
-      "Sofisticacao intensa e luxuosa.\n\nPerfil: madeiras nobres, baunilha e especiarias.\n\nMasculino, elegante e ideal para a noite.",
+      "Sofisticação intensa e luxuosa.\n\nPerfil: madeiras nobres, baunilha e especiarias.\n\nMasculino, elegante e ideal para a noite.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 4290,
     salePriceInCents: null,
@@ -177,7 +177,7 @@ const products = [
     name: "Asad",
     slug: "asad",
     description:
-      "Poder, intensidade e elegancia arabe.\n\nNotas de topo: pimenta preta, tabaco e ananas.\nNotas de coracao: cafe, patchouli e iris.\nNotas de fundo: baunilha, ambar, benjoim, madeira seca e ladano.\n\nForte, ideal para noite e inverno.\nDuracao: 10/10.\nProjecao: 9/10.",
+      "Poder, intensidade e elegância árabe.\n\nNotas de topo: pimenta preta, tabaco e ananás.\nNotas de coração: café, patchouli e íris.\nNotas de fundo: baunilha, âmbar, benjoim, madeira seca e ládano.\n\nForte, ideal para noite e inverno.\nDuração: 10/10.\nProjeção: 9/10.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 2990,
     salePriceInCents: null,
@@ -193,7 +193,7 @@ const products = [
     name: "Asad Bourbon",
     slug: "asad-bourbon",
     description:
-      "Uma interpretacao mais quente e sofisticada da linha Asad.\n\nPerfil: baunilha amadeirada, especiado e ambar.\n\nElegante, sedutor e exclusivo.",
+      "Uma interpretação mais quente e sofisticada da linha Asad.\n\nPerfil: baunilha amadeirada, especiado e âmbar.\n\nElegante, sedutor e exclusivo.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 3590,
     salePriceInCents: null,
@@ -224,7 +224,7 @@ const products = [
     name: "Eclaire",
     slug: "eclaire",
     description:
-      "Um verdadeiro dessert em forma de perfume.\n\nPerfil: baunilha, leite, caramelo e acucar.\n\nFeminino, doce e viciante.",
+      "Um verdadeiro dessert em forma de perfume.\n\nPerfil: baunilha, leite, caramelo e açúcar.\n\nFeminino, doce e viciante.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 3800,
     salePriceInCents: null,
@@ -240,7 +240,7 @@ const products = [
     name: "Eclaire Pistache",
     slug: "eclaire-pistache",
     description:
-      "A versao cremosa e sofisticada da linha Eclaire.\n\nPerfil: pistacio, baunilha e creme.\n\nGourmand, luxuoso e diferente.",
+      "A versão cremosa e sofisticada da linha Eclaire.\n\nPerfil: pistácio, baunilha e creme.\n\nGourmand, luxuoso e diferente.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 3990,
     salePriceInCents: null,
@@ -255,7 +255,7 @@ const products = [
   {
     name: "Fakhar Gold Extrait",
     slug: "fakhar-gold-extrait",
-    description: "Perfume elegante com flores brancas, ambar dourado e fundo sensual amadeirado.",
+    description: "Perfume elegante com flores brancas, âmbar dourado e fundo sensual amadeirado.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 4290,
     salePriceInCents: null,
@@ -271,7 +271,7 @@ const products = [
     name: "Khamrah",
     slug: "khamrah",
     description:
-      "Fragrancia quente e envolvente com canela, baunilha, tamaras, ambar e especiarias orientais.",
+      "Fragrância quente e envolvente com canela, baunilha, tamaras, âmbar e especiarias orientais.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 3890,
     salePriceInCents: 3590,
@@ -286,7 +286,7 @@ const products = [
   {
     name: "Mayar",
     slug: "mayar",
-    description: "Aroma floral frutado feminino com lichia, rosa e almiscar branco.",
+    description: "Aroma floral frutado feminino com lichia, rosa e almíscar branco.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 3490,
     salePriceInCents: null,
@@ -318,7 +318,7 @@ const products = [
     name: "Yara Tous",
     slug: "yara-tous",
     description:
-      "Tropical e irresistivel.\n\nPerfil: manga, coco e baunilha.\n\nPerfeito para verao, doce e exotico.",
+      "Tropical e irresistível.\n\nPerfil: manga, coco e baunilha.\n\nPerfeito para verão, doce e exótico.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 3490,
     salePriceInCents: null,
@@ -350,7 +350,7 @@ const products = [
     name: "Jorge Di Profumo",
     slug: "jorge-di-profumo",
     description:
-      "Frescura aquatica com assinatura masculina refinada.\n\nPerfil: citricos, marinho e madeira.\n\nVersatil, perfeito para verao e uso diario.",
+      "Frescura aquática com assinatura masculina refinada.\n\nPerfil: cítricos, marinho e madeira.\n\nVersátil, perfeito para verão e uso diário.",
     imageUrl: "/placeholders/perfume-default.svg",
     priceInCents: 3290,
     salePriceInCents: null,

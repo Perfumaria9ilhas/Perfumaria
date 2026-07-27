@@ -264,7 +264,7 @@ export function StockAdminTable({
     setDrafts({});
     setBanner({
       tone: "success",
-      message: "Alteracoes pendentes limpas.",
+      message: "Alterações pendentes limpas.",
     });
   }
 
@@ -519,7 +519,7 @@ export function StockAdminTable({
                 <th>Marca</th>
                 <th>Categoria</th>
                 <th>Fornecedor</th>
-                <th>Preco</th>
+                <th>Preço</th>
                 <th>Custo</th>
                 <th>Stock</th>
                 <th>Estado</th>
@@ -964,7 +964,7 @@ export function StockAdminTable({
                     <option value="all">Estado</option>
                     <option value="OUT">Esgotado</option>
                     <option value="LOW">Stock baixo</option>
-                    <option value="STABLE">Stock estavel</option>
+                    <option value="STABLE">Stock estável</option>
                   </CompactSelect>
                   <div className="flex items-center gap-2 rounded-2xl border border-[color:var(--line)] bg-white px-3">
                     <SlidersHorizontal className="h-4 w-4 text-slate-500" />
@@ -1081,7 +1081,7 @@ export function StockAdminTable({
         <div className="border-b border-[color:var(--line)] bg-white px-3 py-2 md:hidden">
           <div className="grid grid-cols-[minmax(0,2fr)_4.8rem_4.2rem_3.4rem_2rem_2rem] items-center gap-2 text-[10px] uppercase tracking-[0.12em] text-slate-500">
             <span>Produto</span>
-            <span>Preco</span>
+            <span>Preço</span>
             <button
               type="button"
               onClick={() => setShowUnitCostColumn((current) => !current)}
@@ -1121,14 +1121,14 @@ export function StockAdminTable({
                   className="hidden md:table-cell"
                 />
                 <TableHeader
-                  title="Preco de venda"
+                  title="Preço de venda"
                   active={sortKey === "salePrice"}
                   direction={sortDirection}
                   onClick={() => toggleSort("salePrice")}
                   className="hidden md:table-cell"
                 />
                 <TableHeader
-                  title={showUnitCostColumn ? "Custo unitario - ocultar" : "Custo unitario - mostrar"}
+                  title={showUnitCostColumn ? "Custo unitário - ocultar" : "Custo unitário - mostrar"}
                   active={showUnitCostColumn}
                   direction="asc"
                   onClick={() => setShowUnitCostColumn((current) => !current)}
@@ -1149,7 +1149,7 @@ export function StockAdminTable({
                   className="hidden md:table-cell"
                 />
                 <TableHeader
-                  title="Saidas"
+                  title="Saídas"
                   active={sortKey === "outputs"}
                   direction={sortDirection}
                   onClick={() => toggleSort("outputs")}
@@ -1244,12 +1244,12 @@ export function StockAdminTable({
                           placeholder=""
                         />
                         <MobileIconAction
-                          label="Saida"
+                          label="Saída"
                           icon={<PackageX className="h-3.5 w-3.5" />}
                           onClick={() => setMovementModal({ kind: "SALE", row })}
                         />
                         <MobileIconAction
-                          label="Historico"
+                          label="Histórico"
                           icon={<History className="h-3.5 w-3.5" />}
                           onClick={() => openHistory(row)}
                         />
@@ -1336,13 +1336,13 @@ export function StockAdminTable({
                           </button>
                         ) : null}
                         <ActionButton
-                          label="Saida"
+                          label="Saída"
                           icon={<PackageX className="h-3.5 w-3.5" />}
                           onClick={() => setMovementModal({ kind: "SALE", row })}
                           mobileIconOnly
                         />
                         <ActionButton
-                          label="Historico"
+                          label="Histórico"
                           icon={<History className="h-3.5 w-3.5" />}
                           onClick={() => openHistory(row)}
                           mobileIconOnly
@@ -1454,7 +1454,7 @@ export function StockAdminTable({
         <SummaryCard label="Unidades" value={summary.totalUnits} helper="Total de stock somado nesta vista." />
         <SummaryCard label="Stock baixo" value={summary.lowStockProducts} helper="Produtos abaixo do limite de alerta." />
         <SummaryCard label="Esgotados" value={summary.outOfStockProducts} helper="Produtos sem unidades disponiveis." />
-        <SummaryCard label="Investido" value={formatPrice(summary.totalInvestedInCents)} helper="Baseado no custo unitario atual." />
+        <SummaryCard label="Investido" value={formatPrice(summary.totalInvestedInCents)} helper="Baseado no custo unitário atual." />
         <SummaryCard label="Venda potencial" value={formatPrice(summary.totalPotentialSalesInCents)} helper="Valor bruto do stock atual." />
         <SummaryCard label="Lucro potencial" value={formatPrice(summary.totalPotentialProfitInCents)} helper="Ignora produtos sem custo definido." />
       </section>
@@ -1466,7 +1466,7 @@ export function StockAdminTable({
         >
           {movementModal.kind === "HISTORY" ? (
             historyLoading ? (
-              <p className="text-sm text-slate-500">A carregar historico...</p>
+              <p className="text-sm text-slate-500">A carregar histórico...</p>
             ) : historyRows.length ? (
               <div className="max-h-[60vh] space-y-3 overflow-y-auto pr-1">
                 {historyRows.map((movement) => (
@@ -1501,7 +1501,7 @@ export function StockAdminTable({
                     ) : null}
                     {movement.unitCostInCents !== null ? (
                       <p className="mt-1 text-sm text-slate-500">
-                        Custo unitario {formatPrice(movement.unitCostInCents)}
+                        Custo unitário {formatPrice(movement.unitCostInCents)}
                       </p>
                     ) : null}
                     {movement.supplier ? (
@@ -1512,7 +1512,7 @@ export function StockAdminTable({
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-slate-500">Ainda nao existem movimentos registados para este produto.</p>
+              <p className="text-sm text-slate-500">Ainda não existem movimentos registados para este produto.</p>
             )
           ) : movementModal.kind === "NOTES" ? (
             <form className="space-y-4" onSubmit={(event) => submitNotes(event, movementModal.row)}>
@@ -1520,7 +1520,7 @@ export function StockAdminTable({
                 name="stockNotes"
                 defaultValue={movementModal.row.stockNotes ?? ""}
                 className="min-h-32 w-full rounded-2xl border border-[color:var(--line)] px-4 py-3"
-                placeholder="Notas internas, fornecedor habitual ou observacoes."
+                placeholder="Notas internas, fornecedor habitual ou observações."
               />
               <div className="flex justify-end">
                 <button className="rounded-full bg-[color:var(--atlantic)] px-5 py-3 text-sm font-semibold text-white">
@@ -1536,7 +1536,7 @@ export function StockAdminTable({
                   <Field label="Quantidade">
                     <input name="quantity" type="number" min="1" required className="h-12 w-full rounded-2xl border border-[color:var(--line)] px-4" />
                   </Field>
-                  <Field label="Custo unitario (opcional)">
+                  <Field label="Custo unitário (opcional)">
                     <input name="unitCost" inputMode="decimal" className="h-12 w-full rounded-2xl border border-[color:var(--line)] px-4" placeholder="Ex: 18,50" />
                   </Field>
                   <Field label="Fornecedor (opcional)">
@@ -1620,7 +1620,7 @@ export function StockAdminTable({
       ) : null}
 
       {showImportPanel ? (
-        <ModalFrame title="Pre-visualizacao da importacao Excel" onClose={() => setShowImportPanel(false)}>
+        <ModalFrame title="Pré-visualização da importação Excel" onClose={() => setShowImportPanel(false)}>
           <div className="space-y-4">
             <div
               className={`rounded-2xl px-4 py-3 text-sm ${
@@ -1640,7 +1640,7 @@ export function StockAdminTable({
                   <tr>
                     <th className="px-3 py-3">Linha</th>
                     <th className="px-3 py-3">Produto</th>
-                    <th className="px-3 py-3">Alteracoes</th>
+                    <th className="px-3 py-3">Alterações</th>
                     <th className="px-3 py-3">Erros</th>
                   </tr>
                 </thead>
@@ -1662,7 +1662,7 @@ export function StockAdminTable({
                             ))}
                           </div>
                         ) : (
-                          <span className="text-slate-400">Sem alteracoes</span>
+                          <span className="text-slate-400">Sem alterações</span>
                         )}
                       </td>
                       <td className="px-3 py-3">
@@ -1696,7 +1696,7 @@ export function StockAdminTable({
                 disabled={importHasErrors}
                 className="rounded-full bg-[color:var(--atlantic)] px-5 py-3 text-sm font-semibold text-white disabled:opacity-40"
               >
-                Confirmar importacao
+                Confirmar importa??o
               </button>
             </div>
           </div>
@@ -1886,11 +1886,11 @@ function getModalTitle(
     case "ENTRY":
       return `Entrada de stock · ${productName}`;
     case "SALE":
-      return `Saida de stock · ${productName}`;
+      return `Saída de stock · ${productName}`;
     case "ADJUSTMENT":
       return `Ajuste manual · ${productName}`;
     case "HISTORY":
-      return `Historico · ${productName}`;
+      return `Histórico · ${productName}`;
     case "NOTES":
       return `Notas internas · ${productName}`;
     default:

@@ -8,7 +8,7 @@ import { getStockMovementsForProduct } from "@/lib/stock-server";
 import { parseEuroPriceToCentsForStock } from "@/lib/stock-utils";
 
 const deleteMovementSchema = z.object({
-  movementId: z.string().min(1, "Movimento invalido."),
+  movementId: z.string().min(1, "Movimento inválido."),
 });
 
 const movementSchema = z
@@ -38,7 +38,7 @@ const movementSchema = z
     if (typeof value.quantity !== "number") {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Indique uma quantidade valida.",
+        message: "Indique uma quantidade válida.",
         path: ["quantity"],
       });
     }
@@ -46,7 +46,7 @@ const movementSchema = z
     if (value.type === StockMovementType.SALE && !value.reason) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Escolha o motivo da saida.",
+        message: "Escolha o motivo da saída.",
         path: ["reason"],
       });
     }
@@ -83,7 +83,7 @@ export async function POST(
   if (!parsed.success) {
     return NextResponse.json(
       {
-        error: "Dados invalidos.",
+        error: "Dados inválidos.",
         issues: parsed.error.flatten(),
       },
       { status: 400 },
@@ -97,7 +97,7 @@ export async function POST(
   } catch (error) {
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Custo unitario invalido.",
+        error: error instanceof Error ? error.message : "Custo unitário inválido.",
       },
       { status: 400 },
     );
@@ -116,7 +116,7 @@ export async function POST(
       });
 
       if (!product) {
-        throw new Error("Produto nao encontrado.");
+        throw new Error("Produto não encontrado.");
       }
 
       const previousStock = product.stock;
@@ -129,7 +129,7 @@ export async function POST(
 
       if (parsed.data.type === StockMovementType.SALE) {
         if (quantity > previousStock && !parsed.data.confirmOverride) {
-          throw new Error("A saida excede o stock disponivel.");
+          throw new Error("A saída excede o stock disponível.");
         }
         resultingStock = Math.max(0, previousStock - quantity);
       }
@@ -178,7 +178,7 @@ export async function POST(
   } catch (error) {
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Nao foi possivel registar o movimento.",
+        error: error instanceof Error ? error.message : "Não foi possível registar o movimento.",
       },
       { status: 400 },
     );
@@ -203,7 +203,7 @@ export async function DELETE(
   if (!parsed.success) {
     return NextResponse.json(
       {
-        error: "Dados invalidos.",
+        error: "Dados inválidos.",
         issues: parsed.error.flatten(),
       },
       { status: 400 },
@@ -220,7 +220,7 @@ export async function DELETE(
       });
 
       if (!movement) {
-        throw new Error("Movimento nao encontrado.");
+        throw new Error("Movimento não encontrado.");
       }
 
       const product = await tx.product.findUnique({
@@ -232,7 +232,7 @@ export async function DELETE(
       });
 
       if (!product) {
-        throw new Error("Produto nao encontrado.");
+        throw new Error("Produto não encontrado.");
       }
 
       const stockDelta =
@@ -244,7 +244,7 @@ export async function DELETE(
       const nextStock = product.stock - stockDelta;
 
       if (nextStock < 0) {
-        throw new Error("Nao e possivel apagar este movimento porque o stock ficaria negativo.");
+        throw new Error("Não é possível apagar este movimento porque o stock ficaria negativo.");
       }
 
       const updatedProduct = await tx.product.update({
@@ -335,7 +335,7 @@ export async function DELETE(
   } catch (error) {
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Nao foi possivel apagar o movimento.",
+        error: error instanceof Error ? error.message : "Não foi possível apagar o movimento.",
       },
       { status: 400 },
     );

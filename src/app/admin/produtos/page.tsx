@@ -240,7 +240,7 @@ export default async function AdminProductsPage({
             />
             <input
               name="durationLabel"
-              placeholder="DuraÃ§Ã£o / relÃ³gio (ex: 6-8h)"
+              placeholder="Duração / relógio (ex: 6-8h)"
               className="h-12 rounded-2xl border px-4 md:col-span-2"
             />
             <div className="grid gap-3 md:col-span-2 md:grid-cols-5">
@@ -500,7 +500,7 @@ export default async function AdminProductsPage({
                           <input
                             name="durationLabel"
                             defaultValue={product.durationLabel ?? ""}
-                            placeholder="DuraÃ§Ã£o / relÃ³gio (ex: 6-8h)"
+                            placeholder="Duração / relógio (ex: 6-8h)"
                             className="h-12 rounded-2xl border px-4 md:col-span-2"
                           />
                           <div className="grid gap-3 md:col-span-2 md:grid-cols-5">

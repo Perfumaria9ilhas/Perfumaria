@@ -290,23 +290,23 @@ export function createStockWorkbookBuffer(rows: AdminStockRow[], movements: Admi
   const workbook = XLSX.utils.book_new();
 
   const stockRows = rows.map((row) => ({
-    "Referencia catalogo": row.catalogReference,
+    "Referência catálogo": row.catalogReference,
     Produto: row.name,
     Marca: row.brandName,
     Categoria: row.categoryName,
     Fornecedor: row.supplierName ?? "",
-    "Preco de venda": row.salePriceInCents / 100,
-    "Custo unitario": row.unitCostInCents > 0 ? row.unitCostInCents / 100 : null,
+    "Preço de venda": row.salePriceInCents / 100,
+    "Custo unitário": row.unitCostInCents > 0 ? row.unitCostInCents / 100 : null,
     "Stock atual": row.stock,
     "Limite de alerta": row.lowStockAlert,
-    Saidas: row.outputs,
+    Saídas: row.outputs,
     "Valor investido": row.investedValueInCents / 100,
     "Valor potencial de venda": row.potentialSalesValueInCents / 100,
     "Lucro potencial":
       row.potentialProfitInCents === null ? "Custo por definir" : row.potentialProfitInCents / 100,
     Estado:
-      row.status === "OUT" ? "Esgotado" : row.status === "LOW" ? "Stock baixo" : "Stock estavel",
-    "Ultima atualizacao": new Date(row.lastUpdatedAt),
+      row.status === "OUT" ? "Esgotado" : row.status === "LOW" ? "Stock baixo" : "Stock estável",
+    "Última atualização": new Date(row.lastUpdatedAt),
     Notas: row.stockNotes ?? "",
   }));
 
@@ -327,7 +327,7 @@ export function createStockWorkbookBuffer(rows: AdminStockRow[], movements: Admi
     Marca: movement.brandName,
     "Tipo de movimento": getMovementTypeExportLabel(movement.type),
     Cliente: movement.customerName ?? "",
-    "Preco unitario venda":
+    "Preço unitário venda":
       movement.saleUnitPriceInCents !== null && movement.type === StockMovementType.SALE
         ? movement.saleUnitPriceInCents / 100
         : null,
@@ -338,7 +338,7 @@ export function createStockWorkbookBuffer(rows: AdminStockRow[], movements: Admi
     Quantidade: movement.quantity,
     "Stock anterior": movement.previousStock,
     "Stock posterior": movement.resultingStock,
-    "Custo unitario":
+    "Custo unitário":
       movement.unitCostInCents !== null && movement.unitCostInCents > 0
         ? movement.unitCostInCents / 100
         : null,
@@ -379,7 +379,7 @@ export async function createStockImportTemplateBuffer() {
       Categoria: row.category.name,
       "Stock atual": row.stock,
       "Limite de alerta": row.lowStockAlert,
-      "Custo unitario": row.purchaseCostInCents > 0 ? row.purchaseCostInCents / 100 : null,
+      "Custo unitário": row.purchaseCostInCents > 0 ? row.purchaseCostInCents / 100 : null,
       Notas: row.stockNotes ?? "",
     })),
     {
@@ -393,7 +393,7 @@ export async function createStockImportTemplateBuffer() {
     currencyColumns: ["G"],
   });
 
-  XLSX.utils.book_append_sheet(workbook, sheet, "Modelo importacao");
+  XLSX.utils.book_append_sheet(workbook, sheet, "Modelo importação");
   return XLSX.write(workbook, { type: "buffer", bookType: "xlsx" }) as Buffer;
 }
 
@@ -506,7 +506,7 @@ export async function parseStockImportWorkbook(file: File): Promise<ParsedStockI
           nextNotes: null,
           changes: [],
           errors: [
-            "O ficheiro precisa das colunas ID interno, Stock atual, Limite de alerta e Custo unitario.",
+            "O ficheiro precisa das colunas ID interno, Stock atual, Limite de alerta e Custo unitário.",
           ],
         },
       ],
@@ -556,7 +556,7 @@ export async function parseStockImportWorkbook(file: File): Promise<ParsedStockI
       productId: rawProductId,
       nextStock: parseImportInt(rawStock, "Stock atual", errors),
       nextAlertLimit: parseImportInt(rawAlertLimit, "Limite de alerta", errors),
-      nextUnitCostInCents: parseImportMoneyToCents(rawCost, "Custo unitario", errors),
+      nextUnitCostInCents: parseImportMoneyToCents(rawCost, "Custo unitário", errors),
       nextNotes,
       errors,
     });
@@ -581,7 +581,7 @@ export async function parseStockImportWorkbook(file: File): Promise<ParsedStockI
     const errors = [...row.errors];
 
     if (!product) {
-      errors.push("Produto nao encontrado para este ID interno.");
+      errors.push("Produto não encontrado para este ID interno.");
     }
 
     const changes: string[] = [];
@@ -642,7 +642,7 @@ export async function applyStockImportWorkbook(file: File) {
       });
 
       if (!current) {
-        throw new Error(`Produto nao encontrado para o ID ${row.productId}`);
+        throw new Error(`Produto não encontrado para o ID ${row.productId}`);
       }
 
       await tx.product.update({
@@ -665,7 +665,7 @@ export async function applyStockImportWorkbook(file: File) {
             previousStock: current.stock,
             resultingStock: row.nextStock,
             unitCostInCents: row.nextUnitCostInCents > 0 ? row.nextUnitCostInCents : null,
-            notes: "Importacao Excel",
+            notes: "Importação Excel",
           },
         });
       }
@@ -680,7 +680,7 @@ function getMovementTypeExportLabel(type: StockMovementType) {
     case StockMovementType.ENTRY:
       return "Entrada";
     case StockMovementType.SALE:
-      return "Saida";
+      return "Saída";
     case StockMovementType.ADJUSTMENT:
       return "Ajuste manual";
   }
@@ -748,7 +748,7 @@ function parseImportInt(
   const normalized = parseNumberValue(value);
 
   if (normalized === null || !Number.isInteger(normalized) || normalized < 0) {
-    errors.push(`${label} invalido. Use um numero inteiro sem valores negativos.`);
+    errors.push(`${label} inválido. Use um número inteiro sem valores negativos.`);
     return 0;
   }
 
@@ -767,7 +767,7 @@ function parseImportMoneyToCents(
   }
 
   if (normalized < 0) {
-    errors.push(`${label} invalido. Use um valor numerico sem negativos.`);
+    errors.push(`${label} inválido. Use um valor numérico sem negativos.`);
     return 0;
   }
 

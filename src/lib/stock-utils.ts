@@ -17,7 +17,7 @@ export function parseEuroPriceToCentsForStock(value?: string | null, allowEmpty 
   const parsed = Number(normalized);
 
   if (!Number.isFinite(parsed) || parsed < 0) {
-    throw new Error("Valor monetario invalido.");
+    throw new Error("Valor monetário inválido.");
   }
 
   return Math.round(parsed * 100);

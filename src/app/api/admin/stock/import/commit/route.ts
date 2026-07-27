@@ -12,7 +12,7 @@ export async function POST(request: Request) {
   if (!(file instanceof File) || file.size === 0) {
     return NextResponse.json(
       {
-        error: "Selecione um ficheiro Excel valido.",
+        error: "Selecione um ficheiro Excel válido.",
       },
       { status: 400 },
     );

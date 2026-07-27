@@ -27,7 +27,7 @@ export async function PATCH(
   if (!parsed.success) {
     return NextResponse.json(
       {
-        error: "Dados invalidos.",
+        error: "Dados inválidos.",
         issues: parsed.error.flatten(),
       },
       { status: 400 },
@@ -43,7 +43,7 @@ export async function PATCH(
   } catch (error) {
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Preco ou custo invalido.",
+        error: error instanceof Error ? error.message : "Preço ou custo inválido.",
       },
       { status: 400 },
     );
@@ -58,7 +58,7 @@ export async function PATCH(
   });
 
   if (!product) {
-    return NextResponse.json({ error: "Produto nao encontrado." }, { status: 404 });
+    return NextResponse.json({ error: "Produto não encontrado." }, { status: 404 });
   }
 
   await prisma.$transaction(async (tx) => {

@@ -11,8 +11,8 @@ const navLinks = [
   { href: "/admin/clientes", label: "Clientes" },
   { href: "/admin/pedidos", label: "Pedidos" },
   { href: "/admin/desejos", label: "Desejos" },
-  { href: "/admin/comentarios", label: "Comentarios" },
-  { href: "/admin/sobre-nos", label: "Sobre Nos" },
+  { href: "/admin/comentarios", label: "Comentários" },
+  { href: "/admin/sobre-nos", label: "Sobre Nós" },
   { href: "/admin/loja", label: "Loja" },
 ];
 
@@ -49,7 +49,7 @@ export function AdminShell({
             ))}
             <form action={logoutAdmin}>
               <button className="rounded-full bg-[color:var(--atlantic)] px-3.5 py-1.5 text-sm font-semibold text-white">
-                Terminar sessao
+                Terminar sessão
               </button>
             </form>
           </div>
@@ -70,7 +70,7 @@ export function AdminShell({
               ))}
               <form action={logoutAdmin}>
                 <button className="rounded-full bg-[color:var(--atlantic)] px-3.5 py-1.5 text-sm font-semibold text-white">
-                  Terminar sessao
+                  Terminar sessão
                 </button>
               </form>
             </div>
@@ -80,7 +80,7 @@ export function AdminShell({
       <main className="mx-auto max-w-[1340px] px-4 py-6 lg:px-5">
         <div className="mb-5 flex flex-col gap-3 rounded-[1.6rem] border border-[color:var(--line)] bg-white/80 px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-slate-600">
-            Alteracoes no admin refletem-se automaticamente no catalogo publico.
+            Alterações no admin refletem-se automaticamente no catálogo público.
           </p>
           <Link
             href="/"
