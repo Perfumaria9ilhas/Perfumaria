@@ -25,13 +25,11 @@ function buildWhatsappMessage(
   totalInCents: number,
   customerName?: string,
 ) {
-  const icons = {
-    order: String.fromCodePoint(0x1f6cd),
-    total: String.fromCodePoint(0x1f4b0),
-    name: String.fromCodePoint(0x1f464),
-    island: String.fromCodePoint(0x1f3dd),
-    delivery: String.fromCodePoint(0x1f69a),
-    thanks: String.fromCodePoint(0x1f60a),
+  const symbols = {
+    order: "✦",
+    total: "€",
+    field: "➤",
+    thanks: "☺",
   };
 
   const productBlocks = items
@@ -42,15 +40,15 @@ function buildWhatsappMessage(
     .join("\n\n");
 
   return (
-    `${icons.order} Novo Pedido — Perfumaria 9 Ilhas\n\n` +
+    `${symbols.order} Novo Pedido — Perfumaria 9 Ilhas\n\n` +
     `Olá! Gostaria de fazer a seguinte encomenda:\n\n` +
     `${productBlocks}\n\n` +
-    `${icons.total} Total: ${formatPrice(totalInCents)}\n\n` +
+    `${symbols.total} Total: ${formatPrice(totalInCents)}\n\n` +
     `Os meus dados:\n` +
-    `${icons.name} Nome: ${customerName ?? ""}\n` +
-    `${icons.island} Ilha:\n` +
-    `${icons.delivery} Método de entrega: Entrega em mão / Envio CTT\n\n` +
-    `Obrigado! ${icons.thanks}`
+    `${symbols.field} Nome: ${customerName ?? ""}\n` +
+    `${symbols.field} Ilha:\n` +
+    `${symbols.field} Método de entrega: Entrega em mão / Envio CTT\n\n` +
+    `Obrigado! ${symbols.thanks}`
   );
 }
 
