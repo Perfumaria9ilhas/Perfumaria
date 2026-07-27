@@ -41,7 +41,7 @@ export function HeroHome({
       <div className="relative bg-[color:var(--sand-soft)] px-5 py-7 text-left sm:flex sm:h-[480px] sm:flex-col sm:justify-center sm:bg-transparent sm:px-8 sm:py-8 sm:pl-10 sm:text-white md:h-[540px] lg:h-[580px] lg:px-12 lg:pl-16 xl:h-[620px] xl:pl-24">
         <div className="max-w-[520px]">
           <p className="mb-2 text-[10px] uppercase tracking-[0.28em] text-[color:var(--gold)] sm:mb-3 sm:text-xs sm:tracking-[0.34em] sm:text-slate-100/80">
-            Bem-vindo à 9 Ilhas
+            {"Bem-vindo \u00e0 9 Ilhas"}
           </p>
 
           <h1 className="text-[2.05rem] leading-[0.95] text-[color:var(--ink)] sm:text-[3rem] sm:text-white lg:text-[3.8rem]">

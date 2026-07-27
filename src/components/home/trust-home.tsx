@@ -23,7 +23,7 @@ type TrustHomeProps = {
 
 function renderStars(rating: number) {
   const safeRating = Math.max(0, Math.min(5, rating));
-  return "★★★★★".slice(0, safeRating) + "☆☆☆☆☆".slice(0, 5 - safeRating);
+  return "\u2605".repeat(safeRating) + "\u2606".repeat(5 - safeRating);
 }
 
 export function TrustHome({ reviews, eyebrow, title }: TrustHomeProps) {
@@ -43,9 +43,11 @@ export function TrustHome({ reviews, eyebrow, title }: TrustHomeProps) {
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs uppercase tracking-[0.32em] text-[color:var(--gold)]">
-                  Avaliação
+                  {"Avalia\u00e7\u00e3o"}
                 </p>
-                <h3 className="mt-2 text-3xl text-[color:var(--ink)]">Deixe o seu comentário</h3>
+                <h3 className="mt-2 text-3xl text-[color:var(--ink)]">
+                  {"Deixe o seu coment\u00e1rio"}
+                </h3>
               </div>
               <button
                 type="button"
@@ -80,7 +82,7 @@ export function TrustHome({ reviews, eyebrow, title }: TrustHomeProps) {
 
               <textarea
                 name="comment"
-                placeholder="Partilhe a sua opinião sobre a loja"
+                placeholder={"Partilhe a sua opini\u00e3o sobre a loja"}
                 rows={5}
                 className="w-full rounded-[1rem] border border-[color:var(--line)] bg-white px-4 py-3 text-sm outline-none transition focus:border-[color:var(--gold)]"
                 required
@@ -90,7 +92,7 @@ export function TrustHome({ reviews, eyebrow, title }: TrustHomeProps) {
                 type="submit"
                 className="inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,_#b88746,_#d1a15f)] px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(184,135,70,0.22)]"
               >
-                Enviar comentário
+                {"Enviar coment\u00e1rio"}
               </button>
             </form>
           </div>
@@ -121,7 +123,7 @@ export function TrustHome({ reviews, eyebrow, title }: TrustHomeProps) {
             ))
           ) : (
             <div className="rounded-[1.8rem] border border-[rgba(194,162,119,0.16)] bg-white/92 px-5 py-10 text-center text-sm leading-7 text-slate-600 lg:col-span-3">
-              Ainda não existem comentários. Seja a primeira pessoa a comentar.
+              {"Ainda n\u00e3o existem coment\u00e1rios. Seja a primeira pessoa a comentar."}
             </div>
           )}
         </div>
@@ -132,7 +134,7 @@ export function TrustHome({ reviews, eyebrow, title }: TrustHomeProps) {
             onClick={() => setIsModalOpen(true)}
             className="inline-flex items-center justify-center rounded-full border border-[rgba(194,162,119,0.2)] px-5 py-3 text-sm font-semibold text-[color:var(--ink)] transition hover:border-[color:var(--gold)] hover:text-[color:var(--gold)]"
           >
-            Fazer comentário
+            {"Fazer coment\u00e1rio"}
           </button>
         </div>
       </section>

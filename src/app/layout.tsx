@@ -1,8 +1,8 @@
-import type { Metadata } from "next";
 import { Montserrat, Playfair_Display } from "next/font/google";
 import Script from "next/script";
 import { MetaPixel } from "@/components/analytics/meta-pixel";
 import { CartProvider } from "@/components/providers/cart-provider";
+import { buildRootMetadata, buildStoreJsonLd, safeJsonLd } from "@/lib/seo";
 import { getStoreSettings } from "@/lib/store-settings";
 import "./globals.css";
 
@@ -18,11 +18,10 @@ const bodyFont = Montserrat({
   weight: ["500"],
 });
 
-export const metadata: Metadata = {
-  title: "9 Ilhas Perfumaria",
-  description:
-    "Catálogo online de perfumes árabes, cosméticos e ambientadores com alma açoriana.",
-};
+export async function generateMetadata() {
+  const settings = await getStoreSettings();
+  return buildRootMetadata(settings.heroImageUrl);
+}
 
 export default async function RootLayout({
   children,
@@ -31,10 +30,15 @@ export default async function RootLayout({
 }>) {
   const settings = await getStoreSettings();
   const metaPixelId = process.env.META_PIXEL_ID;
+  const storeJsonLd = buildStoreJsonLd(settings);
 
   return (
     <html lang="pt-PT" className={`${displayFont.variable} ${bodyFont.variable}`}>
       <body>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(storeJsonLd) }}
+        />
         {metaPixelId ? (
           <>
             <Script id="meta-pixel-base" strategy="afterInteractive">

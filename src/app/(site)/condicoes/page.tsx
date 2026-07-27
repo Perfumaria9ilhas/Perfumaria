@@ -1,13 +1,31 @@
+import type { Metadata } from "next";
 import { faqItems } from "@/lib/constants";
+import { buildFaqJsonLd, buildPageMetadata, safeJsonLd } from "@/lib/seo";
+
+export const metadata: Metadata = buildPageMetadata({
+  title: "Condi\u00e7\u00f5es",
+  description:
+    "Consulte as condi\u00e7\u00f5es de encomenda, envio, pagamento e apoio ao cliente da Perfumaria 9 Ilhas.",
+  path: "/condicoes",
+});
 
 export default function CondicoesPage() {
+  const faqJsonLd = buildFaqJsonLd(faqItems);
+
   return (
     <div className="mx-auto max-w-[1240px] px-4 py-4 lg:px-5 lg:py-6">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(faqJsonLd) }}
+      />
+
       <section className="overflow-hidden rounded-[2.5rem] border border-white/30 bg-[linear-gradient(135deg,_rgba(92,68,47,0.98),_rgba(128,95,69,0.9),_rgba(161,132,98,0.82))] px-6 py-14 text-white shadow-[0_30px_80px_rgba(92,68,47,0.18)] lg:px-10">
-        <p className="text-xs uppercase tracking-[0.35em] text-white/70">Condições</p>
-        <h1 className="mt-3 font-serif text-5xl">Informação útil antes de encomendar</h1>
+        <p className="text-xs uppercase tracking-[0.35em] text-white/70">{"Condi\u00e7\u00f5es"}</p>
+        <h1 className="mt-3 font-serif text-5xl">
+          {"Informa\u00e7\u00e3o \u00fatil antes de encomendar"}
+        </h1>
         <p className="mt-4 max-w-2xl text-lg leading-8 text-white/80">
-          Respostas rápidas sobre encomendas, envios, pagamentos e apoio ao cliente.
+          {"Respostas r\u00e1pidas sobre encomendas, envios, pagamentos e apoio ao cliente."}
         </p>
       </section>
 
