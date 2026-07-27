@@ -2,9 +2,11 @@ import { deleteProductType, saveProductType } from "@/actions/admin";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { ensureDefaultProductTypes } from "@/lib/product-types";
 
 export default async function AdminProductTypesPage() {
   await requireAdmin();
+  await ensureDefaultProductTypes();
 
   const productTypes = await prisma.productType.findMany({
     include: {

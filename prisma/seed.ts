@@ -40,6 +40,7 @@ const productTypes = [
   { name: "Elixir", slug: "elixir" },
   { name: "Pasta Corporal", slug: "pasta-corporal" },
   { name: "Ambientador", slug: "ambientador" },
+  { name: "Desodorizante", slug: "desodorizante" },
   { name: "Gift Set", slug: "gift-set" },
   { name: "Óleo Perfumado", slug: "oleo-perfumado" },
 ];

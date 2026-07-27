@@ -17,6 +17,7 @@ import {
   validateCustomerCredentials,
 } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { ensureDefaultProductTypes } from "@/lib/product-types";
 import { slugify } from "@/lib/utils";
 
 const loginSchema = z.object({
@@ -396,6 +397,7 @@ export async function deleteProductType(formData: FormData) {
 
 export async function saveProduct(formData: FormData) {
   await requireAdmin();
+  await ensureDefaultProductTypes();
 
   const imageFile = formData.get("imageFile");
   const currentImageUrl = formData.get("currentImageUrl")?.toString().trim() ?? "";
