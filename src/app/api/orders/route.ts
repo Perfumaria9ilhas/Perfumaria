@@ -25,23 +25,32 @@ function buildWhatsappMessage(
   totalInCents: number,
   customerName?: string,
 ) {
+  const icons = {
+    order: String.fromCodePoint(0x1f6cd),
+    total: String.fromCodePoint(0x1f4b0),
+    name: String.fromCodePoint(0x1f464),
+    island: String.fromCodePoint(0x1f3dd),
+    delivery: String.fromCodePoint(0x1f69a),
+    thanks: String.fromCodePoint(0x1f60a),
+  };
+
   const productBlocks = items
     .map(
       (item) =>
-        `${item.brand} ${item.name} \u2014 ${item.sizeLabel}\n${item.quantity} \u00D7 ${formatPrice(item.priceInCents)}`,
+        `${item.brand} ${item.name} — ${item.sizeLabel}\n${item.quantity} × ${formatPrice(item.priceInCents)}`,
     )
     .join("\n\n");
 
   return (
-    `\u{1F6CD}\uFE0F Novo Pedido \u2014 Perfumaria 9 Ilhas\n\n` +
-    `Ol\u00E1! Gostaria de fazer a seguinte encomenda:\n\n` +
+    `${icons.order} Novo Pedido — Perfumaria 9 Ilhas\n\n` +
+    `Olá! Gostaria de fazer a seguinte encomenda:\n\n` +
     `${productBlocks}\n\n` +
-    `\u{1F4B0} Total: ${formatPrice(totalInCents)}\n\n` +
+    `${icons.total} Total: ${formatPrice(totalInCents)}\n\n` +
     `Os meus dados:\n` +
-    `\u{1F464} Nome: ${customerName ?? ""}\n` +
-    `\u{1F3DD}\uFE0F Ilha:\n` +
-    `\u{1F69A} M\u00E9todo de entrega: Entrega em m\u00E3o / Envio CTT\n\n` +
-    `Obrigado! \u{1F60A}`
+    `${icons.name} Nome: ${customerName ?? ""}\n` +
+    `${icons.island} Ilha:\n` +
+    `${icons.delivery} Método de entrega: Entrega em mão / Envio CTT\n\n` +
+    `Obrigado! ${icons.thanks}`
   );
 }
 
@@ -57,7 +66,7 @@ export async function POST(request: Request) {
   const parsed = createOrderSchema.safeParse(json);
 
   if (!parsed.success) {
-    return NextResponse.json({ error: "Pedido inv\u00E1lido." }, { status: 400 });
+    return NextResponse.json({ error: "Pedido inválido." }, { status: 400 });
   }
 
   const totalInCents = parsed.data.items.reduce(
@@ -71,7 +80,7 @@ export async function POST(request: Request) {
   });
 
   if (!settings?.whatsappNumber) {
-    return NextResponse.json({ error: "WhatsApp n\u00E3o configurado." }, { status: 400 });
+    return NextResponse.json({ error: "WhatsApp não configurado." }, { status: 400 });
   }
 
   const loggedCustomer = await getCurrentCustomer();
