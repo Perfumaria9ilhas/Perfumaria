@@ -4,3 +4,9 @@ export function formatPrice(priceInCents: number) {
     currency: "EUR",
   }).format(priceInCents / 100);
 }
+
+export function getSalePriceInCents(product: { priceInCents: number; salePriceInCents: number | null }) {
+  return product.salePriceInCents && product.salePriceInCents < product.priceInCents
+    ? product.salePriceInCents
+    : product.priceInCents;
+}

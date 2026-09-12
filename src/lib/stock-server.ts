@@ -3,6 +3,7 @@ import { StockMovementReason, StockMovementType } from "@prisma/client";
 import { unstable_noStore as noStore } from "next/cache";
 import * as XLSX from "xlsx";
 import { prisma } from "@/lib/prisma";
+import { getSalePriceInCents } from "@/lib/format";
 import {
   type AdminStockMovementRow,
   type AdminStockRow,
@@ -34,7 +35,7 @@ function mapProductRow(
   movementSummary: Map<string, { entries: number; outputs: number }>,
   supplierByProductId: Map<string, string>,
 ): AdminStockRow {
-  const currentSellPriceInCents = product.salePriceInCents ?? product.priceInCents;
+  const currentSellPriceInCents = getSalePriceInCents(product);
   const investedValueInCents = product.stock * product.purchaseCostInCents;
   const potentialSalesValueInCents = product.stock * currentSellPriceInCents;
   const potentialProfitInCents =
@@ -208,8 +209,7 @@ export async function getAdminStockTableData() {
 
     const effectiveUnitPriceInCents =
       movement.saleUnitPriceInCents ??
-      movement.product.salePriceInCents ??
-      movement.product.priceInCents;
+      getSalePriceInCents(movement.product);
 
     const current = customerSummaryMap.get(customerName) ?? {
       customerName,
@@ -273,8 +273,7 @@ export async function getStockMovementsForProducts(productIds: string[]) {
     customerName: movement.customerName,
     saleUnitPriceInCents:
       movement.saleUnitPriceInCents ??
-      movement.product.salePriceInCents ??
-      movement.product.priceInCents,
+      getSalePriceInCents(movement.product),
     quantity: movement.quantity,
     previousStock: movement.previousStock,
     resultingStock: movement.resultingStock,

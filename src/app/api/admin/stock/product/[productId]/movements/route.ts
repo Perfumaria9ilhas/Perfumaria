@@ -1,4 +1,5 @@
 import { StockMovementReason, StockMovementType } from "@prisma/client";
+import { getSalePriceInCents } from "@/lib/format";
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -168,7 +169,7 @@ export async function POST(
               : null,
           saleUnitPriceInCents:
             parsed.data.type === StockMovementType.SALE
-              ? product.salePriceInCents ?? product.priceInCents
+              ? getSalePriceInCents(product)
               : null,
           supplier: parsed.data.supplier.trim() || null,
           notes: parsed.data.notes.trim() || null,
