@@ -194,12 +194,16 @@ export function buildStockSummary(rows: AdminStockRow[]): StockSummary {
   );
 }
 
+export function normalizeStockSearch(value: string) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+}
+
 export function filterStockRows(rows: AdminStockRow[], filters: StockFilters) {
-  const normalizedQuery = filters.query.trim().toLowerCase();
+  const normalizedQuery = normalizeStockSearch(filters.query);
 
   return rows.filter((row) => {
     if (normalizedQuery) {
-      const haystack = `${row.name} ${row.brandName}`.toLowerCase();
+      const haystack = normalizeStockSearch(`${row.name} ${row.brandName} ${row.customerNames.join(" ")}`);
       if (!haystack.includes(normalizedQuery)) {
         return false;
       }

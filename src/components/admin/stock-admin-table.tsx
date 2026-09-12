@@ -31,6 +31,7 @@ import {
   getStockStatusLabel,
   getStockStatusTone,
   paginateStockRows,
+  normalizeStockSearch,
   parsePageSize,
   sortStockRows,
   toEuroInput,
@@ -176,6 +177,12 @@ export function StockAdminTable({
   );
   const topCustomer = [...rankedCustomers].sort((left, right) => right.totalUnits - left.totalUnits)
     .find((customer) => customer.totalUnits > 0);
+  const matchingCustomers = useMemo(() => {
+    const query = normalizeStockSearch(deferredQuery);
+    return query ? rankedCustomers.filter((customer) =>
+      normalizeStockSearch(customer.customerName).includes(query),
+    ) : [];
+  }, [deferredQuery, rankedCustomers]);
   const pendingDraftRows = useMemo(
     () =>
       rows.filter((row) => {
@@ -942,8 +949,8 @@ export function StockAdminTable({
         <div className="flex flex-col gap-4">
           <div className="rounded-[1.4rem] border border-[color:var(--line)] bg-[color:var(--sand-soft)] p-3">
             <div className="flex flex-col gap-3">
-              <div className="flex flex-col gap-2 xl:flex-row xl:items-center">
-                <label className="relative min-w-0 flex-1">
+              <div className="flex min-w-0 flex-col gap-2">
+                <label className="relative block w-full min-w-0">
                   <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   <input
                     value={searchTerm}
@@ -951,11 +958,12 @@ export function StockAdminTable({
                       setPage(1);
                       setSearchTerm(event.target.value);
                     }}
-                    placeholder="Pesquisar produto ou marca..."
+                    aria-label="Pesquisar produto, marca ou cliente"
+                    placeholder="Pesquisar produto, marca ou cliente..."
                     className="h-10 w-full rounded-2xl border border-[color:var(--line)] bg-white pl-11 pr-4 text-sm text-[color:var(--ink)] placeholder:text-slate-400"
                   />
                 </label>
-                <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+                <div className="grid min-w-0 gap-2 sm:grid-cols-2 xl:grid-cols-5 [&_select]:min-w-0 [&_select]:max-w-full">
                   <CompactSelect value={selectedBrand} onChange={(value) => { setPage(1); setSelectedBrand(value); }}>
                     <option value="">Marca</option>
                     {availableBrands.map((brand) => (
@@ -999,6 +1007,27 @@ export function StockAdminTable({
                   </div>
                 </div>
               </div>
+
+              {matchingCustomers.length > 0 ? (
+                <div className="flex flex-wrap items-center gap-2 text-sm" aria-label="Clientes encontrados">
+                  <span className="text-slate-600">Selecionar cliente:</span>
+                  {matchingCustomers.slice(0, 8).map((customer) => (
+                    <button
+                      key={customer.customerName}
+                      type="button"
+                      onClick={() => {
+                        setPage(1);
+                        setSelectedCustomer(customer.customerName);
+                        setSearchTerm("");
+                      }}
+                      className="rounded-full border border-[color:var(--line)] bg-white px-3 py-2 text-[color:var(--ink)]"
+                    >
+                      {customer.customerName} · {customer.totalUnits} unidades
+                    </button>
+                  ))}
+                  {matchingCustomers.length > 8 ? <span className="text-xs text-slate-500">Escreva mais letras para encontrar os restantes clientes.</span> : null}
+                </div>
+              ) : null}
 
               <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
