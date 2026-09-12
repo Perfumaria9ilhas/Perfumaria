@@ -167,6 +167,14 @@ export function StockAdminTable({
         : null,
     [customerSummaries, selectedCustomer],
   );
+  const rankedCustomers = useMemo(
+    () => [...customerSummaries].sort(
+      (left, right) => right.totalUnits - left.totalUnits ||
+        left.customerName.localeCompare(right.customerName, "pt-PT"),
+    ),
+    [customerSummaries],
+  );
+  const topCustomer = rankedCustomers.find((customer) => customer.totalUnits > 0);
   const pendingDraftRows = useMemo(
     () =>
       rows.filter((row) => {
@@ -955,9 +963,11 @@ export function StockAdminTable({
                     ))}
                   </CompactSelect>
                   <CompactSelect value={selectedCustomer} onChange={(value) => { setPage(1); setSelectedCustomer(value); }}>
-                    <option value="">Cliente</option>
-                    {customerNames.map((customerName) => (
-                      <option key={customerName} value={customerName}>{customerName}</option>
+                    <option value="">Cliente · mais compras primeiro</option>
+                    {rankedCustomers.map((customer) => (
+                      <option key={customer.customerName} value={customer.customerName}>
+                        {customer.customerName} · {customer.totalUnits} {customer.totalUnits === 1 ? "unidade" : "unidades"}
+                      </option>
                     ))}
                   </CompactSelect>
                   <CompactSelect value={selectedStatus} onChange={(value) => { setPage(1); setSelectedStatus(value as "all" | "OUT" | "LOW" | "STABLE"); }}>
@@ -992,9 +1002,22 @@ export function StockAdminTable({
                   </span>
                   {selectedCustomerSummary ? (
                     <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-[color:var(--ink)]">
-                      Cliente {selectedCustomerSummary.customerName}: {formatPrice(selectedCustomerSummary.totalSpentInCents)}
+                      Cliente {selectedCustomerSummary.customerName}: {selectedCustomerSummary.totalUnits} {selectedCustomerSummary.totalUnits === 1 ? "unidade comprada" : "unidades compradas"} · {formatPrice(selectedCustomerSummary.totalSpentInCents)}
                     </span>
                   ) : null}
+                  <button
+                    type="button"
+                    disabled={!topCustomer}
+                    title={topCustomer ? `${topCustomer.customerName}: ${topCustomer.totalUnits} unidades compradas` : "Ainda não existem compras de clientes"}
+                    onClick={() => {
+                      if (!topCustomer) return;
+                      clearFilters();
+                      setSelectedCustomer(topCustomer.customerName);
+                    }}
+                    className="inline-flex items-center gap-2 rounded-full border border-[color:var(--line)] bg-white px-3 py-2 text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Cliente que mais comprou
+                  </button>
                   <label className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2">
                     <input
                       type="checkbox"
@@ -1030,6 +1053,9 @@ export function StockAdminTable({
                   Limpar
                 </button>
               </div>
+              <p className="text-xs text-slate-500">
+                Compras por cliente: total de unidades de todos os produtos nas vendas registadas, em todo o histórico. Em caso de empate, os clientes aparecem por ordem alfabética.
+              </p>
             </div>
           </div>
 
