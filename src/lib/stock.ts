@@ -51,6 +51,7 @@ export type AdminStockRow = {
   lowStockAlert: number;
   entries: number;
   outputs: number;
+  customerSales: { customerName: string; quantity: number }[];
   investedValueInCents: number;
   potentialSalesValueInCents: number;
   potentialProfitInCents: number | null;
@@ -239,17 +240,26 @@ export function sortStockRows(
   rows: AdminStockRow[],
   sortKey: StockSortKey,
   sortDirection: StockSortDirection,
+  customerName = "",
 ) {
   const direction = sortDirection === "asc" ? 1 : -1;
 
   return [...rows].sort((left, right) => {
-    const result = compareStockRows(left, right, sortKey);
+    const result = sortKey === "outputs"
+      ? getStockOutputs(left, customerName) - getStockOutputs(right, customerName)
+      : compareStockRows(left, right, sortKey);
     if (result !== 0) {
       return result * direction;
     }
 
     return collator.compare(left.name, right.name);
   });
+}
+
+export function getStockOutputs(row: AdminStockRow, customerName = "") {
+  return customerName
+    ? row.customerSales.find((sale) => sale.customerName === customerName)?.quantity ?? 0
+    : row.outputs;
 }
 
 function compareNullableNumber(left: number | null, right: number | null) {

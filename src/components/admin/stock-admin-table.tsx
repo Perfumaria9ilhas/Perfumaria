@@ -27,6 +27,7 @@ import {
   getMovementReasonLabel,
   getMovementTypeLabel,
   getStockStatus,
+  getStockOutputs,
   getStockStatusLabel,
   getStockStatusTone,
   paginateStockRows,
@@ -143,8 +144,8 @@ export function StockAdminTable({
   );
   const filteredRows = useMemo(() => filterStockRows(rows, activeFilters), [rows, activeFilters]);
   const sortedRows = useMemo(
-    () => sortStockRows(filteredRows, sortKey, sortDirection),
-    [filteredRows, sortKey, sortDirection],
+    () => sortStockRows(filteredRows, sortKey, sortDirection, selectedCustomer),
+    [filteredRows, sortKey, sortDirection, selectedCustomer],
   );
   const summary = useMemo(() => buildStockSummary(sortedRows), [sortedRows]);
   const pagination = useMemo(
@@ -169,12 +170,12 @@ export function StockAdminTable({
   );
   const rankedCustomers = useMemo(
     () => [...customerSummaries].sort(
-      (left, right) => right.totalUnits - left.totalUnits ||
-        left.customerName.localeCompare(right.customerName, "pt-PT"),
+      (left, right) => left.customerName.localeCompare(right.customerName, "pt-PT"),
     ),
     [customerSummaries],
   );
-  const topCustomer = rankedCustomers.find((customer) => customer.totalUnits > 0);
+  const topCustomer = [...rankedCustomers].sort((left, right) => right.totalUnits - left.totalUnits)
+    .find((customer) => customer.totalUnits > 0);
   const pendingDraftRows = useMemo(
     () =>
       rows.filter((row) => {
@@ -810,6 +811,11 @@ export function StockAdminTable({
                 stock: payload.updatedRow.stock,
                 entries: payload.updatedRow.entries,
                 outputs: payload.updatedRow.outputs,
+                customerSales: currentRow.customerSales.map((sale) =>
+                  sale.customerName === movement.customerName?.trim()
+                    ? { ...sale, quantity: Math.max(0, sale.quantity - movement.quantity) }
+                    : sale,
+                ).filter((sale) => sale.quantity > 0),
                 customerNames: payload.updatedRow.customerNames,
                 supplierName: payload.updatedRow.supplierName,
                 investedValueInCents: payload.updatedRow.stock * currentRow.unitCostInCents,
@@ -963,7 +969,7 @@ export function StockAdminTable({
                     ))}
                   </CompactSelect>
                   <CompactSelect value={selectedCustomer} onChange={(value) => { setPage(1); setSelectedCustomer(value); }}>
-                    <option value="">Cliente · mais compras primeiro</option>
+                    <option value="">Cliente</option>
                     {rankedCustomers.map((customer) => (
                       <option key={customer.customerName} value={customer.customerName}>
                         {customer.customerName} · {customer.totalUnits} {customer.totalUnits === 1 ? "unidade" : "unidades"}
@@ -1175,7 +1181,7 @@ export function StockAdminTable({
                   className="hidden md:table-cell"
                 />
                 <TableHeader
-                  title="Saídas"
+                  title={selectedCustomer ? "Saídas do cliente" : "Saídas"}
                   active={sortKey === "outputs"}
                   direction={sortDirection}
                   onClick={() => toggleSort("outputs")}
@@ -1328,7 +1334,7 @@ export function StockAdminTable({
                         className="h-10 w-24 rounded-xl border border-[color:var(--line)] px-3"
                       />
                     </Cell>
-                    <Cell className="hidden md:table-cell">{row.outputs}</Cell>
+                    <Cell className="hidden md:table-cell">{getStockOutputs(row, selectedCustomer)}</Cell>
                     <Cell className="hidden xl:table-cell">{formatPrice(row.investedValueInCents)}</Cell>
                     <Cell className="hidden xl:table-cell">{formatPrice(row.potentialSalesValueInCents)}</Cell>
                     <Cell className="hidden xl:table-cell">
@@ -2020,6 +2026,15 @@ function applyMovementLocally(
     stock: nextStock,
     entries: nextEntries,
     outputs: nextOutputs,
+    customerSales: payload.type === StockMovementType.SALE && payload.customerName.trim()
+      ? [
+          ...row.customerSales.filter((sale) => sale.customerName !== payload.customerName.trim()),
+          {
+            customerName: payload.customerName.trim(),
+            quantity: getStockOutputs(row, payload.customerName.trim()) + payload.quantity,
+          },
+        ]
+      : row.customerSales,
     unitCostInCents: nextUnitCost,
     investedValueInCents: nextStock * nextUnitCost,
     potentialSalesValueInCents: nextStock * row.salePriceInCents,

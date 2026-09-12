@@ -13,6 +13,7 @@ import {
   filterStockRows,
   getBrandCatalogCapacity,
   getStockStatus,
+  getStockOutputs,
 } from "@/lib/stock";
 
 type XlsxCell = XLSX.CellObject & {
@@ -68,6 +69,7 @@ function mapProductRow(
     lowStockAlert: product.lowStockAlert,
     entries: totals.entries,
     outputs: totals.outputs,
+    customerSales: [],
     investedValueInCents,
     potentialSalesValueInCents,
     potentialProfitInCents,
@@ -161,6 +163,19 @@ export async function getAdminStockTableData() {
   }
 
   const rows = products.map((product) => mapProductRow(product, movementSummary, supplierByProductId));
+  const rowsById = new Map(rows.map((row) => [row.id, row]));
+  for (const movement of saleMovements) {
+    const customerName = movement.customerName?.trim();
+    const row = rowsById.get(movement.productId);
+    if (!customerName || !row) continue;
+    const sale = row.customerSales.find((entry) => entry.customerName === customerName);
+    if (sale) sale.quantity += movement.quantity;
+    else row.customerSales.push({ customerName, quantity: movement.quantity });
+  }
+  for (const row of rows) {
+    row.customerNames = row.customerSales.map((sale) => sale.customerName)
+      .sort((left, right) => left.localeCompare(right, "pt-PT"));
+  }
   const groupedRows = new Map<string, AdminStockRow[]>();
   for (const row of rows) {
     const brandRows = groupedRows.get(row.brandName) ?? [];
@@ -276,7 +291,10 @@ export async function getStockMovementsForProduct(productId: string) {
 
 export async function getFilteredStockExportData(filters: StockFilters, includeAll: boolean) {
   const data = await getAdminStockTableData();
-  const rows = includeAll ? data.rows : filterStockRows(data.rows, filters);
+  const rows = includeAll ? data.rows : filterStockRows(data.rows, filters).map((row) => ({
+    ...row,
+    outputs: getStockOutputs(row, filters.customerName),
+  }));
   const movements = await getStockMovementsForProducts(rows.map((row) => row.id));
 
   return {
