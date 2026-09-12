@@ -149,6 +149,10 @@ export function StockAdminTable({
     [filteredRows, sortKey, sortDirection, selectedCustomer],
   );
   const summary = useMemo(() => buildStockSummary(sortedRows), [sortedRows]);
+  const salesTotal = useMemo(() => sortedRows.reduce((total, row) => {
+    const units = getStockOutputs(row, selectedCustomer);
+    return { units: total.units + units, value: total.value + units * row.salePriceInCents };
+  }, { units: 0, value: 0 }), [sortedRows, selectedCustomer]);
   const pagination = useMemo(
     () => paginateStockRows(sortedRows, { page, pageSize }),
     [sortedRows, page, pageSize],
@@ -1508,6 +1512,13 @@ export function StockAdminTable({
             </button>
           </div>
         </div>
+      </section>
+
+      <section className="rounded-[1.8rem] border border-[color:var(--line)] bg-white p-5 shadow-sm" aria-label="Total de vendas">
+        <p className="text-sm text-slate-600">{selectedCustomer ? `Total de vendas — ${selectedCustomer}` : "Total de vendas"}</p>
+        <p className="mt-2 text-2xl font-semibold text-[color:var(--ink)]">{formatPrice(salesTotal.value)}</p>
+        <p className="mt-1 text-sm text-slate-600">{salesTotal.units} unidades vendidas · preços atuais do site</p>
+        <p className="mt-1 text-xs text-slate-500">Inclui todas as páginas dos produtos filtrados.</p>
       </section>
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-7">
