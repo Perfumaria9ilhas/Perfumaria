@@ -16,7 +16,7 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
-import { useDeferredValue, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useId, useMemo, useRef, useState } from "react";
 import { formatPrice } from "@/lib/format";
 import {
   type AdminStockMovementRow,
@@ -1756,20 +1756,22 @@ export function StockAdminTable({
                 <p className="text-sm text-slate-600">Escolha 5 perfumes diferentes. Cada perfume terá uma saída registada a 3,30 €, totalizando 16,50 €.</p>
                 {[1, 2, 3, 4, 5].map((position) => (
                   <Field key={position} label={`Perfume ${position}`}>
-                    <select name={`product${position}`} required defaultValue="" className="h-12 w-full rounded-2xl border border-[color:var(--line)] bg-white px-4">
-                      <option value="" disabled>Selecionar perfume</option>
-                      {rows.filter((row) => row.availableInFiveMl && row.stock > 0).map((row) => <option key={row.id} value={row.id}>{row.name} · {row.brandName}</option>)}
-                    </select>
+                    <SearchableProductSelect
+                      name={`product${position}`}
+                      products={rows.filter((row) => row.availableInFiveMl)}
+                      placeholder={`Pesquisar perfume ${position}...`}
+                    />
                   </Field>
                 ))}
               </div>
             ) : (
               <>
                 <Field label="Perfume">
-                  <select name="productId" required defaultValue="" className="h-12 w-full rounded-2xl border border-[color:var(--line)] bg-white px-4">
-                    <option value="" disabled>Selecionar perfume</option>
-                    {rows.filter((row) => (row.availableInFiveMl || row.availableInTenMl) && row.stock > 0).map((row) => <option key={row.id} value={row.id}>{row.name} · {row.brandName}</option>)}
-                  </select>
+                  <SearchableProductSelect
+                    name="productId"
+                    products={rows.filter((row) => row.availableInFiveMl || row.availableInTenMl)}
+                    placeholder="Pesquisar perfume..."
+                  />
                 </Field>
                 <Field label="Tamanho">
                   <select name="sizeMl" required defaultValue="5" className="h-12 w-full rounded-2xl border border-[color:var(--line)] bg-white px-4">
@@ -2044,6 +2046,80 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="text-sm text-slate-600">{label}</span>
       {children}
     </label>
+  );
+}
+
+function SearchableProductSelect({
+  name,
+  products,
+  placeholder,
+}: {
+  name: string;
+  products: AdminStockRow[];
+  placeholder: string;
+}) {
+  const [query, setQuery] = useState("");
+  const listboxId = useId();
+  const [selectedId, setSelectedId] = useState("");
+  const [open, setOpen] = useState(false);
+  const matches = useMemo(() => {
+    const normalizedQuery = normalizeStockSearch(query);
+    const ordered = [...products].sort((left, right) =>
+      left.name.localeCompare(right.name, "pt-PT"),
+    );
+    if (!normalizedQuery) return ordered.slice(0, 30);
+    return ordered.filter((product) =>
+      normalizeStockSearch(`${product.name} ${product.brandName}`).includes(normalizedQuery),
+    ).slice(0, 30);
+  }, [products, query]);
+
+  return (
+    <div className="relative">
+      <input type="hidden" name={name} value={selectedId} />
+      <input
+        value={query}
+        required
+        autoComplete="off"
+        placeholder={placeholder}
+        aria-label={placeholder}
+        role="combobox"
+        aria-expanded={open}
+        aria-controls={listboxId}
+        onFocus={() => setOpen(true)}
+        onBlur={() => window.setTimeout(() => setOpen(false), 120)}
+        onChange={(event) => {
+          setQuery(event.target.value);
+          setSelectedId("");
+          setOpen(true);
+        }}
+        className="h-12 w-full rounded-2xl border border-[color:var(--line)] bg-white px-4 pr-10 text-[color:var(--ink)]"
+      />
+      <Search className="pointer-events-none absolute right-4 top-4 h-4 w-4 text-slate-400" />
+      {open ? (
+        <div id={listboxId} role="listbox" className="absolute z-50 mt-2 max-h-64 w-full overflow-y-auto rounded-2xl border border-[color:var(--line)] bg-white p-2 shadow-xl">
+          {matches.length ? matches.map((product) => (
+            <button
+              key={product.id}
+              type="button"
+              role="option"
+              aria-selected={selectedId === product.id}
+              onPointerDown={(event) => event.preventDefault()}
+              onClick={() => {
+                setSelectedId(product.id);
+                setQuery(`${product.name} · ${product.brandName}`);
+                setOpen(false);
+              }}
+              className="block w-full rounded-xl px-3 py-3 text-left text-sm text-[color:var(--ink)] hover:bg-[color:var(--sand-soft)]"
+            >
+              <span className="font-medium">{product.name}</span>
+              <span className="ml-1 text-slate-500">· {product.brandName}</span>
+            </button>
+          )) : (
+            <p className="px-3 py-4 text-sm text-slate-500">Nenhum perfume encontrado.</p>
+          )}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
