@@ -2,14 +2,13 @@ import { deleteProductType, saveProductType } from "@/actions/admin";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { ensureDefaultProductTypes } from "@/lib/product-types";
 
 export default async function AdminProductTypesPage() {
   await requireAdmin();
-  await ensureDefaultProductTypes();
 
   const productTypes = await prisma.productType.findMany({
     include: {
+      products: { select: { active: true } },
       _count: {
         select: {
           products: true,
@@ -56,8 +55,7 @@ export default async function AdminProductTypesPage() {
                     {productType.name}
                   </h2>
                   <p className="text-sm text-slate-500">
-                    {productType._count.products} produto
-                    {productType._count.products === 1 ? "" : "s"} a usar este tipo
+                    {productType.products.filter((product) => product.active).length} produtos ativos · {productType.products.filter((product) => !product.active).length} inativos
                   </p>
                 </div>
               </div>
@@ -77,14 +75,26 @@ export default async function AdminProductTypesPage() {
 
               <form action={deleteProductType} className="mt-3">
                 <input type="hidden" name="id" value={productType.id} />
+                {productType._count.products > 0 ? (
+                  <label className="mb-3 block text-sm text-slate-600">
+                    Para remover, escolha outro tipo para os {productType._count.products} produtos associados. Os produtos e as vendas serão mantidos.
+                    <select
+                      name="replacementId"
+                      required
+                      defaultValue=""
+                      className="mt-2 h-12 w-full rounded-2xl border bg-white px-4"
+                    >
+                      <option value="" disabled>Escolher tipo de destino</option>
+                      {productTypes.filter((type) => type.id !== productType.id).map((type) => (
+                        <option key={type.id} value={type.id}>{type.name}</option>
+                      ))}
+                    </select>
+                    {productTypes.length === 1 ? <span className="mt-2 block">Crie primeiro outro tipo para receber estes produtos.</span> : null}
+                  </label>
+                ) : null}
                 <button
                   className="text-sm text-red-500 disabled:cursor-not-allowed disabled:text-slate-300"
-                  disabled={productType._count.products > 0}
-                  title={
-                    productType._count.products > 0
-                      ? "Remove primeiro os produtos que usam este tipo."
-                      : undefined
-                  }
+                  disabled={productType._count.products > 0 && productTypes.length === 1}
                 >
                   Remover tipo
                 </button>

@@ -17,7 +17,6 @@ import {
   validateCustomerCredentials,
 } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { ensureDefaultProductTypes } from "@/lib/product-types";
 import { slugify } from "@/lib/utils";
 
 const loginSchema = z.object({
@@ -381,23 +380,34 @@ export async function deleteProductType(formData: FormData) {
   await requireAdmin();
   const id = z.string().parse(formData.get("id"));
 
-  const productsUsingType = await prisma.product.count({
-    where: { productTypeId: id },
+  const replacementId = formData.get("replacementId")?.toString().trim();
+  await prisma.$transaction(async (tx) => {
+    const productsUsingType = await tx.product.count({ where: { productTypeId: id } });
+    if (productsUsingType > 0) {
+      if (!replacementId || replacementId === id) {
+        throw new Error("Escolha outro tipo para os produtos associados antes de remover.");
+      }
+      const replacement = await tx.productType.findUnique({ where: { id: replacementId } });
+      if (!replacement) throw new Error("O tipo de destino já não existe. Atualize a página.");
+      await tx.product.updateMany({
+        where: { productTypeId: id },
+        data: {
+          productTypeId: replacement.id,
+          concentration: getLegacyConcentrationForProductTypeName(replacement.name),
+        },
+      });
+    }
+    await tx.productType.delete({ where: { id } });
   });
-
-  if (productsUsingType > 0) {
-    throw new Error("Este tipo está a ser usado em produtos existentes e não pode ser removido.");
-  }
-
-  await prisma.productType.delete({ where: { id } });
 
   revalidatePath("/admin/produtos");
   revalidatePath("/admin/tipos-produto");
+  revalidatePath("/catalogo");
+  revalidatePath("/", "layout");
 }
 
 export async function saveProduct(formData: FormData) {
   await requireAdmin();
-  await ensureDefaultProductTypes();
 
   const imageFile = formData.get("imageFile");
   const currentImageUrl = formData.get("currentImageUrl")?.toString().trim() ?? "";

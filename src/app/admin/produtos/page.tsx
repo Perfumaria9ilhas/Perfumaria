@@ -6,7 +6,6 @@ import { formatPrice } from "@/lib/format";
 import { getProductAudienceLabel, productAudienceOptions } from "@/lib/product-audience";
 import { getProductConcentrationLabel } from "@/lib/product-concentration";
 import { prisma } from "@/lib/prisma";
-import { ensureDefaultProductTypes } from "@/lib/product-types";
 
 type AdminProductGroup =
   | "todos"
@@ -207,7 +206,6 @@ export default async function AdminProductsPage({
   searchParams?: Promise<{ marca?: string; tipo?: string; q?: string }>;
 }) {
   await requireAdmin();
-  await ensureDefaultProductTypes();
 
   const params = (await searchParams) ?? {};
   const selectedBrandSlug = params.marca?.trim() ?? "";
