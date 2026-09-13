@@ -8,6 +8,7 @@ import {
   FileText,
   History,
   PackageX,
+  ShoppingBasket,
   RotateCcw,
   Save,
   Search,
@@ -102,6 +103,9 @@ export function StockAdminTable({
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importPreviewRows, setImportPreviewRows] = useState<StockImportPreviewRow[]>([]);
   const [showImportPanel, setShowImportPanel] = useState(false);
+  const [showDecantSale, setShowDecantSale] = useState(false);
+  const [decantMode, setDecantMode] = useState<"KIT" | "INDIVIDUAL">("KIT");
+  const [savingDecantSale, setSavingDecantSale] = useState(false);
   const [importHasErrors, setImportHasErrors] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const deferredQuery = useDeferredValue(searchTerm);
@@ -149,10 +153,6 @@ export function StockAdminTable({
     [filteredRows, sortKey, sortDirection, selectedCustomer],
   );
   const summary = useMemo(() => buildStockSummary(sortedRows), [sortedRows]);
-  const salesTotal = useMemo(() => sortedRows.reduce((total, row) => {
-    const units = getStockOutputs(row, selectedCustomer);
-    return { units: total.units + units, value: total.value + units * row.salePriceInCents };
-  }, { units: 0, value: 0 }), [sortedRows, selectedCustomer]);
   const pagination = useMemo(
     () => paginateStockRows(sortedRows, { page, pageSize }),
     [sortedRows, page, pageSize],
@@ -173,6 +173,13 @@ export function StockAdminTable({
         : null,
     [customerSummaries, selectedCustomer],
   );
+  const salesTotal = useMemo(() => {
+    const summaries = selectedCustomerSummary ? [selectedCustomerSummary] : customerSummaries;
+    return summaries.reduce((total, customer) => ({
+      units: total.units + customer.totalUnits,
+      value: total.value + customer.totalSpentInCents,
+    }), { units: 0, value: 0 });
+  }, [customerSummaries, selectedCustomerSummary]);
   const rankedCustomers = useMemo(
     () => [...customerSummaries].sort(
       (left, right) => left.customerName.localeCompare(right.customerName, "pt-PT"),
@@ -683,6 +690,40 @@ export function StockAdminTable({
       setHistoryRows([]);
     } finally {
       setHistoryLoading(false);
+    }
+  }
+
+  async function submitDecantSale(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const productIds = decantMode === "KIT"
+      ? [1, 2, 3, 4, 5].map((position) => formData.get(`product${position}`)?.toString() ?? "")
+      : [formData.get("productId")?.toString() ?? ""];
+
+    setSavingDecantSale(true);
+    setBanner(null);
+    try {
+      const response = await fetch("/api/admin/stock/decants", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: decantMode,
+          productIds,
+          sizeMl: decantMode === "KIT" ? 5 : Number(formData.get("sizeMl")),
+          quantity: decantMode === "KIT" ? 1 : Number(formData.get("quantity")),
+          customerName: formData.get("customerName")?.toString() ?? "",
+        }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error ?? "Não foi possível registar a venda de decants.");
+      setShowDecantSale(false);
+      setBanner({ tone: "success", message: decantMode === "KIT" ? "Kit de 5 decants vendido por 16,50 €." : "Venda individual de decant registada." });
+      window.location.reload();
+    } catch (error) {
+      setBanner({ tone: "error", message: error instanceof Error ? error.message : "Não foi possível registar a venda." });
+    } finally {
+      setSavingDecantSale(false);
     }
   }
 
@@ -1451,6 +1492,14 @@ export function StockAdminTable({
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
+              onClick={() => setShowDecantSale(true)}
+              className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[color:var(--atlantic)] px-4 text-sm font-semibold text-white"
+            >
+              <ShoppingBasket className="h-4 w-4" />
+              Venda de decants
+            </button>
+            <button
+              type="button"
               onClick={() => exportExcel("filtered")}
               className="inline-flex h-10 items-center gap-2 rounded-2xl border border-[color:var(--line)] bg-[color:var(--cocoa)] px-4 text-sm font-medium text-white"
             >
@@ -1517,8 +1566,8 @@ export function StockAdminTable({
       <section className="rounded-[1.8rem] border border-[color:var(--line)] bg-white p-5 shadow-sm" aria-label="Total de vendas">
         <p className="text-sm text-slate-600">{selectedCustomer ? `Total de vendas — ${selectedCustomer}` : "Total de vendas"}</p>
         <p className="mt-2 text-2xl font-semibold text-[color:var(--ink)]">{formatPrice(salesTotal.value)}</p>
-        <p className="mt-1 text-sm text-slate-600">{salesTotal.units} unidades vendidas · preços atuais do site</p>
-        <p className="mt-1 text-xs text-slate-500">Inclui todas as páginas dos produtos filtrados.</p>
+        <p className="mt-1 text-sm text-slate-600">{salesTotal.units} vendas registadas · preços efetivos de cada venda</p>
+        <p className="mt-1 text-xs text-slate-500">Inclui todo o histórico{selectedCustomer ? " deste cliente" : " de clientes"}, incluindo kits e decants.</p>
       </section>
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-7">
@@ -1688,6 +1737,54 @@ export function StockAdminTable({
               </div>
             </form>
           )}
+        </ModalFrame>
+      ) : null}
+
+      {showDecantSale ? (
+        <ModalFrame title="Venda de decants" onClose={() => setShowDecantSale(false)}>
+          <form className="space-y-4" onSubmit={submitDecantSale}>
+            <div className="grid grid-cols-2 gap-2 rounded-2xl bg-[color:var(--sand-soft)] p-1">
+              <button type="button" onClick={() => setDecantMode("KIT")} className={`rounded-xl px-3 py-3 text-sm font-semibold ${decantMode === "KIT" ? "bg-white text-[color:var(--ink)] shadow-sm" : "text-slate-500"}`}>Kit · 5 × 5 ml · 16,50 €</button>
+              <button type="button" onClick={() => setDecantMode("INDIVIDUAL")} className={`rounded-xl px-3 py-3 text-sm font-semibold ${decantMode === "INDIVIDUAL" ? "bg-white text-[color:var(--ink)] shadow-sm" : "text-slate-500"}`}>Venda individual</button>
+            </div>
+            <Field label="Cliente">
+              <input name="customerName" list="decant-customer-names" required minLength={2} className="h-12 w-full rounded-2xl border border-[color:var(--line)] px-4" placeholder="Nome da pessoa que compra" />
+            </Field>
+            <datalist id="decant-customer-names">{customerNames.map((name) => <option key={name} value={name} />)}</datalist>
+            {decantMode === "KIT" ? (
+              <div className="space-y-3">
+                <p className="text-sm text-slate-600">Escolha 5 perfumes diferentes. Cada perfume terá uma saída registada a 3,30 €, totalizando 16,50 €.</p>
+                {[1, 2, 3, 4, 5].map((position) => (
+                  <Field key={position} label={`Perfume ${position}`}>
+                    <select name={`product${position}`} required defaultValue="" className="h-12 w-full rounded-2xl border border-[color:var(--line)] bg-white px-4">
+                      <option value="" disabled>Selecionar perfume</option>
+                      {rows.filter((row) => row.availableInFiveMl && row.stock > 0).map((row) => <option key={row.id} value={row.id}>{row.name} · {row.brandName}</option>)}
+                    </select>
+                  </Field>
+                ))}
+              </div>
+            ) : (
+              <>
+                <Field label="Perfume">
+                  <select name="productId" required defaultValue="" className="h-12 w-full rounded-2xl border border-[color:var(--line)] bg-white px-4">
+                    <option value="" disabled>Selecionar perfume</option>
+                    {rows.filter((row) => (row.availableInFiveMl || row.availableInTenMl) && row.stock > 0).map((row) => <option key={row.id} value={row.id}>{row.name} · {row.brandName}</option>)}
+                  </select>
+                </Field>
+                <Field label="Tamanho">
+                  <select name="sizeMl" required defaultValue="5" className="h-12 w-full rounded-2xl border border-[color:var(--line)] bg-white px-4">
+                    <option value="5">5 ml · 3,50 €</option>
+                    <option value="10">10 ml · 6,50 €</option>
+                  </select>
+                </Field>
+                <Field label="Quantidade"><input name="quantity" type="number" min="1" defaultValue="1" required className="h-12 w-full rounded-2xl border border-[color:var(--line)] px-4" /></Field>
+              </>
+            )}
+            <div className="flex items-center justify-between border-t border-[color:var(--line)] pt-4">
+              <strong>{decantMode === "KIT" ? "Total: 16,50 €" : "5 ml: 3,50 € · 10 ml: 6,50 €"}</strong>
+              <button disabled={savingDecantSale} className="rounded-full bg-[color:var(--atlantic)] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">{savingDecantSale ? "A registar..." : "Registar venda"}</button>
+            </div>
+          </form>
         </ModalFrame>
       ) : null}
 

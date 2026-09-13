@@ -64,6 +64,8 @@ function mapProductRow(
     categoryName: product.category.name,
     supplierName: supplierByProductId.get(product.id) ?? null,
     imageUrl: product.imageUrl,
+    availableInFiveMl: product.availableInFiveMl,
+    availableInTenMl: product.availableInTenMl,
     salePriceInCents: currentSellPriceInCents,
     unitCostInCents: product.purchaseCostInCents,
     stock: product.stock,
