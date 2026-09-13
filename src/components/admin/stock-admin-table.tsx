@@ -1076,6 +1076,14 @@ export function StockAdminTable({
 
               <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
+                  <button
+                    type="button"
+                    onClick={() => setShowDecantSale(true)}
+                    className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[color:var(--atlantic)] px-4 text-sm font-semibold text-white"
+                  >
+                    <ShoppingBasket className="h-4 w-4" />
+                    Venda de decants
+                  </button>
                   <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2">
                     <Filter className="h-4 w-4" />
                     {resultsLabel}
@@ -1490,14 +1498,6 @@ export function StockAdminTable({
       <section className="rounded-[1.8rem] border border-[color:var(--line)] bg-white p-4 shadow-sm">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setShowDecantSale(true)}
-              className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[color:var(--atlantic)] px-4 text-sm font-semibold text-white"
-            >
-              <ShoppingBasket className="h-4 w-4" />
-              Venda de decants
-            </button>
             <button
               type="button"
               onClick={() => exportExcel("filtered")}
