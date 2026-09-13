@@ -23,7 +23,6 @@ import {
   type AdminStockRow,
   type StockCustomerSummary,
   type StockImportPreviewRow,
-  buildStockSummary,
   filterStockRows,
   getMovementReasonLabel,
   getMovementTypeLabel,
@@ -152,7 +151,6 @@ export function StockAdminTable({
     () => sortStockRows(filteredRows, sortKey, sortDirection, selectedCustomer),
     [filteredRows, sortKey, sortDirection, selectedCustomer],
   );
-  const summary = useMemo(() => buildStockSummary(sortedRows), [sortedRows]);
   const pagination = useMemo(
     () => paginateStockRows(sortedRows, { page, pageSize }),
     [sortedRows, page, pageSize],
@@ -1570,16 +1568,6 @@ export function StockAdminTable({
         <p className="mt-1 text-xs text-slate-500">Inclui todo o histórico{selectedCustomer ? " deste cliente" : " de clientes"}, incluindo kits e decants.</p>
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-7">
-        <SummaryCard label="Produtos" value={summary.totalProducts} helper="Itens visiveis na tabela atual." />
-        <SummaryCard label="Unidades" value={summary.totalUnits} helper="Total de stock somado nesta vista." />
-        <SummaryCard label="Stock baixo" value={summary.lowStockProducts} helper="Produtos abaixo do limite de alerta." />
-        <SummaryCard label="Esgotados" value={summary.outOfStockProducts} helper="Produtos sem unidades disponiveis." />
-        <SummaryCard label="Investido" value={formatPrice(summary.totalInvestedInCents)} helper="Baseado no custo unitário atual." />
-        <SummaryCard label="Venda potencial" value={formatPrice(summary.totalPotentialSalesInCents)} helper="Valor bruto do stock atual." />
-        <SummaryCard label="Lucro potencial" value={formatPrice(summary.totalPotentialProfitInCents)} helper="Ignora produtos sem custo definido." />
-      </section>
-
       {movementModal ? (
         <ModalFrame
           title={getModalTitle(movementModal.kind, movementModal.row.name)}
@@ -1874,16 +1862,6 @@ export function StockAdminTable({
         </ModalFrame>
       ) : null}
     </div>
-  );
-}
-
-function SummaryCard({ label, value, helper }: { label: string; value: string | number; helper: string }) {
-  return (
-    <article className="rounded-[1.45rem] border border-[color:var(--line)] bg-white px-4 py-4 shadow-sm">
-      <p className="text-[11px] uppercase tracking-[0.28em] text-[color:var(--atlantic)]">{label}</p>
-      <p className="mt-3 font-serif text-3xl text-[color:var(--ink)]">{value}</p>
-      <p className="mt-2 text-xs text-slate-500">{helper}</p>
-    </article>
   );
 }
 
