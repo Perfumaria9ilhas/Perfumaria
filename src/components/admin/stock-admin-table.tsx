@@ -77,7 +77,7 @@ type StockSaleRow = {
   deliveryStatus: StockDeliveryStatus;
   createdAt: string;
   totalInCents: number;
-  items: { id: string; productId: string; name: string; quantity: number; notes: string | null }[];
+  items: { id: string; productId: string; name: string; quantity: number; unitPriceInCents: number; status: StockSaleStatus; deliveryStatus: StockDeliveryStatus; notes: string | null }[];
 };
 
 type StockCustomerSalesGroup = {
@@ -855,7 +855,7 @@ export function StockAdminTable({
       setBanner({ tone: "error", message: payload.error ?? "Não foi possível alterar o estado." });
       return;
     }
-    setSales((current) => current.map((sale) => sale.id === saleGroupId ? { ...sale, status } : sale));
+    setSales((current) => current.map((sale) => sale.id === saleGroupId ? { ...sale, status, items: sale.items.map((item) => ({ ...item, status })) } : sale));
   }
 
   async function updateDeliveryStatus(saleGroupId: string, deliveryStatus: StockDeliveryStatus) {
@@ -869,7 +869,7 @@ export function StockAdminTable({
       setBanner({ tone: "error", message: payload.error ?? "Não foi possível alterar o estado da entrega." });
       return;
     }
-    setSales((current) => current.map((sale) => sale.id === saleGroupId ? { ...sale, deliveryStatus } : sale));
+    setSales((current) => current.map((sale) => sale.id === saleGroupId ? { ...sale, deliveryStatus, items: sale.items.map((item) => ({ ...item, deliveryStatus })) } : sale));
   }
 
   async function saveSaleEdits(event: React.FormEvent<HTMLFormElement>, sale: StockSaleRow) {
@@ -883,11 +883,11 @@ export function StockAdminTable({
         body: JSON.stringify({
           saleGroupId: sale.id,
           customerName: formData.get("customerName")?.toString() ?? "",
-          status: formData.get("status"),
-          deliveryStatus: formData.get("deliveryStatus"),
           items: sale.items.map((item) => ({
             movementId: item.id,
             productId: formData.get(`saleItem${item.id}`)?.toString() ?? item.productId,
+            status: formData.get(`saleItemStatus${item.id}`) ?? (item.notes?.includes("Kit de decants") ? formData.get("kitStatus") : null),
+            deliveryStatus: formData.get(`saleItemDelivery${item.id}`) ?? (item.notes?.includes("Kit de decants") ? formData.get("kitDelivery") : null),
           })),
         }),
       });
@@ -919,8 +919,8 @@ export function StockAdminTable({
     let kitDecants = 0;
     let individualDecants = 0;
     for (const sale of sales) {
-      if (sale.status === StockSaleStatus.OFFERED) continue;
       for (const item of sale.items) {
+        if (item.status === StockSaleStatus.OFFERED) continue;
         if (item.notes?.includes("Kit de decants")) kitDecants += item.quantity;
         else if (item.notes?.includes("Decant individual")) individualDecants += item.quantity;
         else perfumes += item.quantity;
@@ -2040,8 +2040,8 @@ export function StockAdminTable({
               {!pagedCustomerGroups.length ? <p className="p-5 text-slate-500">Nenhuma venda encontrada.</p> : null}
               <div className="flex items-center justify-between border-t border-[color:var(--line)] px-4 py-3 text-sm"><span>Página {salesPage} de {salesTotalPages} · máximo de 25 clientes</span><div className="flex gap-2"><button type="button" disabled={salesPage === 1} onClick={() => setSalesPage((page) => Math.max(1, page - 1))} className="rounded-full border px-3 py-2 disabled:opacity-40">Anterior</button><button type="button" disabled={salesPage === salesTotalPages} onClick={() => setSalesPage((page) => Math.min(salesTotalPages, page + 1))} className="rounded-full border px-3 py-2 disabled:opacity-40">Seguinte</button></div></div>
               <div className="grid gap-3 border-t border-[color:var(--line)] bg-white p-4 sm:grid-cols-3">
-                <SaleStatusTotal label="Por pagar" value={sales.filter((sale) => sale.status === StockSaleStatus.PENDING).reduce((sum, sale) => sum + sale.totalInCents, 0)} />
-                <SaleStatusTotal label="Pago" value={sales.filter((sale) => sale.status === StockSaleStatus.PAID).reduce((sum, sale) => sum + sale.totalInCents, 0)} />
+                <SaleStatusTotal label="Por pagar" value={getItemStatusTotal(sales, StockSaleStatus.PENDING)} />
+                <SaleStatusTotal label="Pago" value={getItemStatusTotal(sales, StockSaleStatus.PAID)} />
                 <SaleStatusTotal label="Oferecido" value={0} />
                 <SaleCountTotal label="Perfumes vendidos" value={soldItemTotals.perfumes} />
                 <SaleCountTotal label="Kits vendidos" value={soldItemTotals.kits} />
@@ -2389,6 +2389,7 @@ function SaleTableRows({
   products: AdminStockRow[];
   showSummary?: boolean;
 }) {
+  const firstKitItemId = sale.items.find((item) => item.notes?.includes("Kit de decants"))?.id;
   return (
     <>
       {showSummary ? <tr onClick={onToggle} className={`cursor-pointer border-t border-[color:var(--line)] hover:bg-[color:var(--sand-soft)] ${sale.status === StockSaleStatus.PENDING ? "bg-amber-50" : "bg-white"}`}>
@@ -2407,16 +2408,21 @@ function SaleTableRows({
         <tr className="border-t border-[color:var(--line)] bg-[color:var(--sand-soft)]">
           <td colSpan={6} className="p-4">
             <form onSubmit={onSave} className="space-y-4">
-              <div className="grid gap-3 md:grid-cols-3">
+              <div>
                 <Field label="Nome do cliente"><input name="customerName" defaultValue={sale.customerName} required minLength={2} className="h-12 w-full rounded-2xl border border-[color:var(--line)] bg-white px-4" /></Field>
-                <Field label="Estado"><select name="status" defaultValue={sale.status} className="h-12 w-full rounded-2xl border border-[color:var(--line)] bg-white px-4"><option value={StockSaleStatus.PAID}>Pago</option><option value={StockSaleStatus.PENDING}>Por pagar</option><option value={StockSaleStatus.OFFERED}>Oferecido</option></select></Field>
-                <Field label="Entrega"><select name="deliveryStatus" defaultValue={sale.deliveryStatus} className="h-12 w-full rounded-2xl border border-[color:var(--line)] bg-white px-4"><option value={StockDeliveryStatus.DELIVERED}>Entregue</option><option value={StockDeliveryStatus.PENDING}>Por entregar</option></select></Field>
               </div>
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="space-y-3">
                 {sale.items.map((item, index) => (
-                  <Field key={item.id} label={`${item.notes?.includes("Decant") || item.notes?.includes("Kit") ? "Decant" : "Perfume"} ${index + 1} · ${item.quantity} unidade${item.quantity === 1 ? "" : "s"}`}>
-                    <SearchableProductSelect name={`saleItem${item.id}`} products={products} placeholder="Pesquisar produto..." initialProductId={item.productId} />
-                  </Field>
+                  <div key={item.id} className="rounded-2xl border border-[color:var(--line)] bg-white p-3">
+                    <p className="mb-3 text-sm font-medium text-[color:var(--ink)]">{`${item.notes?.includes("Kit de decants") ? "Perfume do kit" : item.notes?.includes("Decant") ? "Decant" : "Perfume"} ${index + 1} · ${item.quantity} unidade${item.quantity === 1 ? "" : "s"}`}</p>
+                    <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto]">
+                      <Field label="Produto"><SearchableProductSelect name={`saleItem${item.id}`} products={products} placeholder="Pesquisar produto..." initialProductId={item.productId} /></Field>
+                      {!item.notes?.includes("Kit de decants") || item.id === firstKitItemId ? <>
+                        <Field label="Pagamento"><select name={item.notes?.includes("Kit de decants") ? "kitStatus" : `saleItemStatus${item.id}`} defaultValue={item.status} className="h-12 rounded-2xl border border-[color:var(--line)] bg-white px-4"><option value={StockSaleStatus.PAID}>Pago</option><option value={StockSaleStatus.PENDING}>Por pagar</option><option value={StockSaleStatus.OFFERED}>Oferecido</option></select></Field>
+                        <Field label="Entrega"><select name={item.notes?.includes("Kit de decants") ? "kitDelivery" : `saleItemDelivery${item.id}`} defaultValue={item.deliveryStatus} className="h-12 rounded-2xl border border-[color:var(--line)] bg-white px-4"><option value={StockDeliveryStatus.DELIVERED}>Entregue</option><option value={StockDeliveryStatus.PENDING}>Por entregar</option></select></Field>
+                      </> : null}
+                    </div>
+                  </div>
                 ))}
               </div>
               <div className="flex justify-end"><button disabled={saving} className="rounded-full bg-[color:var(--atlantic)] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">{saving ? "A guardar..." : "Guardar alterações"}</button></div>
@@ -2538,6 +2544,13 @@ function SaleStatusTotal({ label, value }: { label: string; value: number }) {
 
 function SaleCountTotal({ label, value }: { label: string; value: number }) {
   return <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--sand-soft)] p-4"><p className="text-xs uppercase tracking-[0.14em] text-slate-500">{label}</p><p className="mt-2 font-serif text-2xl text-[color:var(--ink)]">{value}</p></div>;
+}
+
+function getItemStatusTotal(sales: StockSaleRow[], status: StockSaleStatus) {
+  return sales.reduce((salesTotal, sale) => salesTotal + sale.items.reduce(
+    (itemTotal, item) => itemTotal + (item.status === status ? item.quantity * item.unitPriceInCents : 0),
+    0,
+  ), 0);
 }
 
 function formatSaleSummary(sale: StockSaleRow) {

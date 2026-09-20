@@ -19,7 +19,12 @@ const statusSchema = z.object({
   status: z.nativeEnum(StockSaleStatus).optional(),
   deliveryStatus: z.nativeEnum(StockDeliveryStatus).optional(),
   customerName: z.string().trim().min(2).optional(),
-  items: z.array(z.object({ movementId: z.string().min(1), productId: z.string().min(1) })).max(100).optional(),
+  items: z.array(z.object({
+    movementId: z.string().min(1),
+    productId: z.string().min(1),
+    status: z.nativeEnum(StockSaleStatus).optional(),
+    deliveryStatus: z.nativeEnum(StockDeliveryStatus).optional(),
+  })).max(100).optional(),
 });
 
 export async function GET() {
@@ -31,7 +36,7 @@ export async function GET() {
   });
   const groups = new Map<string, {
     id: string; customerName: string; status: StockSaleStatus; deliveryStatus: StockDeliveryStatus; createdAt: string;
-    totalInCents: number; items: { id: string; productId: string; name: string; quantity: number; notes: string | null }[];
+    totalInCents: number; items: { id: string; productId: string; name: string; quantity: number; unitPriceInCents: number; status: StockSaleStatus; deliveryStatus: StockDeliveryStatus; notes: string | null }[];
   }>();
   for (const movement of movements) {
     const id = movement.saleGroupId ?? movement.id;
@@ -45,8 +50,18 @@ export async function GET() {
       items: [],
     };
     group.totalInCents += movement.quantity * (movement.saleUnitPriceInCents ?? 0);
-    group.items.push({ id: movement.id, productId: movement.productId, name: movement.product.name, quantity: movement.quantity, notes: movement.notes });
+    group.items.push({ id: movement.id, productId: movement.productId, name: movement.product.name, quantity: movement.quantity, unitPriceInCents: movement.saleUnitPriceInCents ?? 0, status: movement.saleStatus ?? StockSaleStatus.PAID, deliveryStatus: movement.deliveryStatus ?? StockDeliveryStatus.DELIVERED, notes: movement.notes });
     groups.set(id, group);
+  }
+  for (const group of groups.values()) {
+    group.status = group.items.some((item) => item.status === StockSaleStatus.PENDING)
+      ? StockSaleStatus.PENDING
+      : group.items.every((item) => item.status === StockSaleStatus.OFFERED)
+        ? StockSaleStatus.OFFERED
+        : StockSaleStatus.PAID;
+    group.deliveryStatus = group.items.some((item) => item.deliveryStatus === StockDeliveryStatus.PENDING)
+      ? StockDeliveryStatus.PENDING
+      : StockDeliveryStatus.DELIVERED;
   }
   return NextResponse.json({ sales: [...groups.values()] });
 }
@@ -63,6 +78,8 @@ export async function PATCH(request: Request) {
     });
     if (!movements.length) throw new Error("Venda não encontrada.");
     const itemChanges = new Map((parsed.data.items ?? []).map((item) => [item.movementId, item.productId]));
+    const itemStatuses = new Map((parsed.data.items ?? []).map((item) => [item.movementId, item.status]));
+    const itemDeliveryStatuses = new Map((parsed.data.items ?? []).map((item) => [item.movementId, item.deliveryStatus]));
     const requestedProductIds = [...new Set(itemChanges.values())];
     const replacementProducts = requestedProductIds.length
       ? await tx.product.findMany({ where: { id: { in: requestedProductIds } } })
@@ -87,8 +104,8 @@ export async function PATCH(request: Request) {
         where: { id: movement.id },
         data: {
           saleGroupId: parsed.data.saleGroupId,
-          saleStatus: parsed.data.status,
-          deliveryStatus: parsed.data.deliveryStatus,
+          saleStatus: itemStatuses.get(movement.id) ?? parsed.data.status,
+          deliveryStatus: itemDeliveryStatuses.get(movement.id) ?? parsed.data.deliveryStatus,
           customerName: parsed.data.customerName ?? movement.customerName,
           productId: nextProductId,
           saleUnitPriceInCents: nextProductId !== movement.productId && movement.reason === StockMovementReason.SALE
