@@ -31,11 +31,10 @@ export async function POST(request: Request) {
       for (const product of products) {
         const quantity = quantities.get(product.id)!;
         if (!product.active) throw new Error(`${product.name} já não está disponível no site.`);
-        if (product.stock < quantity) throw new Error(`Stock insuficiente para ${product.name}. Disponível: ${product.stock}.`);
-        const resultingStock = product.stock - quantity;
+        const resultingStock = Math.max(0, product.stock - quantity);
         const updated = await tx.product.updateMany({
           where: { id: product.id, stock: product.stock },
-          data: { stock: { decrement: quantity } },
+          data: { stock: resultingStock },
         });
         if (updated.count !== 1) throw new Error(`O stock de ${product.name} foi alterado. Tente novamente.`);
         await tx.stockMovement.create({ data: {

@@ -1828,7 +1828,7 @@ export function StockAdminTable({
             <div className="space-y-3">
               {perfumeLineIds.map((id, index) => (
                 <SaleLine key={id} label={`Perfume ${index + 1}`} onRemove={perfumeLineIds.length > 1 ? () => setPerfumeLineIds((current) => current.filter((lineId) => lineId !== id)) : undefined}>
-                  <SearchableProductSelect name={`perfumeProduct${id}`} products={rows.filter((row) => row.active && row.stock > 0)} placeholder="Pesquisar perfume..." />
+                  <SearchableProductSelect name={`perfumeProduct${id}`} products={rows.filter((row) => row.active)} placeholder="Pesquisar perfume..." />
                   <input name={`perfumeQuantity${id}`} aria-label="Quantidade" type="number" min="1" defaultValue="1" required className="h-12 w-24 rounded-2xl border border-[color:var(--line)] px-3" />
                 </SaleLine>
               ))}
