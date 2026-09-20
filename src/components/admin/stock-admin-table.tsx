@@ -897,6 +897,20 @@ export function StockAdminTable({
       left.customerName.localeCompare(right.customerName, "pt-PT", { sensitivity: "base" }),
     );
   }, [sales, salesStatusFilter]);
+  const soldItemTotals = useMemo(() => {
+    let perfumes = 0;
+    let kitDecants = 0;
+    let individualDecants = 0;
+    for (const sale of sales) {
+      if (sale.status === StockSaleStatus.OFFERED) continue;
+      for (const item of sale.items) {
+        if (item.notes?.includes("Kit de decants")) kitDecants += item.quantity;
+        else if (item.notes?.includes("Decant individual")) individualDecants += item.quantity;
+        else perfumes += item.quantity;
+      }
+    }
+    return { perfumes, kits: Math.floor(kitDecants / 5), individualDecants };
+  }, [sales]);
   const salesTotalPages = Math.max(1, Math.ceil(customerSalesGroups.length / 25));
   const pagedCustomerGroups = customerSalesGroups.slice((salesPage - 1) * 25, salesPage * 25);
 
@@ -2006,6 +2020,9 @@ export function StockAdminTable({
                 <SaleStatusTotal label="Por pagar" value={sales.filter((sale) => sale.status === StockSaleStatus.PENDING).reduce((sum, sale) => sum + sale.totalInCents, 0)} />
                 <SaleStatusTotal label="Pago" value={sales.filter((sale) => sale.status === StockSaleStatus.PAID).reduce((sum, sale) => sum + sale.totalInCents, 0)} />
                 <SaleStatusTotal label="Oferecido" value={0} />
+                <SaleCountTotal label="Perfumes vendidos" value={soldItemTotals.perfumes} />
+                <SaleCountTotal label="Kits vendidos" value={soldItemTotals.kits} />
+                <SaleCountTotal label="Decants individuais" value={soldItemTotals.individualDecants} />
               </div>
             </div>
           )}
@@ -2352,7 +2369,7 @@ function SaleTableRows({
       {showSummary ? <tr onClick={onToggle} className={`cursor-pointer border-t border-[color:var(--line)] hover:bg-[color:var(--sand-soft)] ${sale.status === StockSaleStatus.PENDING ? "bg-amber-50" : "bg-white"}`}>
         <td className="whitespace-nowrap px-4 py-3 font-medium text-[color:var(--ink)]">{sale.customerName}</td>
         <td className="whitespace-nowrap px-4 py-3 text-slate-500">{new Date(sale.createdAt).toLocaleDateString("pt-PT")}</td>
-        <td className="max-w-md truncate px-4 py-3 text-slate-500">{sale.items.map((item) => `${item.quantity}× ${item.name}`).join(", ")}</td>
+        <td className="max-w-md truncate px-4 py-3 text-slate-500">{formatSaleSummary(sale)}</td>
         <td className="px-4 py-3" onClick={(event) => event.stopPropagation()}>
           <select value={sale.status} onChange={(event) => onStatusChange(event.target.value as StockSaleStatus)} className="h-9 rounded-xl border border-[color:var(--line)] bg-white px-2"><option value={StockSaleStatus.PENDING}>Por pagar</option><option value={StockSaleStatus.PAID}>Pago</option><option value={StockSaleStatus.OFFERED}>Oferecido</option></select>
         </td>
@@ -2488,6 +2505,20 @@ function AppViewButton({ active, onClick, icon, label }: { active: boolean; onCl
 
 function SaleStatusTotal({ label, value }: { label: string; value: number }) {
   return <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--sand-soft)] p-4"><p className="text-sm text-slate-600">{label}</p><p className="mt-1 font-serif text-2xl text-[color:var(--ink)]">{formatPrice(value)}</p></div>;
+}
+
+function SaleCountTotal({ label, value }: { label: string; value: number }) {
+  return <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--sand-soft)] p-4"><p className="text-xs uppercase tracking-[0.14em] text-slate-500">{label}</p><p className="mt-2 font-serif text-2xl text-[color:var(--ink)]">{value}</p></div>;
+}
+
+function formatSaleSummary(sale: StockSaleRow) {
+  const regularItems = sale.items.filter((item) => !item.notes?.includes("Kit de decants"));
+  const kitDecantUnits = sale.items
+    .filter((item) => item.notes?.includes("Kit de decants"))
+    .reduce((total, item) => total + item.quantity, 0);
+  const summary = regularItems.map((item) => `${item.quantity}× ${item.name}`);
+  if (kitDecantUnits) summary.push(`${Math.max(1, Math.floor(kitDecantUnits / 5))}× Kit de decants`);
+  return summary.join(", ");
 }
 
 function getModalTitle(
