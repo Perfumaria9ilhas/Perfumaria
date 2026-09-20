@@ -76,7 +76,7 @@ type StockSaleRow = {
   status: StockSaleStatus;
   createdAt: string;
   totalInCents: number;
-  items: { name: string; quantity: number; notes: string | null }[];
+  items: { id: string; productId: string; name: string; quantity: number; notes: string | null }[];
 };
 
 export function StockAdminTable({
@@ -123,6 +123,9 @@ export function StockAdminTable({
   const [sales, setSales] = useState<StockSaleRow[]>([]);
   const [salesLoading, setSalesLoading] = useState(false);
   const [salesStatusFilter, setSalesStatusFilter] = useState<"ALL" | StockSaleStatus>("ALL");
+  const [salesPage, setSalesPage] = useState(1);
+  const [expandedSaleId, setExpandedSaleId] = useState<string | null>(null);
+  const [savingSaleId, setSavingSaleId] = useState<string | null>(null);
   const [importHasErrors, setImportHasErrors] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const deferredQuery = useDeferredValue(searchTerm);
@@ -824,6 +827,7 @@ export function StockAdminTable({
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error ?? "Não foi possível carregar as vendas.");
       setSales(payload.sales ?? []);
+      setSalesPage(1);
     } catch (error) {
       setBanner({ tone: "error", message: error instanceof Error ? error.message : "Não foi possível carregar as vendas." });
     } finally {
@@ -844,6 +848,42 @@ export function StockAdminTable({
     }
     setSales((current) => current.map((sale) => sale.id === saleGroupId ? { ...sale, status } : sale));
   }
+
+  async function saveSaleEdits(event: React.FormEvent<HTMLFormElement>, sale: StockSaleRow) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    setSavingSaleId(sale.id);
+    try {
+      const response = await fetch("/api/admin/stock/sales", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          saleGroupId: sale.id,
+          customerName: formData.get("customerName")?.toString() ?? "",
+          status: formData.get("status"),
+          items: sale.items.map((item) => ({
+            movementId: item.id,
+            productId: formData.get(`saleItem${item.id}`)?.toString() ?? item.productId,
+          })),
+        }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error ?? "Não foi possível guardar a venda.");
+      await loadSales();
+      setExpandedSaleId(null);
+    } catch (error) {
+      setBanner({ tone: "error", message: error instanceof Error ? error.message : "Não foi possível guardar a venda." });
+    } finally {
+      setSavingSaleId(null);
+    }
+  }
+
+  const filteredSales = useMemo(() => sales
+    .filter((sale) => salesStatusFilter === "ALL" || sale.status === salesStatusFilter)
+    .sort((left, right) => left.customerName.localeCompare(right.customerName, "pt-PT", { sensitivity: "base" })),
+  [sales, salesStatusFilter]);
+  const salesTotalPages = Math.max(1, Math.ceil(filteredSales.length / 25));
+  const pagedSales = filteredSales.slice((salesPage - 1) * 25, salesPage * 25);
 
   async function submitMovement(event: React.FormEvent<HTMLFormElement>, row: AdminStockRow) {
     event.preventDefault();
@@ -1917,26 +1957,29 @@ export function StockAdminTable({
         <section className="rounded-[1.8rem] border border-[color:var(--line)] bg-white p-5 shadow-sm sm:p-7">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="font-serif text-3xl text-[color:var(--ink)]">Estado das vendas</h2>
-            <select value={salesStatusFilter} onChange={(event) => setSalesStatusFilter(event.target.value as "ALL" | StockSaleStatus)} className="h-11 rounded-2xl border border-[color:var(--line)] bg-white px-4">
+            <select value={salesStatusFilter} onChange={(event) => { setSalesStatusFilter(event.target.value as "ALL" | StockSaleStatus); setSalesPage(1); }} className="h-11 rounded-2xl border border-[color:var(--line)] bg-white px-4">
               <option value="ALL">Todos os estados</option><option value={StockSaleStatus.PENDING}>Por pagar</option><option value={StockSaleStatus.PAID}>Pago</option><option value={StockSaleStatus.OFFERED}>Oferecido</option>
             </select>
           </div>
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
-            <SaleStatusTotal label="Por pagar" value={sales.filter((sale) => sale.status === StockSaleStatus.PENDING).reduce((sum, sale) => sum + sale.totalInCents, 0)} />
-            <SaleStatusTotal label="Pago" value={sales.filter((sale) => sale.status === StockSaleStatus.PAID).reduce((sum, sale) => sum + sale.totalInCents, 0)} />
-            <SaleStatusTotal label="Oferecido" value={sales.filter((sale) => sale.status === StockSaleStatus.OFFERED).reduce((sum, sale) => sum + sale.totalInCents, 0)} />
-          </div>
           {salesLoading ? <p className="mt-6 text-slate-500">A carregar vendas...</p> : (
-            <div className="mt-6 space-y-3">
-              {sales.filter((sale) => salesStatusFilter === "ALL" || sale.status === salesStatusFilter).map((sale) => (
-                <article key={sale.id} className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--sand-soft)] p-4">
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                    <div><p className="font-semibold text-[color:var(--ink)]">{sale.customerName}</p><p className="text-sm text-slate-500">{new Date(sale.createdAt).toLocaleString("pt-PT")} · {sale.items.map((item) => `${item.quantity}× ${item.name}${item.notes ? ` (${item.notes})` : ""}`).join(", ")}</p></div>
-                    <div className="flex flex-wrap items-center gap-3"><strong>{formatPrice(sale.totalInCents)}</strong><select value={sale.status} onChange={(event) => updateSaleStatus(sale.id, event.target.value as StockSaleStatus)} className="h-10 rounded-xl border border-[color:var(--line)] bg-white px-3"><option value={StockSaleStatus.PENDING}>Por pagar</option><option value={StockSaleStatus.PAID}>Pago</option><option value={StockSaleStatus.OFFERED}>Oferecido</option></select></div>
-                  </div>
-                </article>
-              ))}
-              {!sales.length ? <p className="text-slate-500">Ainda não existem vendas registadas.</p> : null}
+            <div className="mt-6 overflow-hidden rounded-2xl border border-[color:var(--line)]">
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-[color:var(--sand-soft)] text-left text-xs uppercase tracking-[0.14em] text-slate-500"><tr><th className="px-4 py-3">Cliente</th><th className="px-4 py-3">Data</th><th className="px-4 py-3">Resumo</th><th className="px-4 py-3">Estado</th><th className="px-4 py-3 text-right">Valor</th></tr></thead>
+                  <tbody>
+                    {pagedSales.map((sale) => (
+                      <SaleTableRows key={sale.id} sale={sale} expanded={expandedSaleId === sale.id} onToggle={() => setExpandedSaleId((current) => current === sale.id ? null : sale.id)} onStatusChange={(status) => updateSaleStatus(sale.id, status)} onSave={(event) => saveSaleEdits(event, sale)} saving={savingSaleId === sale.id} products={rows.filter((row) => row.active)} />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {!pagedSales.length ? <p className="p-5 text-slate-500">Nenhuma venda encontrada.</p> : null}
+              <div className="flex items-center justify-between border-t border-[color:var(--line)] px-4 py-3 text-sm"><span>Página {salesPage} de {salesTotalPages} · máximo de 25 vendas</span><div className="flex gap-2"><button type="button" disabled={salesPage === 1} onClick={() => setSalesPage((page) => Math.max(1, page - 1))} className="rounded-full border px-3 py-2 disabled:opacity-40">Anterior</button><button type="button" disabled={salesPage === salesTotalPages} onClick={() => setSalesPage((page) => Math.min(salesTotalPages, page + 1))} className="rounded-full border px-3 py-2 disabled:opacity-40">Seguinte</button></div></div>
+              <div className="grid gap-3 border-t border-[color:var(--line)] bg-white p-4 sm:grid-cols-3">
+                <SaleStatusTotal label="Por pagar" value={sales.filter((sale) => sale.status === StockSaleStatus.PENDING).reduce((sum, sale) => sum + sale.totalInCents, 0)} />
+                <SaleStatusTotal label="Pago" value={sales.filter((sale) => sale.status === StockSaleStatus.PAID).reduce((sum, sale) => sum + sale.totalInCents, 0)} />
+                <SaleStatusTotal label="Oferecido" value={0} />
+              </div>
             </div>
           )}
         </section>
@@ -2258,20 +2301,75 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
+function SaleTableRows({
+  sale,
+  expanded,
+  onToggle,
+  onStatusChange,
+  onSave,
+  saving,
+  products,
+}: {
+  sale: StockSaleRow;
+  expanded: boolean;
+  onToggle: () => void;
+  onStatusChange: (status: StockSaleStatus) => void;
+  onSave: (event: React.FormEvent<HTMLFormElement>) => void;
+  saving: boolean;
+  products: AdminStockRow[];
+}) {
+  return (
+    <>
+      <tr onClick={onToggle} className="cursor-pointer border-t border-[color:var(--line)] bg-white hover:bg-[color:var(--sand-soft)]">
+        <td className="whitespace-nowrap px-4 py-3 font-medium text-[color:var(--ink)]">{sale.customerName}</td>
+        <td className="whitespace-nowrap px-4 py-3 text-slate-500">{new Date(sale.createdAt).toLocaleDateString("pt-PT")}</td>
+        <td className="max-w-md truncate px-4 py-3 text-slate-500">{sale.items.map((item) => `${item.quantity}× ${item.name}`).join(", ")}</td>
+        <td className="px-4 py-3" onClick={(event) => event.stopPropagation()}>
+          <select value={sale.status} onChange={(event) => onStatusChange(event.target.value as StockSaleStatus)} className="h-9 rounded-xl border border-[color:var(--line)] bg-white px-2"><option value={StockSaleStatus.PENDING}>Por pagar</option><option value={StockSaleStatus.PAID}>Pago</option><option value={StockSaleStatus.OFFERED}>Oferecido</option></select>
+        </td>
+        <td className="whitespace-nowrap px-4 py-3 text-right font-semibold">{formatPrice(sale.totalInCents)}</td>
+      </tr>
+      {expanded ? (
+        <tr className="border-t border-[color:var(--line)] bg-[color:var(--sand-soft)]">
+          <td colSpan={5} className="p-4">
+            <form onSubmit={onSave} className="space-y-4">
+              <div className="grid gap-3 md:grid-cols-2">
+                <Field label="Nome do cliente"><input name="customerName" defaultValue={sale.customerName} required minLength={2} className="h-12 w-full rounded-2xl border border-[color:var(--line)] bg-white px-4" /></Field>
+                <Field label="Estado"><select name="status" defaultValue={sale.status} className="h-12 w-full rounded-2xl border border-[color:var(--line)] bg-white px-4"><option value={StockSaleStatus.PAID}>Pago</option><option value={StockSaleStatus.PENDING}>Por pagar</option><option value={StockSaleStatus.OFFERED}>Oferecido</option></select></Field>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                {sale.items.map((item, index) => (
+                  <Field key={item.id} label={`${item.notes?.includes("Decant") || item.notes?.includes("Kit") ? "Decant" : "Perfume"} ${index + 1} · ${item.quantity} unidade${item.quantity === 1 ? "" : "s"}`}>
+                    <SearchableProductSelect name={`saleItem${item.id}`} products={products} placeholder="Pesquisar produto..." initialProductId={item.productId} />
+                  </Field>
+                ))}
+              </div>
+              <div className="flex justify-end"><button disabled={saving} className="rounded-full bg-[color:var(--atlantic)] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">{saving ? "A guardar..." : "Guardar alterações"}</button></div>
+            </form>
+          </td>
+        </tr>
+      ) : null}
+    </>
+  );
+}
+
 function SearchableProductSelect({
   name,
   products,
   placeholder,
   required = true,
+  initialProductId = "",
 }: {
   name: string;
   products: AdminStockRow[];
   placeholder: string;
   required?: boolean;
+  initialProductId?: string;
 }) {
-  const [query, setQuery] = useState("");
+  const initialProduct = products.find((product) => product.id === initialProductId);
+  const [query, setQuery] = useState(initialProduct ? `${initialProduct.name} · ${initialProduct.brandName}` : "");
   const listboxId = useId();
-  const [selectedId, setSelectedId] = useState("");
+  const [selectedId, setSelectedId] = useState(initialProductId);
   const [open, setOpen] = useState(false);
   const matches = useMemo(() => {
     const normalizedQuery = normalizeStockSearch(query);
