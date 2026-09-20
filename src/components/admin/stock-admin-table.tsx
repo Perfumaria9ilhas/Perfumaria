@@ -788,6 +788,9 @@ export function StockAdminTable({
     const kitProductIds = combinedDecantMode === "KIT"
       ? [1, 2, 3, 4, 5].map((position) => formData.get(`combinedKit${position}`)?.toString() ?? "")
       : [];
+    const kitQuantity = combinedDecantMode === "KIT"
+      ? Number(formData.get("combinedKitQuantity"))
+      : 1;
     setSavingCombinedSale(true);
     setBanner(null);
     try {
@@ -800,6 +803,7 @@ export function StockAdminTable({
           perfumeLines,
           decantLines,
           kitProductIds,
+          kitQuantity,
         }),
       });
       const payload = await response.json();
@@ -1851,9 +1855,9 @@ export function StockAdminTable({
             <div className="grid gap-4 md:grid-cols-2">
               <Field label="Cliente"><input name="customerName" list="combined-customer-names" required minLength={2} className="h-12 w-full rounded-2xl border border-[color:var(--line)] px-4" placeholder="Nome da pessoa que compra" /></Field>
               <Field label="Estado da venda">
-                <select name="status" required defaultValue={StockSaleStatus.PENDING} className="h-12 w-full rounded-2xl border border-[color:var(--line)] bg-white px-4">
-                  <option value={StockSaleStatus.PENDING}>Por pagar · aguardar entrega/pagamento</option>
+                <select name="status" required defaultValue={StockSaleStatus.PAID} className="h-12 w-full rounded-2xl border border-[color:var(--line)] bg-white px-4">
                   <option value={StockSaleStatus.PAID}>Pago</option>
+                  <option value={StockSaleStatus.PENDING}>Por pagar · aguardar entrega/pagamento</option>
                   <option value={StockSaleStatus.OFFERED}>Oferecido</option>
                 </select>
               </Field>
@@ -1884,6 +1888,9 @@ export function StockAdminTable({
                 {combinedDecantMode === "KIT" ? (
                   <div className="mt-4 space-y-3">
                     <p className="text-sm text-slate-600">Selecione os 5 perfumes diferentes do kit.</p>
+                    <Field label="Quantidade de kits">
+                      <input name="combinedKitQuantity" type="number" min="1" defaultValue="1" required className="h-12 w-full rounded-2xl border border-[color:var(--line)] bg-white px-4" />
+                    </Field>
                     {[1, 2, 3, 4, 5].map((position) => <Field key={position} label={`Decant ${position}`}><SearchableProductSelect name={`combinedKit${position}`} products={rows.filter((row) => row.active && row.availableInFiveMl)} placeholder="Pesquisar perfume..." /></Field>)}
                   </div>
                 ) : null}

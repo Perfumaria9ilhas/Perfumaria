@@ -13,6 +13,7 @@ const schema = z.object({
   perfumeLines: z.array(z.object({ productId: z.string().min(1), quantity: z.number().int().positive() })).max(50),
   decantLines: z.array(z.object({ productId: z.string().min(1), sizeMl: z.union([z.literal(5), z.literal(10)]), quantity: z.number().int().positive() })).max(50),
   kitProductIds: z.array(z.string().min(1)).max(5),
+  kitQuantity: z.number().int().positive().max(100).default(1),
 }).superRefine((value, ctx) => {
   if (!value.perfumeLines.length && !value.decantLines.length && !value.kitProductIds.length) ctx.addIssue({ code: "custom", message: "Adicione pelo menos um perfume, decant ou kit." });
   if (value.kitProductIds.length && (value.kitProductIds.length !== 5 || new Set(value.kitProductIds).size !== 5)) ctx.addIssue({ code: "custom", message: "O kit precisa de 5 perfumes diferentes." });
@@ -42,7 +43,7 @@ export async function POST(request: Request) {
       }
       const decants = [
         ...data.decantLines.map((line) => ({ ...line, price: line.sizeMl === 5 ? 350 : 650, note: `Decant individual · ${line.sizeMl} ml` })),
-        ...data.kitProductIds.map((productId) => ({ productId, sizeMl: 5 as const, quantity: 1, price: 330, note: "Kit de decants · 5 ml" })),
+        ...data.kitProductIds.map((productId) => ({ productId, sizeMl: 5 as const, quantity: data.kitQuantity, price: 330, note: `Kit de decants · 5 ml · ${data.kitQuantity} kit${data.kitQuantity === 1 ? "" : "s"}` })),
       ];
       for (const line of decants) {
         const product = productById.get(line.productId)!;
