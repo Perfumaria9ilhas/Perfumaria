@@ -17,7 +17,7 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
-import { useDeferredValue, useId, useMemo, useRef, useState } from "react";
+import { Fragment, useDeferredValue, useId, useMemo, useRef, useState } from "react";
 import { formatPrice } from "@/lib/format";
 import {
   type AdminStockMovementRow,
@@ -79,6 +79,12 @@ type StockSaleRow = {
   items: { id: string; productId: string; name: string; quantity: number; notes: string | null }[];
 };
 
+type StockCustomerSalesGroup = {
+  key: string;
+  customerName: string;
+  sales: StockSaleRow[];
+};
+
 export function StockAdminTable({
   rows: initialRows,
   brands,
@@ -125,6 +131,7 @@ export function StockAdminTable({
   const [salesStatusFilter, setSalesStatusFilter] = useState<"ALL" | StockSaleStatus>("ALL");
   const [salesPage, setSalesPage] = useState(1);
   const [expandedSaleId, setExpandedSaleId] = useState<string | null>(null);
+  const [expandedCustomerKey, setExpandedCustomerKey] = useState<string | null>(null);
   const [savingSaleId, setSavingSaleId] = useState<string | null>(null);
   const [importHasErrors, setImportHasErrors] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -878,12 +885,20 @@ export function StockAdminTable({
     }
   }
 
-  const filteredSales = useMemo(() => sales
-    .filter((sale) => salesStatusFilter === "ALL" || sale.status === salesStatusFilter)
-    .sort((left, right) => left.customerName.localeCompare(right.customerName, "pt-PT", { sensitivity: "base" })),
-  [sales, salesStatusFilter]);
-  const salesTotalPages = Math.max(1, Math.ceil(filteredSales.length / 25));
-  const pagedSales = filteredSales.slice((salesPage - 1) * 25, salesPage * 25);
+  const customerSalesGroups = useMemo(() => {
+    const groups = new Map<string, StockCustomerSalesGroup>();
+    for (const sale of sales.filter((entry) => salesStatusFilter === "ALL" || entry.status === salesStatusFilter)) {
+      const key = normalizeStockSearch(sale.customerName);
+      const group = groups.get(key) ?? { key, customerName: sale.customerName, sales: [] };
+      group.sales.push(sale);
+      groups.set(key, group);
+    }
+    return [...groups.values()].sort((left, right) =>
+      left.customerName.localeCompare(right.customerName, "pt-PT", { sensitivity: "base" }),
+    );
+  }, [sales, salesStatusFilter]);
+  const salesTotalPages = Math.max(1, Math.ceil(customerSalesGroups.length / 25));
+  const pagedCustomerGroups = customerSalesGroups.slice((salesPage - 1) * 25, salesPage * 25);
 
   async function submitMovement(event: React.FormEvent<HTMLFormElement>, row: AdminStockRow) {
     event.preventDefault();
@@ -1965,16 +1980,27 @@ export function StockAdminTable({
             <div className="mt-6 overflow-hidden rounded-2xl border border-[color:var(--line)]">
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
-                  <thead className="bg-[color:var(--sand-soft)] text-left text-xs uppercase tracking-[0.14em] text-slate-500"><tr><th className="px-4 py-3">Cliente</th><th className="px-4 py-3">Data</th><th className="px-4 py-3">Resumo</th><th className="px-4 py-3">Estado</th><th className="px-4 py-3 text-right">Valor</th></tr></thead>
+                  <thead className="bg-[color:var(--sand-soft)] text-left text-xs uppercase tracking-[0.14em] text-slate-500"><tr><th className="px-4 py-3" colSpan={5}>Cliente</th></tr></thead>
                   <tbody>
-                    {pagedSales.map((sale) => (
-                      <SaleTableRows key={sale.id} sale={sale} expanded={expandedSaleId === sale.id} onToggle={() => setExpandedSaleId((current) => current === sale.id ? null : sale.id)} onStatusChange={(status) => updateSaleStatus(sale.id, status)} onSave={(event) => saveSaleEdits(event, sale)} saving={savingSaleId === sale.id} products={rows.filter((row) => row.active)} />
-                    ))}
+                    {pagedCustomerGroups.map((group) => {
+                      const expanded = expandedCustomerKey === group.key;
+                      return <Fragment key={group.key}>
+                        <tr onClick={() => { setExpandedCustomerKey((current) => current === group.key ? null : group.key); setExpandedSaleId(group.sales.length === 1 ? group.sales[0].id : null); }} className="cursor-pointer border-t border-[color:var(--line)] bg-white hover:bg-[color:var(--sand-soft)]">
+                          <td colSpan={5} className="px-4 py-4 font-medium text-[color:var(--ink)]">{group.customerName}</td>
+                        </tr>
+                        {expanded && group.sales.length === 1 ? (
+                          <SaleTableRows sale={group.sales[0]} expanded showSummary={false} onToggle={() => undefined} onStatusChange={(status) => updateSaleStatus(group.sales[0].id, status)} onSave={(event) => saveSaleEdits(event, group.sales[0])} saving={savingSaleId === group.sales[0].id} products={rows.filter((row) => row.active)} />
+                        ) : null}
+                        {expanded && group.sales.length > 1 ? group.sales.map((sale) => (
+                          <SaleTableRows key={sale.id} sale={sale} expanded={expandedSaleId === sale.id} onToggle={() => setExpandedSaleId((current) => current === sale.id ? null : sale.id)} onStatusChange={(status) => updateSaleStatus(sale.id, status)} onSave={(event) => saveSaleEdits(event, sale)} saving={savingSaleId === sale.id} products={rows.filter((row) => row.active)} />
+                        )) : null}
+                      </Fragment>;
+                    })}
                   </tbody>
                 </table>
               </div>
-              {!pagedSales.length ? <p className="p-5 text-slate-500">Nenhuma venda encontrada.</p> : null}
-              <div className="flex items-center justify-between border-t border-[color:var(--line)] px-4 py-3 text-sm"><span>Página {salesPage} de {salesTotalPages} · máximo de 25 vendas</span><div className="flex gap-2"><button type="button" disabled={salesPage === 1} onClick={() => setSalesPage((page) => Math.max(1, page - 1))} className="rounded-full border px-3 py-2 disabled:opacity-40">Anterior</button><button type="button" disabled={salesPage === salesTotalPages} onClick={() => setSalesPage((page) => Math.min(salesTotalPages, page + 1))} className="rounded-full border px-3 py-2 disabled:opacity-40">Seguinte</button></div></div>
+              {!pagedCustomerGroups.length ? <p className="p-5 text-slate-500">Nenhuma venda encontrada.</p> : null}
+              <div className="flex items-center justify-between border-t border-[color:var(--line)] px-4 py-3 text-sm"><span>Página {salesPage} de {salesTotalPages} · máximo de 25 clientes</span><div className="flex gap-2"><button type="button" disabled={salesPage === 1} onClick={() => setSalesPage((page) => Math.max(1, page - 1))} className="rounded-full border px-3 py-2 disabled:opacity-40">Anterior</button><button type="button" disabled={salesPage === salesTotalPages} onClick={() => setSalesPage((page) => Math.min(salesTotalPages, page + 1))} className="rounded-full border px-3 py-2 disabled:opacity-40">Seguinte</button></div></div>
               <div className="grid gap-3 border-t border-[color:var(--line)] bg-white p-4 sm:grid-cols-3">
                 <SaleStatusTotal label="Por pagar" value={sales.filter((sale) => sale.status === StockSaleStatus.PENDING).reduce((sum, sale) => sum + sale.totalInCents, 0)} />
                 <SaleStatusTotal label="Pago" value={sales.filter((sale) => sale.status === StockSaleStatus.PAID).reduce((sum, sale) => sum + sale.totalInCents, 0)} />
@@ -2309,6 +2335,7 @@ function SaleTableRows({
   onSave,
   saving,
   products,
+  showSummary = true,
 }: {
   sale: StockSaleRow;
   expanded: boolean;
@@ -2317,10 +2344,11 @@ function SaleTableRows({
   onSave: (event: React.FormEvent<HTMLFormElement>) => void;
   saving: boolean;
   products: AdminStockRow[];
+  showSummary?: boolean;
 }) {
   return (
     <>
-      <tr onClick={onToggle} className="cursor-pointer border-t border-[color:var(--line)] bg-white hover:bg-[color:var(--sand-soft)]">
+      {showSummary ? <tr onClick={onToggle} className="cursor-pointer border-t border-[color:var(--line)] bg-white hover:bg-[color:var(--sand-soft)]">
         <td className="whitespace-nowrap px-4 py-3 font-medium text-[color:var(--ink)]">{sale.customerName}</td>
         <td className="whitespace-nowrap px-4 py-3 text-slate-500">{new Date(sale.createdAt).toLocaleDateString("pt-PT")}</td>
         <td className="max-w-md truncate px-4 py-3 text-slate-500">{sale.items.map((item) => `${item.quantity}× ${item.name}`).join(", ")}</td>
@@ -2328,7 +2356,7 @@ function SaleTableRows({
           <select value={sale.status} onChange={(event) => onStatusChange(event.target.value as StockSaleStatus)} className="h-9 rounded-xl border border-[color:var(--line)] bg-white px-2"><option value={StockSaleStatus.PENDING}>Por pagar</option><option value={StockSaleStatus.PAID}>Pago</option><option value={StockSaleStatus.OFFERED}>Oferecido</option></select>
         </td>
         <td className="whitespace-nowrap px-4 py-3 text-right font-semibold">{formatPrice(sale.totalInCents)}</td>
-      </tr>
+      </tr> : null}
       {expanded ? (
         <tr className="border-t border-[color:var(--line)] bg-[color:var(--sand-soft)]">
           <td colSpan={5} className="p-4">
