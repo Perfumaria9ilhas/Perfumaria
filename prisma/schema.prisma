@@ -273,6 +273,8 @@ model StockMovement {
   type              StockMovementType
   reason            StockMovementReason?
   customerName      String?
+  saleGroupId       String?
+  saleStatus        StockSaleStatus?
   saleUnitPriceInCents Int?
   quantity          Int
   previousStock     Int
@@ -286,6 +288,14 @@ model StockMovement {
 
   @@index([productId, createdAt])
   @@index([type, createdAt])
+  @@index([saleGroupId])
+  @@index([saleStatus, createdAt])
+}
+
+enum StockSaleStatus {
+  PENDING
+  PAID
+  OFFERED
 }
 
 enum StockMovementType {

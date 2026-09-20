@@ -1,6 +1,6 @@
 "use client";
 
-import { type Brand, type Category, StockMovementReason, StockMovementType } from "@prisma/client";
+import { type Brand, type Category, StockMovementReason, StockMovementType, StockSaleStatus } from "@prisma/client";
 import {
   Download,
   FileSpreadsheet,
@@ -9,7 +9,6 @@ import {
   History,
   PackageX,
   Plus,
-  ShoppingBasket,
   ShoppingCart,
   RotateCcw,
   Save,
@@ -71,6 +70,15 @@ type DraftRowState = {
   stockNotes: string;
 };
 
+type StockSaleRow = {
+  id: string;
+  customerName: string;
+  status: StockSaleStatus;
+  createdAt: string;
+  totalInCents: number;
+  items: { name: string; quantity: number; notes: string | null }[];
+};
+
 export function StockAdminTable({
   rows: initialRows,
   brands,
@@ -104,12 +112,17 @@ export function StockAdminTable({
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importPreviewRows, setImportPreviewRows] = useState<StockImportPreviewRow[]>([]);
   const [showImportPanel, setShowImportPanel] = useState(false);
-  const [activeView, setActiveView] = useState<"PERFUMES" | "DECANTS" | "STOCK">("STOCK");
+  const [activeView, setActiveView] = useState<"NEW_SALE" | "SALES" | "STOCK" | "PERFUMES" | "DECANTS">("NEW_SALE");
   const [decantMode, setDecantMode] = useState<"KIT" | "INDIVIDUAL">("KIT");
   const [savingDecantSale, setSavingDecantSale] = useState(false);
   const [decantLineIds, setDecantLineIds] = useState([0]);
   const [savingPerfumeSale, setSavingPerfumeSale] = useState(false);
   const [perfumeLineIds, setPerfumeLineIds] = useState([0]);
+  const [combinedDecantMode, setCombinedDecantMode] = useState<"NONE" | "KIT" | "INDIVIDUAL">("NONE");
+  const [savingCombinedSale, setSavingCombinedSale] = useState(false);
+  const [sales, setSales] = useState<StockSaleRow[]>([]);
+  const [salesLoading, setSalesLoading] = useState(false);
+  const [salesStatusFilter, setSalesStatusFilter] = useState<"ALL" | StockSaleStatus>("ALL");
   const [importHasErrors, setImportHasErrors] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const deferredQuery = useDeferredValue(searchTerm);
@@ -760,6 +773,74 @@ export function StockAdminTable({
     }
   }
 
+  async function submitCombinedSale(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const perfumeLines = perfumeLineIds.map((id) => ({
+      productId: formData.get(`combinedPerfume${id}`)?.toString() ?? "",
+      quantity: Number(formData.get(`combinedPerfumeQuantity${id}`)),
+    })).filter((line) => line.productId);
+    const decantLines = combinedDecantMode === "INDIVIDUAL" ? decantLineIds.map((id) => ({
+      productId: formData.get(`combinedDecant${id}`)?.toString() ?? "",
+      sizeMl: Number(formData.get(`combinedDecantSize${id}`)),
+      quantity: Number(formData.get(`combinedDecantQuantity${id}`)),
+    })).filter((line) => line.productId) : [];
+    const kitProductIds = combinedDecantMode === "KIT"
+      ? [1, 2, 3, 4, 5].map((position) => formData.get(`combinedKit${position}`)?.toString() ?? "")
+      : [];
+    setSavingCombinedSale(true);
+    setBanner(null);
+    try {
+      const response = await fetch("/api/admin/stock/sales/combined", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerName: formData.get("customerName")?.toString() ?? "",
+          status: formData.get("status"),
+          perfumeLines,
+          decantLines,
+          kitProductIds,
+        }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error ?? "Não foi possível registar a venda.");
+      window.location.reload();
+    } catch (error) {
+      setBanner({ tone: "error", message: error instanceof Error ? error.message : "Não foi possível registar a venda." });
+    } finally {
+      setSavingCombinedSale(false);
+    }
+  }
+
+  async function loadSales() {
+    setActiveView("SALES");
+    setSalesLoading(true);
+    try {
+      const response = await fetch("/api/admin/stock/sales");
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error ?? "Não foi possível carregar as vendas.");
+      setSales(payload.sales ?? []);
+    } catch (error) {
+      setBanner({ tone: "error", message: error instanceof Error ? error.message : "Não foi possível carregar as vendas." });
+    } finally {
+      setSalesLoading(false);
+    }
+  }
+
+  async function updateSaleStatus(saleGroupId: string, status: StockSaleStatus) {
+    const response = await fetch("/api/admin/stock/sales", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ saleGroupId, status }),
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+      setBanner({ tone: "error", message: payload.error ?? "Não foi possível alterar o estado." });
+      return;
+    }
+    setSales((current) => current.map((sale) => sale.id === saleGroupId ? { ...sale, status } : sale));
+  }
+
   async function submitMovement(event: React.FormEvent<HTMLFormElement>, row: AdminStockRow) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -1024,8 +1105,8 @@ export function StockAdminTable({
   return (
     <div className="space-y-5">
       <nav className="grid grid-cols-1 gap-3 rounded-[1.8rem] border border-[color:var(--line)] bg-white p-3 shadow-sm sm:grid-cols-3" aria-label="Áreas de vendas e stock">
-        <AppViewButton active={activeView === "PERFUMES"} onClick={() => setActiveView("PERFUMES")} icon={<ShoppingCart className="h-5 w-5" />} label="Venda de perfumes" />
-        <AppViewButton active={activeView === "DECANTS"} onClick={() => setActiveView("DECANTS")} icon={<ShoppingBasket className="h-5 w-5" />} label="Venda de decants" />
+        <AppViewButton active={activeView === "NEW_SALE"} onClick={() => setActiveView("NEW_SALE")} icon={<ShoppingCart className="h-5 w-5" />} label="Nova venda" />
+        <AppViewButton active={activeView === "SALES"} onClick={loadSales} icon={<History className="h-5 w-5" />} label="Estado das vendas" />
         <AppViewButton active={activeView === "STOCK"} onClick={() => setActiveView("STOCK")} icon={<PackageX className="h-5 w-5" />} label="Stock" />
       </nav>
 
@@ -1763,6 +1844,97 @@ export function StockAdminTable({
         </ModalFrame>
       ) : null}
 
+      {activeView === "NEW_SALE" ? (
+        <section className="rounded-[1.8rem] border border-[color:var(--line)] bg-white p-5 shadow-sm sm:p-7">
+          <h2 className="font-serif text-3xl text-[color:var(--ink)]">Nova venda</h2>
+          <form className="mt-5 space-y-6" onSubmit={submitCombinedSale}>
+            <div className="grid gap-4 md:grid-cols-2">
+              <Field label="Cliente"><input name="customerName" list="combined-customer-names" required minLength={2} className="h-12 w-full rounded-2xl border border-[color:var(--line)] px-4" placeholder="Nome da pessoa que compra" /></Field>
+              <Field label="Estado da venda">
+                <select name="status" required defaultValue={StockSaleStatus.PENDING} className="h-12 w-full rounded-2xl border border-[color:var(--line)] bg-white px-4">
+                  <option value={StockSaleStatus.PENDING}>Por pagar · aguardar entrega/pagamento</option>
+                  <option value={StockSaleStatus.PAID}>Pago</option>
+                  <option value={StockSaleStatus.OFFERED}>Oferecido</option>
+                </select>
+              </Field>
+            </div>
+            <datalist id="combined-customer-names">{customerNames.map((name) => <option key={name} value={name} />)}</datalist>
+
+            <div className="grid items-start gap-5 xl:grid-cols-2">
+              <div className="rounded-[1.5rem] border border-[color:var(--line)] bg-[color:var(--sand-soft)] p-4">
+                <h3 className="font-serif text-2xl text-[color:var(--ink)]">Perfumes</h3>
+                <div className="mt-4 space-y-3">
+                  {perfumeLineIds.map((id, index) => (
+                    <SaleLine key={id} label={`Perfume ${index + 1}`} onRemove={perfumeLineIds.length > 1 ? () => setPerfumeLineIds((current) => current.filter((lineId) => lineId !== id)) : undefined}>
+                      <SearchableProductSelect required={false} name={`combinedPerfume${id}`} products={rows.filter((row) => row.active)} placeholder="Pesquisar perfume..." />
+                      <input name={`combinedPerfumeQuantity${id}`} aria-label="Quantidade" type="number" min="1" defaultValue="1" required className="h-12 w-24 rounded-2xl border border-[color:var(--line)] px-3" />
+                    </SaleLine>
+                  ))}
+                  <AddLineButton onClick={() => setPerfumeLineIds((current) => [...current, Math.max(...current) + 1])}>Adicionar outro perfume</AddLineButton>
+                </div>
+              </div>
+
+              <div className="rounded-[1.5rem] border border-[color:var(--line)] bg-[color:var(--sand-soft)] p-4">
+                <h3 className="font-serif text-2xl text-[color:var(--ink)]">Decants</h3>
+                <div className="mt-4 grid grid-cols-3 gap-2">
+                  {(["NONE", "KIT", "INDIVIDUAL"] as const).map((mode) => (
+                    <button key={mode} type="button" onClick={() => setCombinedDecantMode(mode)} className={`rounded-xl px-2 py-3 text-sm font-semibold ${combinedDecantMode === mode ? "bg-white text-[color:var(--ink)] shadow-sm" : "text-slate-500"}`}>{mode === "NONE" ? "Sem decants" : mode === "KIT" ? "Kit 16,50 €" : "Individuais"}</button>
+                  ))}
+                </div>
+                {combinedDecantMode === "KIT" ? (
+                  <div className="mt-4 space-y-3">
+                    <p className="text-sm text-slate-600">Selecione os 5 perfumes diferentes do kit.</p>
+                    {[1, 2, 3, 4, 5].map((position) => <Field key={position} label={`Decant ${position}`}><SearchableProductSelect name={`combinedKit${position}`} products={rows.filter((row) => row.active && row.availableInFiveMl)} placeholder="Pesquisar perfume..." /></Field>)}
+                  </div>
+                ) : null}
+                {combinedDecantMode === "INDIVIDUAL" ? (
+                  <div className="mt-4 space-y-3">
+                    {decantLineIds.map((id, index) => (
+                      <SaleLine key={id} label={`Decant ${index + 1}`} onRemove={decantLineIds.length > 1 ? () => setDecantLineIds((current) => current.filter((lineId) => lineId !== id)) : undefined}>
+                        <SearchableProductSelect name={`combinedDecant${id}`} products={rows.filter((row) => row.active && (row.availableInFiveMl || row.availableInTenMl))} placeholder="Pesquisar perfume..." />
+                        <select name={`combinedDecantSize${id}`} defaultValue="5" className="h-12 rounded-2xl border border-[color:var(--line)] bg-white px-3"><option value="5">5 ml · 3,50 €</option><option value="10">10 ml · 6,50 €</option></select>
+                        <input name={`combinedDecantQuantity${id}`} aria-label="Quantidade" type="number" min="1" defaultValue="1" className="h-12 w-24 rounded-2xl border border-[color:var(--line)] px-3" />
+                      </SaleLine>
+                    ))}
+                    <AddLineButton onClick={() => setDecantLineIds((current) => [...current, Math.max(...current) + 1])}>Adicionar outro decant</AddLineButton>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+            <div className="flex justify-end border-t border-[color:var(--line)] pt-5"><button disabled={savingCombinedSale} className="rounded-full bg-[color:var(--atlantic)] px-6 py-3 text-sm font-semibold text-white disabled:opacity-50">{savingCombinedSale ? "A registar..." : "Registar venda completa"}</button></div>
+          </form>
+        </section>
+      ) : null}
+
+      {activeView === "SALES" ? (
+        <section className="rounded-[1.8rem] border border-[color:var(--line)] bg-white p-5 shadow-sm sm:p-7">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="font-serif text-3xl text-[color:var(--ink)]">Estado das vendas</h2>
+            <select value={salesStatusFilter} onChange={(event) => setSalesStatusFilter(event.target.value as "ALL" | StockSaleStatus)} className="h-11 rounded-2xl border border-[color:var(--line)] bg-white px-4">
+              <option value="ALL">Todos os estados</option><option value={StockSaleStatus.PENDING}>Por pagar</option><option value={StockSaleStatus.PAID}>Pago</option><option value={StockSaleStatus.OFFERED}>Oferecido</option>
+            </select>
+          </div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <SaleStatusTotal label="Por pagar" value={sales.filter((sale) => sale.status === StockSaleStatus.PENDING).reduce((sum, sale) => sum + sale.totalInCents, 0)} />
+            <SaleStatusTotal label="Pago" value={sales.filter((sale) => sale.status === StockSaleStatus.PAID).reduce((sum, sale) => sum + sale.totalInCents, 0)} />
+            <SaleStatusTotal label="Oferecido" value={sales.filter((sale) => sale.status === StockSaleStatus.OFFERED).reduce((sum, sale) => sum + sale.totalInCents, 0)} />
+          </div>
+          {salesLoading ? <p className="mt-6 text-slate-500">A carregar vendas...</p> : (
+            <div className="mt-6 space-y-3">
+              {sales.filter((sale) => salesStatusFilter === "ALL" || sale.status === salesStatusFilter).map((sale) => (
+                <article key={sale.id} className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--sand-soft)] p-4">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <div><p className="font-semibold text-[color:var(--ink)]">{sale.customerName}</p><p className="text-sm text-slate-500">{new Date(sale.createdAt).toLocaleString("pt-PT")} · {sale.items.map((item) => `${item.quantity}× ${item.name}${item.notes ? ` (${item.notes})` : ""}`).join(", ")}</p></div>
+                    <div className="flex flex-wrap items-center gap-3"><strong>{formatPrice(sale.totalInCents)}</strong><select value={sale.status} onChange={(event) => updateSaleStatus(sale.id, event.target.value as StockSaleStatus)} className="h-10 rounded-xl border border-[color:var(--line)] bg-white px-3"><option value={StockSaleStatus.PENDING}>Por pagar</option><option value={StockSaleStatus.PAID}>Pago</option><option value={StockSaleStatus.OFFERED}>Oferecido</option></select></div>
+                  </div>
+                </article>
+              ))}
+              {!sales.length ? <p className="text-slate-500">Ainda não existem vendas registadas.</p> : null}
+            </div>
+          )}
+        </section>
+      ) : null}
+
       {activeView === "DECANTS" ? (
         <section className="mx-auto w-full max-w-4xl rounded-[1.8rem] border border-[color:var(--line)] bg-white p-5 shadow-sm sm:p-7">
           <h2 className="mb-5 font-serif text-3xl text-[color:var(--ink)]">Venda de decants</h2>
@@ -2083,10 +2255,12 @@ function SearchableProductSelect({
   name,
   products,
   placeholder,
+  required = true,
 }: {
   name: string;
   products: AdminStockRow[];
   placeholder: string;
+  required?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const listboxId = useId();
@@ -2108,7 +2282,7 @@ function SearchableProductSelect({
       <input type="hidden" name={name} value={selectedId} />
       <input
         value={query}
-        required
+        required={required}
         autoComplete="off"
         placeholder={placeholder}
         aria-label={placeholder}
@@ -2176,6 +2350,10 @@ function AppViewButton({ active, onClick, icon, label }: { active: boolean; onCl
       {label}
     </button>
   );
+}
+
+function SaleStatusTotal({ label, value }: { label: string; value: number }) {
+  return <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--sand-soft)] p-4"><p className="text-sm text-slate-600">{label}</p><p className="mt-1 font-serif text-2xl text-[color:var(--ink)]">{formatPrice(value)}</p></div>;
 }
 
 function getModalTitle(

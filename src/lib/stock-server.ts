@@ -211,8 +211,9 @@ export async function getAdminStockTableData() {
     }
 
     const effectiveUnitPriceInCents =
-      movement.saleUnitPriceInCents ??
-      getSalePriceInCents(movement.product);
+      movement.saleStatus === "OFFERED"
+        ? 0
+        : movement.saleUnitPriceInCents ?? getSalePriceInCents(movement.product);
 
     const current = customerSummaryMap.get(customerName) ?? {
       customerName,

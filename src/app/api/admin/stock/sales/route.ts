@@ -1,4 +1,4 @@
-import { StockMovementReason, StockMovementType } from "@prisma/client";
+import { StockMovementReason, StockMovementType, StockSaleStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -13,6 +13,57 @@ const schema = z.object({
     quantity: z.number().int().positive(),
   })).min(1).max(50),
 });
+
+const statusSchema = z.object({
+  saleGroupId: z.string().min(1),
+  status: z.nativeEnum(StockSaleStatus),
+});
+
+export async function GET() {
+  await requireAdmin();
+  const movements = await prisma.stockMovement.findMany({
+    where: { type: StockMovementType.SALE, customerName: { not: null } },
+    include: { product: { select: { name: true } } },
+    orderBy: { createdAt: "desc" },
+  });
+  const groups = new Map<string, {
+    id: string; customerName: string; status: StockSaleStatus; createdAt: string;
+    totalInCents: number; items: { name: string; quantity: number; notes: string | null }[];
+  }>();
+  for (const movement of movements) {
+    const id = movement.saleGroupId ?? movement.id;
+    const group = groups.get(id) ?? {
+      id,
+      customerName: movement.customerName ?? "Cliente",
+      status: movement.saleStatus ?? StockSaleStatus.PAID,
+      createdAt: movement.createdAt.toISOString(),
+      totalInCents: 0,
+      items: [],
+    };
+    group.totalInCents += movement.quantity * (movement.saleUnitPriceInCents ?? 0);
+    group.items.push({ name: movement.product.name, quantity: movement.quantity, notes: movement.notes });
+    groups.set(id, group);
+  }
+  return NextResponse.json({ sales: [...groups.values()] });
+}
+
+export async function PATCH(request: Request) {
+  await requireAdmin();
+  const parsed = statusSchema.safeParse(await request.json());
+  if (!parsed.success) return NextResponse.json({ error: "Estado inválido." }, { status: 400 });
+  const grouped = await prisma.stockMovement.updateMany({
+    where: { saleGroupId: parsed.data.saleGroupId },
+    data: { saleStatus: parsed.data.status },
+  });
+  if (grouped.count === 0) {
+    await prisma.stockMovement.update({
+      where: { id: parsed.data.saleGroupId },
+      data: { saleGroupId: parsed.data.saleGroupId, saleStatus: parsed.data.status },
+    });
+  }
+  revalidatePath("/admin/stock");
+  return NextResponse.json({ success: true });
+}
 
 export async function POST(request: Request) {
   await requireAdmin();
