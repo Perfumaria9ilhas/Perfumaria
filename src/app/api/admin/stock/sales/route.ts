@@ -1,4 +1,4 @@
-import { StockMovementReason, StockMovementType, StockSaleStatus } from "@prisma/client";
+import { StockDeliveryStatus, StockMovementReason, StockMovementType, StockSaleStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -16,7 +16,8 @@ const schema = z.object({
 
 const statusSchema = z.object({
   saleGroupId: z.string().min(1),
-  status: z.nativeEnum(StockSaleStatus),
+  status: z.nativeEnum(StockSaleStatus).optional(),
+  deliveryStatus: z.nativeEnum(StockDeliveryStatus).optional(),
   customerName: z.string().trim().min(2).optional(),
   items: z.array(z.object({ movementId: z.string().min(1), productId: z.string().min(1) })).max(100).optional(),
 });
@@ -29,7 +30,7 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
   });
   const groups = new Map<string, {
-    id: string; customerName: string; status: StockSaleStatus; createdAt: string;
+    id: string; customerName: string; status: StockSaleStatus; deliveryStatus: StockDeliveryStatus; createdAt: string;
     totalInCents: number; items: { id: string; productId: string; name: string; quantity: number; notes: string | null }[];
   }>();
   for (const movement of movements) {
@@ -38,6 +39,7 @@ export async function GET() {
       id,
       customerName: movement.customerName ?? "Cliente",
       status: movement.saleStatus ?? StockSaleStatus.PAID,
+      deliveryStatus: movement.deliveryStatus ?? StockDeliveryStatus.DELIVERED,
       createdAt: movement.createdAt.toISOString(),
       totalInCents: 0,
       items: [],
@@ -86,6 +88,7 @@ export async function PATCH(request: Request) {
         data: {
           saleGroupId: parsed.data.saleGroupId,
           saleStatus: parsed.data.status,
+          deliveryStatus: parsed.data.deliveryStatus,
           customerName: parsed.data.customerName ?? movement.customerName,
           productId: nextProductId,
           saleUnitPriceInCents: nextProductId !== movement.productId && movement.reason === StockMovementReason.SALE

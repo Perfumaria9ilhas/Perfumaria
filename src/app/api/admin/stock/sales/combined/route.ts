@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { StockMovementReason, StockMovementType, StockSaleStatus } from "@prisma/client";
+import { StockDeliveryStatus, StockMovementReason, StockMovementType, StockSaleStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -10,6 +10,7 @@ import { prisma } from "@/lib/prisma";
 const schema = z.object({
   customerName: z.string().trim().min(2),
   status: z.nativeEnum(StockSaleStatus),
+  deliveryStatus: z.nativeEnum(StockDeliveryStatus),
   perfumeLines: z.array(z.object({ productId: z.string().min(1), quantity: z.number().int().positive() })).max(50),
   decantLines: z.array(z.object({ productId: z.string().min(1), sizeMl: z.union([z.literal(5), z.literal(10)]), quantity: z.number().int().positive() })).max(50),
   kitProductIds: z.array(z.string().min(1)).max(5),
@@ -39,7 +40,7 @@ export async function POST(request: Request) {
         const resultingStock = Math.max(0, product.stock - quantity);
         const updated = await tx.product.updateMany({ where: { id: product.id, stock: product.stock }, data: { stock: resultingStock } });
         if (updated.count !== 1) throw new Error(`O stock de ${product.name} foi alterado. Tente novamente.`);
-        await tx.stockMovement.create({ data: { productId, type: StockMovementType.SALE, reason: StockMovementReason.SALE, customerName: data.customerName, saleGroupId, saleStatus: data.status, saleUnitPriceInCents: getSalePriceInCents(product), quantity, previousStock: product.stock, resultingStock, notes: "Venda de perfume" } });
+        await tx.stockMovement.create({ data: { productId, type: StockMovementType.SALE, reason: StockMovementReason.SALE, customerName: data.customerName, saleGroupId, saleStatus: data.status, deliveryStatus: data.deliveryStatus, saleUnitPriceInCents: getSalePriceInCents(product), quantity, previousStock: product.stock, resultingStock, notes: "Venda de perfume" } });
       }
       const decants = [
         ...data.decantLines.map((line) => ({ ...line, price: line.sizeMl === 5 ? 350 : 650, note: `Decant individual · ${line.sizeMl} ml` })),
@@ -50,7 +51,7 @@ export async function POST(request: Request) {
         if (!product.active) throw new Error(`${product.name} já não está disponível no site.`);
         if (line.sizeMl === 5 && !product.availableInFiveMl) throw new Error(`${product.name} não está disponível em 5 ml.`);
         if (line.sizeMl === 10 && !product.availableInTenMl) throw new Error(`${product.name} não está disponível em 10 ml.`);
-        await tx.stockMovement.create({ data: { productId: product.id, type: StockMovementType.SALE, reason: StockMovementReason.DECANT, customerName: data.customerName, saleGroupId, saleStatus: data.status, saleUnitPriceInCents: line.price, quantity: line.quantity, previousStock: product.stock, resultingStock: product.stock, notes: line.note } });
+        await tx.stockMovement.create({ data: { productId: product.id, type: StockMovementType.SALE, reason: StockMovementReason.DECANT, customerName: data.customerName, saleGroupId, saleStatus: data.status, deliveryStatus: data.deliveryStatus, saleUnitPriceInCents: line.price, quantity: line.quantity, previousStock: product.stock, resultingStock: product.stock, notes: line.note } });
       }
     });
   } catch (error) {

@@ -275,6 +275,7 @@ model StockMovement {
   customerName      String?
   saleGroupId       String?
   saleStatus        StockSaleStatus?
+  deliveryStatus    StockDeliveryStatus?
   saleUnitPriceInCents Int?
   quantity          Int
   previousStock     Int
@@ -296,6 +297,11 @@ enum StockSaleStatus {
   PENDING
   PAID
   OFFERED
+}
+
+enum StockDeliveryStatus {
+  DELIVERED
+  PENDING
 }
 
 enum StockMovementType {

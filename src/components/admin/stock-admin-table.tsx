@@ -1,6 +1,6 @@
 "use client";
 
-import { type Brand, type Category, StockMovementReason, StockMovementType, StockSaleStatus } from "@prisma/client";
+import { type Brand, type Category, StockDeliveryStatus, StockMovementReason, StockMovementType, StockSaleStatus } from "@prisma/client";
 import {
   Download,
   FileSpreadsheet,
@@ -74,6 +74,7 @@ type StockSaleRow = {
   id: string;
   customerName: string;
   status: StockSaleStatus;
+  deliveryStatus: StockDeliveryStatus;
   createdAt: string;
   totalInCents: number;
   items: { id: string; productId: string; name: string; quantity: number; notes: string | null }[];
@@ -810,6 +811,7 @@ export function StockAdminTable({
         body: JSON.stringify({
           customerName: formData.get("customerName")?.toString() ?? "",
           status: formData.get("status"),
+          deliveryStatus: formData.get("deliveryStatus"),
           perfumeLines,
           decantLines,
           kitProductIds,
@@ -856,6 +858,20 @@ export function StockAdminTable({
     setSales((current) => current.map((sale) => sale.id === saleGroupId ? { ...sale, status } : sale));
   }
 
+  async function updateDeliveryStatus(saleGroupId: string, deliveryStatus: StockDeliveryStatus) {
+    const response = await fetch("/api/admin/stock/sales", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ saleGroupId, deliveryStatus }),
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+      setBanner({ tone: "error", message: payload.error ?? "Não foi possível alterar o estado da entrega." });
+      return;
+    }
+    setSales((current) => current.map((sale) => sale.id === saleGroupId ? { ...sale, deliveryStatus } : sale));
+  }
+
   async function saveSaleEdits(event: React.FormEvent<HTMLFormElement>, sale: StockSaleRow) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -868,6 +884,7 @@ export function StockAdminTable({
           saleGroupId: sale.id,
           customerName: formData.get("customerName")?.toString() ?? "",
           status: formData.get("status"),
+          deliveryStatus: formData.get("deliveryStatus"),
           items: sale.items.map((item) => ({
             movementId: item.id,
             productId: formData.get(`saleItem${item.id}`)?.toString() ?? item.productId,
@@ -1921,13 +1938,19 @@ export function StockAdminTable({
         <section className="rounded-[1.8rem] border border-[color:var(--line)] bg-white p-5 shadow-sm sm:p-7">
           <h2 className="font-serif text-3xl text-[color:var(--ink)]">Nova venda</h2>
           <form className="mt-5 space-y-6" onSubmit={submitCombinedSale}>
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-3">
               <Field label="Cliente"><input name="customerName" list="combined-customer-names" required minLength={2} className="h-12 w-full rounded-2xl border border-[color:var(--line)] px-4" placeholder="Nome da pessoa que compra" /></Field>
               <Field label="Estado da venda">
                 <select name="status" required defaultValue={StockSaleStatus.PAID} className="h-12 w-full rounded-2xl border border-[color:var(--line)] bg-white px-4">
                   <option value={StockSaleStatus.PAID}>Pago</option>
                   <option value={StockSaleStatus.PENDING}>Por pagar · aguardar entrega/pagamento</option>
                   <option value={StockSaleStatus.OFFERED}>Oferecido</option>
+                </select>
+              </Field>
+              <Field label="Estado da entrega">
+                <select name="deliveryStatus" required defaultValue={StockDeliveryStatus.DELIVERED} className="h-12 w-full rounded-2xl border border-[color:var(--line)] bg-white px-4">
+                  <option value={StockDeliveryStatus.DELIVERED}>Entregue</option>
+                  <option value={StockDeliveryStatus.PENDING}>Por entregar</option>
                 </select>
               </Field>
             </div>
@@ -1994,20 +2017,20 @@ export function StockAdminTable({
             <div className="mt-6 overflow-hidden rounded-2xl border border-[color:var(--line)]">
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
-                  <thead className="bg-[color:var(--sand-soft)] text-left text-xs uppercase tracking-[0.14em] text-slate-500"><tr><th className="px-4 py-3" colSpan={5}>Cliente</th></tr></thead>
+                  <thead className="bg-[color:var(--sand-soft)] text-left text-xs uppercase tracking-[0.14em] text-slate-500"><tr><th className="px-4 py-3" colSpan={6}>Cliente</th></tr></thead>
                   <tbody>
                     {pagedCustomerGroups.map((group) => {
                       const expanded = expandedCustomerKey === group.key;
                       const hasPendingSale = group.sales.some((sale) => sale.status === StockSaleStatus.PENDING);
                       return <Fragment key={group.key}>
                         <tr onClick={() => { setExpandedCustomerKey((current) => current === group.key ? null : group.key); setExpandedSaleId(group.sales.length === 1 ? group.sales[0].id : null); }} className={`cursor-pointer border-t border-[color:var(--line)] hover:bg-[color:var(--sand-soft)] ${hasPendingSale ? "bg-amber-50" : "bg-white"}`}>
-                          <td colSpan={5} className={`px-4 py-4 font-medium text-[color:var(--ink)] ${hasPendingSale ? "border-l-4 border-l-amber-500" : ""}`} title={hasPendingSale ? "Este cliente tem uma ou mais vendas por pagar" : undefined}>{group.customerName}</td>
+                          <td colSpan={6} className={`px-4 py-4 font-medium text-[color:var(--ink)] ${hasPendingSale ? "border-l-4 border-l-amber-500" : ""}`} title={hasPendingSale ? "Este cliente tem uma ou mais vendas por pagar" : undefined}>{group.customerName}</td>
                         </tr>
                         {expanded && group.sales.length === 1 ? (
-                          <SaleTableRows sale={group.sales[0]} expanded showSummary={false} onToggle={() => undefined} onStatusChange={(status) => updateSaleStatus(group.sales[0].id, status)} onSave={(event) => saveSaleEdits(event, group.sales[0])} saving={savingSaleId === group.sales[0].id} products={rows.filter((row) => row.active)} />
+                          <SaleTableRows sale={group.sales[0]} expanded showSummary={false} onToggle={() => undefined} onStatusChange={(status) => updateSaleStatus(group.sales[0].id, status)} onDeliveryStatusChange={(status) => updateDeliveryStatus(group.sales[0].id, status)} onSave={(event) => saveSaleEdits(event, group.sales[0])} saving={savingSaleId === group.sales[0].id} products={rows.filter((row) => row.active)} />
                         ) : null}
                         {expanded && group.sales.length > 1 ? group.sales.map((sale) => (
-                          <SaleTableRows key={sale.id} sale={sale} expanded={expandedSaleId === sale.id} onToggle={() => setExpandedSaleId((current) => current === sale.id ? null : sale.id)} onStatusChange={(status) => updateSaleStatus(sale.id, status)} onSave={(event) => saveSaleEdits(event, sale)} saving={savingSaleId === sale.id} products={rows.filter((row) => row.active)} />
+                          <SaleTableRows key={sale.id} sale={sale} expanded={expandedSaleId === sale.id} onToggle={() => setExpandedSaleId((current) => current === sale.id ? null : sale.id)} onStatusChange={(status) => updateSaleStatus(sale.id, status)} onDeliveryStatusChange={(status) => updateDeliveryStatus(sale.id, status)} onSave={(event) => saveSaleEdits(event, sale)} saving={savingSaleId === sale.id} products={rows.filter((row) => row.active)} />
                         )) : null}
                       </Fragment>;
                     })}
@@ -2350,6 +2373,7 @@ function SaleTableRows({
   expanded,
   onToggle,
   onStatusChange,
+  onDeliveryStatusChange,
   onSave,
   saving,
   products,
@@ -2359,6 +2383,7 @@ function SaleTableRows({
   expanded: boolean;
   onToggle: () => void;
   onStatusChange: (status: StockSaleStatus) => void;
+  onDeliveryStatusChange: (status: StockDeliveryStatus) => void;
   onSave: (event: React.FormEvent<HTMLFormElement>) => void;
   saving: boolean;
   products: AdminStockRow[];
@@ -2373,15 +2398,19 @@ function SaleTableRows({
         <td className="px-4 py-3" onClick={(event) => event.stopPropagation()}>
           <select value={sale.status} onChange={(event) => onStatusChange(event.target.value as StockSaleStatus)} className="h-9 rounded-xl border border-[color:var(--line)] bg-white px-2"><option value={StockSaleStatus.PENDING}>Por pagar</option><option value={StockSaleStatus.PAID}>Pago</option><option value={StockSaleStatus.OFFERED}>Oferecido</option></select>
         </td>
+        <td className="px-4 py-3" onClick={(event) => event.stopPropagation()}>
+          <select value={sale.deliveryStatus} onChange={(event) => onDeliveryStatusChange(event.target.value as StockDeliveryStatus)} className="h-9 rounded-xl border border-[color:var(--line)] bg-white px-2"><option value={StockDeliveryStatus.DELIVERED}>Entregue</option><option value={StockDeliveryStatus.PENDING}>Por entregar</option></select>
+        </td>
         <td className="whitespace-nowrap px-4 py-3 text-right font-semibold">{formatPrice(sale.totalInCents)}</td>
       </tr> : null}
       {expanded ? (
         <tr className="border-t border-[color:var(--line)] bg-[color:var(--sand-soft)]">
-          <td colSpan={5} className="p-4">
+          <td colSpan={6} className="p-4">
             <form onSubmit={onSave} className="space-y-4">
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid gap-3 md:grid-cols-3">
                 <Field label="Nome do cliente"><input name="customerName" defaultValue={sale.customerName} required minLength={2} className="h-12 w-full rounded-2xl border border-[color:var(--line)] bg-white px-4" /></Field>
                 <Field label="Estado"><select name="status" defaultValue={sale.status} className="h-12 w-full rounded-2xl border border-[color:var(--line)] bg-white px-4"><option value={StockSaleStatus.PAID}>Pago</option><option value={StockSaleStatus.PENDING}>Por pagar</option><option value={StockSaleStatus.OFFERED}>Oferecido</option></select></Field>
+                <Field label="Entrega"><select name="deliveryStatus" defaultValue={sale.deliveryStatus} className="h-12 w-full rounded-2xl border border-[color:var(--line)] bg-white px-4"><option value={StockDeliveryStatus.DELIVERED}>Entregue</option><option value={StockDeliveryStatus.PENDING}>Por entregar</option></select></Field>
               </div>
               <div className="grid gap-3 md:grid-cols-2">
                 {sale.items.map((item, index) => (
