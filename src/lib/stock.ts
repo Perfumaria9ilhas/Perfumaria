@@ -45,6 +45,7 @@ export type AdminStockRow = {
   categoryName: string;
   supplierName: string | null;
   imageUrl: string;
+  active: boolean;
   availableInFiveMl: boolean;
   availableInTenMl: boolean;
   salePriceInCents: number;

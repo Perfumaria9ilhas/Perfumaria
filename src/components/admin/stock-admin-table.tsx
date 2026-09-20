@@ -8,7 +8,9 @@ import {
   FileText,
   History,
   PackageX,
+  Plus,
   ShoppingBasket,
+  ShoppingCart,
   RotateCcw,
   Save,
   Search,
@@ -105,6 +107,10 @@ export function StockAdminTable({
   const [showDecantSale, setShowDecantSale] = useState(false);
   const [decantMode, setDecantMode] = useState<"KIT" | "INDIVIDUAL">("KIT");
   const [savingDecantSale, setSavingDecantSale] = useState(false);
+  const [decantLineIds, setDecantLineIds] = useState([0]);
+  const [showPerfumeSale, setShowPerfumeSale] = useState(false);
+  const [savingPerfumeSale, setSavingPerfumeSale] = useState(false);
+  const [perfumeLineIds, setPerfumeLineIds] = useState([0]);
   const [importHasErrors, setImportHasErrors] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const deferredQuery = useDeferredValue(searchTerm);
@@ -697,7 +703,12 @@ export function StockAdminTable({
     const formData = new FormData(form);
     const productIds = decantMode === "KIT"
       ? [1, 2, 3, 4, 5].map((position) => formData.get(`product${position}`)?.toString() ?? "")
-      : [formData.get("productId")?.toString() ?? ""];
+      : decantLineIds.map((id) => formData.get(`decantProduct${id}`)?.toString() ?? "");
+    const lines = decantMode === "INDIVIDUAL" ? decantLineIds.map((id) => ({
+      productId: formData.get(`decantProduct${id}`)?.toString() ?? "",
+      sizeMl: Number(formData.get(`decantSize${id}`)),
+      quantity: Number(formData.get(`decantQuantity${id}`)),
+    })) : undefined;
 
     setSavingDecantSale(true);
     setBanner(null);
@@ -708,9 +719,8 @@ export function StockAdminTable({
         body: JSON.stringify({
           mode: decantMode,
           productIds,
-          sizeMl: decantMode === "KIT" ? 5 : Number(formData.get("sizeMl")),
-          quantity: decantMode === "KIT" ? 1 : Number(formData.get("quantity")),
           customerName: formData.get("customerName")?.toString() ?? "",
+          ...(decantMode === "KIT" ? { sizeMl: 5, quantity: 1 } : { lines }),
         }),
       });
       const payload = await response.json();
@@ -722,6 +732,34 @@ export function StockAdminTable({
       setBanner({ tone: "error", message: error instanceof Error ? error.message : "Não foi possível registar a venda." });
     } finally {
       setSavingDecantSale(false);
+    }
+  }
+
+  async function submitPerfumeSale(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    setSavingPerfumeSale(true);
+    setBanner(null);
+    try {
+      const response = await fetch("/api/admin/stock/sales", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerName: formData.get("customerName")?.toString() ?? "",
+          lines: perfumeLineIds.map((id) => ({
+            productId: formData.get(`perfumeProduct${id}`)?.toString() ?? "",
+            quantity: Number(formData.get(`perfumeQuantity${id}`)),
+          })),
+        }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error ?? "Não foi possível registar a venda de perfumes.");
+      setShowPerfumeSale(false);
+      window.location.reload();
+    } catch (error) {
+      setBanner({ tone: "error", message: error instanceof Error ? error.message : "Não foi possível registar a venda." });
+    } finally {
+      setSavingPerfumeSale(false);
     }
   }
 
@@ -1081,6 +1119,14 @@ export function StockAdminTable({
                   >
                     <ShoppingBasket className="h-4 w-4" />
                     Venda de decants
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowPerfumeSale(true)}
+                    className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[color:var(--cocoa)] px-4 text-sm font-semibold text-white"
+                  >
+                    <ShoppingCart className="h-4 w-4" />
+                    Venda de perfumes
                   </button>
                   <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2">
                     <Filter className="h-4 w-4" />
@@ -1746,34 +1792,49 @@ export function StockAdminTable({
                   <Field key={position} label={`Perfume ${position}`}>
                     <SearchableProductSelect
                       name={`product${position}`}
-                      products={rows.filter((row) => row.availableInFiveMl)}
+                      products={rows.filter((row) => row.active && row.availableInFiveMl)}
                       placeholder={`Pesquisar perfume ${position}...`}
                     />
                   </Field>
                 ))}
               </div>
             ) : (
-              <>
-                <Field label="Perfume">
-                  <SearchableProductSelect
-                    name="productId"
-                    products={rows.filter((row) => row.availableInFiveMl || row.availableInTenMl)}
-                    placeholder="Pesquisar perfume..."
-                  />
-                </Field>
-                <Field label="Tamanho">
-                  <select name="sizeMl" required defaultValue="5" className="h-12 w-full rounded-2xl border border-[color:var(--line)] bg-white px-4">
-                    <option value="5">5 ml · 3,50 €</option>
-                    <option value="10">10 ml · 6,50 €</option>
-                  </select>
-                </Field>
-                <Field label="Quantidade"><input name="quantity" type="number" min="1" defaultValue="1" required className="h-12 w-full rounded-2xl border border-[color:var(--line)] px-4" /></Field>
-              </>
+              <div className="space-y-3">
+                {decantLineIds.map((id, index) => (
+                  <SaleLine key={id} label={`Decant ${index + 1}`} onRemove={decantLineIds.length > 1 ? () => setDecantLineIds((current) => current.filter((lineId) => lineId !== id)) : undefined}>
+                    <SearchableProductSelect name={`decantProduct${id}`} products={rows.filter((row) => row.active && (row.availableInFiveMl || row.availableInTenMl))} placeholder="Pesquisar perfume..." />
+                    <select name={`decantSize${id}`} required defaultValue="5" className="h-12 rounded-2xl border border-[color:var(--line)] bg-white px-3">
+                      <option value="5">5 ml · 3,50 €</option><option value="10">10 ml · 6,50 €</option>
+                    </select>
+                    <input name={`decantQuantity${id}`} aria-label="Quantidade" type="number" min="1" defaultValue="1" required className="h-12 w-24 rounded-2xl border border-[color:var(--line)] px-3" />
+                  </SaleLine>
+                ))}
+                <AddLineButton onClick={() => setDecantLineIds((current) => [...current, Math.max(...current) + 1])}>Adicionar outro decant</AddLineButton>
+              </div>
             )}
             <div className="flex items-center justify-between border-t border-[color:var(--line)] pt-4">
               <strong>{decantMode === "KIT" ? "Total: 16,50 €" : "5 ml: 3,50 € · 10 ml: 6,50 €"}</strong>
               <button disabled={savingDecantSale} className="rounded-full bg-[color:var(--atlantic)] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">{savingDecantSale ? "A registar..." : "Registar venda"}</button>
             </div>
+          </form>
+        </ModalFrame>
+      ) : null}
+
+      {showPerfumeSale ? (
+        <ModalFrame title="Venda de perfumes" onClose={() => setShowPerfumeSale(false)}>
+          <form className="space-y-4" onSubmit={submitPerfumeSale}>
+            <Field label="Cliente"><input name="customerName" list="perfume-customer-names" required minLength={2} className="h-12 w-full rounded-2xl border border-[color:var(--line)] px-4" placeholder="Nome da pessoa que compra" /></Field>
+            <datalist id="perfume-customer-names">{customerNames.map((name) => <option key={name} value={name} />)}</datalist>
+            <div className="space-y-3">
+              {perfumeLineIds.map((id, index) => (
+                <SaleLine key={id} label={`Perfume ${index + 1}`} onRemove={perfumeLineIds.length > 1 ? () => setPerfumeLineIds((current) => current.filter((lineId) => lineId !== id)) : undefined}>
+                  <SearchableProductSelect name={`perfumeProduct${id}`} products={rows.filter((row) => row.active && row.stock > 0)} placeholder="Pesquisar perfume..." />
+                  <input name={`perfumeQuantity${id}`} aria-label="Quantidade" type="number" min="1" defaultValue="1" required className="h-12 w-24 rounded-2xl border border-[color:var(--line)] px-3" />
+                </SaleLine>
+              ))}
+              <AddLineButton onClick={() => setPerfumeLineIds((current) => [...current, Math.max(...current) + 1])}>Adicionar outro perfume</AddLineButton>
+            </div>
+            <div className="flex justify-end border-t border-[color:var(--line)] pt-4"><button disabled={savingPerfumeSale} className="rounded-full bg-[color:var(--atlantic)] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">{savingPerfumeSale ? "A registar..." : "Registar venda"}</button></div>
           </form>
         </ModalFrame>
       ) : null}
@@ -2099,6 +2160,17 @@ function SearchableProductSelect({
       ) : null}
     </div>
   );
+}
+
+function SaleLine({ label, children, onRemove }: { label: string; children: React.ReactNode; onRemove?: () => void }) {
+  return <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--sand-soft)] p-3">
+    <div className="mb-2 flex items-center justify-between"><span className="text-sm font-semibold text-[color:var(--ink)]">{label}</span>{onRemove ? <button type="button" onClick={onRemove} className="text-xs font-medium text-rose-600">Remover</button> : null}</div>
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-start [&>div]:min-w-0 [&>div]:flex-1">{children}</div>
+  </div>;
+}
+
+function AddLineButton({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
+  return <button type="button" onClick={onClick} className="inline-flex items-center gap-2 rounded-full border border-[color:var(--line)] bg-white px-4 py-2 text-sm font-semibold text-[color:var(--ink)]"><Plus className="h-4 w-4" />{children}</button>;
 }
 
 function getModalTitle(
