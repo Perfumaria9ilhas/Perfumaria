@@ -1984,9 +1984,10 @@ export function StockAdminTable({
                   <tbody>
                     {pagedCustomerGroups.map((group) => {
                       const expanded = expandedCustomerKey === group.key;
+                      const hasPendingSale = group.sales.some((sale) => sale.status === StockSaleStatus.PENDING);
                       return <Fragment key={group.key}>
-                        <tr onClick={() => { setExpandedCustomerKey((current) => current === group.key ? null : group.key); setExpandedSaleId(group.sales.length === 1 ? group.sales[0].id : null); }} className="cursor-pointer border-t border-[color:var(--line)] bg-white hover:bg-[color:var(--sand-soft)]">
-                          <td colSpan={5} className="px-4 py-4 font-medium text-[color:var(--ink)]">{group.customerName}</td>
+                        <tr onClick={() => { setExpandedCustomerKey((current) => current === group.key ? null : group.key); setExpandedSaleId(group.sales.length === 1 ? group.sales[0].id : null); }} className={`cursor-pointer border-t border-[color:var(--line)] hover:bg-[color:var(--sand-soft)] ${hasPendingSale ? "bg-amber-50" : "bg-white"}`}>
+                          <td colSpan={5} className={`px-4 py-4 font-medium text-[color:var(--ink)] ${hasPendingSale ? "border-l-4 border-l-amber-500" : ""}`} title={hasPendingSale ? "Este cliente tem uma ou mais vendas por pagar" : undefined}>{group.customerName}</td>
                         </tr>
                         {expanded && group.sales.length === 1 ? (
                           <SaleTableRows sale={group.sales[0]} expanded showSummary={false} onToggle={() => undefined} onStatusChange={(status) => updateSaleStatus(group.sales[0].id, status)} onSave={(event) => saveSaleEdits(event, group.sales[0])} saving={savingSaleId === group.sales[0].id} products={rows.filter((row) => row.active)} />
@@ -2348,7 +2349,7 @@ function SaleTableRows({
 }) {
   return (
     <>
-      {showSummary ? <tr onClick={onToggle} className="cursor-pointer border-t border-[color:var(--line)] bg-white hover:bg-[color:var(--sand-soft)]">
+      {showSummary ? <tr onClick={onToggle} className={`cursor-pointer border-t border-[color:var(--line)] hover:bg-[color:var(--sand-soft)] ${sale.status === StockSaleStatus.PENDING ? "bg-amber-50" : "bg-white"}`}>
         <td className="whitespace-nowrap px-4 py-3 font-medium text-[color:var(--ink)]">{sale.customerName}</td>
         <td className="whitespace-nowrap px-4 py-3 text-slate-500">{new Date(sale.createdAt).toLocaleDateString("pt-PT")}</td>
         <td className="max-w-md truncate px-4 py-3 text-slate-500">{sale.items.map((item) => `${item.quantity}× ${item.name}`).join(", ")}</td>
