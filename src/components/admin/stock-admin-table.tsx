@@ -104,11 +104,10 @@ export function StockAdminTable({
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importPreviewRows, setImportPreviewRows] = useState<StockImportPreviewRow[]>([]);
   const [showImportPanel, setShowImportPanel] = useState(false);
-  const [showDecantSale, setShowDecantSale] = useState(false);
+  const [activeView, setActiveView] = useState<"PERFUMES" | "DECANTS" | "STOCK">("STOCK");
   const [decantMode, setDecantMode] = useState<"KIT" | "INDIVIDUAL">("KIT");
   const [savingDecantSale, setSavingDecantSale] = useState(false);
   const [decantLineIds, setDecantLineIds] = useState([0]);
-  const [showPerfumeSale, setShowPerfumeSale] = useState(false);
   const [savingPerfumeSale, setSavingPerfumeSale] = useState(false);
   const [perfumeLineIds, setPerfumeLineIds] = useState([0]);
   const [importHasErrors, setImportHasErrors] = useState(false);
@@ -725,7 +724,6 @@ export function StockAdminTable({
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error ?? "Não foi possível registar a venda de decants.");
-      setShowDecantSale(false);
       setBanner({ tone: "success", message: decantMode === "KIT" ? "Kit de 5 decants vendido por 16,50 €." : "Venda individual de decant registada." });
       window.location.reload();
     } catch (error) {
@@ -754,7 +752,6 @@ export function StockAdminTable({
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error ?? "Não foi possível registar a venda de perfumes.");
-      setShowPerfumeSale(false);
       window.location.reload();
     } catch (error) {
       setBanner({ tone: "error", message: error instanceof Error ? error.message : "Não foi possível registar a venda." });
@@ -1026,6 +1023,13 @@ export function StockAdminTable({
 
   return (
     <div className="space-y-5">
+      <nav className="grid grid-cols-1 gap-3 rounded-[1.8rem] border border-[color:var(--line)] bg-white p-3 shadow-sm sm:grid-cols-3" aria-label="Áreas de vendas e stock">
+        <AppViewButton active={activeView === "PERFUMES"} onClick={() => setActiveView("PERFUMES")} icon={<ShoppingCart className="h-5 w-5" />} label="Venda de perfumes" />
+        <AppViewButton active={activeView === "DECANTS"} onClick={() => setActiveView("DECANTS")} icon={<ShoppingBasket className="h-5 w-5" />} label="Venda de decants" />
+        <AppViewButton active={activeView === "STOCK"} onClick={() => setActiveView("STOCK")} icon={<PackageX className="h-5 w-5" />} label="Stock" />
+      </nav>
+
+      <div className={activeView === "STOCK" ? "contents" : "hidden"}>
       <section className="rounded-[1.8rem] border border-[color:var(--line)] bg-white p-4 shadow-sm">
         <div className="flex flex-col gap-4">
           <div className="rounded-[1.4rem] border border-[color:var(--line)] bg-[color:var(--sand-soft)] p-3">
@@ -1112,22 +1116,6 @@ export function StockAdminTable({
 
               <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
-                  <button
-                    type="button"
-                    onClick={() => setShowDecantSale(true)}
-                    className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[color:var(--atlantic)] px-4 text-sm font-semibold text-white"
-                  >
-                    <ShoppingBasket className="h-4 w-4" />
-                    Venda de decants
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowPerfumeSale(true)}
-                    className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[color:var(--cocoa)] px-4 text-sm font-semibold text-white"
-                  >
-                    <ShoppingCart className="h-4 w-4" />
-                    Venda de perfumes
-                  </button>
                   <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2">
                     <Filter className="h-4 w-4" />
                     {resultsLabel}
@@ -1613,6 +1601,7 @@ export function StockAdminTable({
         <p className="mt-1 text-sm text-slate-600">{salesTotal.units} vendas registadas · preços efetivos de cada venda</p>
         <p className="mt-1 text-xs text-slate-500">Inclui todo o histórico{selectedCustomer ? " deste cliente" : " de clientes"}, incluindo kits e decants.</p>
       </section>
+      </div>
 
       {movementModal ? (
         <ModalFrame
@@ -1774,8 +1763,9 @@ export function StockAdminTable({
         </ModalFrame>
       ) : null}
 
-      {showDecantSale ? (
-        <ModalFrame title="Venda de decants" onClose={() => setShowDecantSale(false)}>
+      {activeView === "DECANTS" ? (
+        <section className="mx-auto w-full max-w-4xl rounded-[1.8rem] border border-[color:var(--line)] bg-white p-5 shadow-sm sm:p-7">
+          <h2 className="mb-5 font-serif text-3xl text-[color:var(--ink)]">Venda de decants</h2>
           <form className="space-y-4" onSubmit={submitDecantSale}>
             <div className="grid grid-cols-2 gap-2 rounded-2xl bg-[color:var(--sand-soft)] p-1">
               <button type="button" onClick={() => setDecantMode("KIT")} className={`rounded-xl px-3 py-3 text-sm font-semibold ${decantMode === "KIT" ? "bg-white text-[color:var(--ink)] shadow-sm" : "text-slate-500"}`}>Kit · 5 × 5 ml · 16,50 €</button>
@@ -1817,11 +1807,12 @@ export function StockAdminTable({
               <button disabled={savingDecantSale} className="rounded-full bg-[color:var(--atlantic)] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">{savingDecantSale ? "A registar..." : "Registar venda"}</button>
             </div>
           </form>
-        </ModalFrame>
+        </section>
       ) : null}
 
-      {showPerfumeSale ? (
-        <ModalFrame title="Venda de perfumes" onClose={() => setShowPerfumeSale(false)}>
+      {activeView === "PERFUMES" ? (
+        <section className="mx-auto w-full max-w-4xl rounded-[1.8rem] border border-[color:var(--line)] bg-white p-5 shadow-sm sm:p-7">
+          <h2 className="mb-5 font-serif text-3xl text-[color:var(--ink)]">Venda de perfumes</h2>
           <form className="space-y-4" onSubmit={submitPerfumeSale}>
             <Field label="Cliente"><input name="customerName" list="perfume-customer-names" required minLength={2} className="h-12 w-full rounded-2xl border border-[color:var(--line)] px-4" placeholder="Nome da pessoa que compra" /></Field>
             <datalist id="perfume-customer-names">{customerNames.map((name) => <option key={name} value={name} />)}</datalist>
@@ -1836,7 +1827,7 @@ export function StockAdminTable({
             </div>
             <div className="flex justify-end border-t border-[color:var(--line)] pt-4"><button disabled={savingPerfumeSale} className="rounded-full bg-[color:var(--atlantic)] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">{savingPerfumeSale ? "A registar..." : "Registar venda"}</button></div>
           </form>
-        </ModalFrame>
+        </section>
       ) : null}
 
       {showImportPanel ? (
@@ -2171,6 +2162,20 @@ function SaleLine({ label, children, onRemove }: { label: string; children: Reac
 
 function AddLineButton({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
   return <button type="button" onClick={onClick} className="inline-flex items-center gap-2 rounded-full border border-[color:var(--line)] bg-white px-4 py-2 text-sm font-semibold text-[color:var(--ink)]"><Plus className="h-4 w-4" />{children}</button>;
+}
+
+function AppViewButton({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`flex min-h-20 items-center justify-center gap-3 rounded-[1.35rem] px-4 py-4 text-base font-semibold transition ${active ? "bg-[color:var(--atlantic)] text-white shadow-sm" : "bg-[color:var(--sand-soft)] text-[color:var(--ink)] hover:bg-[color:var(--sand)]"}`}
+    >
+      {icon}
+      {label}
+    </button>
+  );
 }
 
 function getModalTitle(
