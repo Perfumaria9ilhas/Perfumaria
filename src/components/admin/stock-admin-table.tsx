@@ -77,7 +77,7 @@ type StockSaleRow = {
   deliveryStatus: StockDeliveryStatus;
   createdAt: string;
   totalInCents: number;
-  items: { id: string; productId: string; name: string; quantity: number; unitPriceInCents: number; status: StockSaleStatus; deliveryStatus: StockDeliveryStatus; notes: string | null }[];
+  items: { id: string; productId: string; name: string; quantity: number; unitPriceInCents: number; status: StockSaleStatus; deliveryStatus: StockDeliveryStatus; sizeMl: 5 | 10 | null; notes: string | null }[];
 };
 
 type StockCustomerSalesGroup = {
@@ -888,6 +888,7 @@ export function StockAdminTable({
             productId: formData.get(`saleItem${item.id}`)?.toString() ?? item.productId,
             status: formData.get(`saleItemStatus${item.id}`) ?? (item.notes?.includes("Kit de decants") ? formData.get("kitStatus") : null),
             deliveryStatus: formData.get(`saleItemDelivery${item.id}`) ?? (item.notes?.includes("Kit de decants") ? formData.get("kitDelivery") : null),
+            sizeMl: item.notes?.includes("Decant individual") ? Number(formData.get(`saleItemSize${item.id}`)) : undefined,
           })),
         }),
       });
@@ -917,16 +918,20 @@ export function StockAdminTable({
   const soldItemTotals = useMemo(() => {
     let perfumes = 0;
     let kitDecants = 0;
-    let individualDecants = 0;
+    let fiveMlDecants = 0;
+    let tenMlDecants = 0;
     for (const sale of sales) {
       for (const item of sale.items) {
         if (item.status === StockSaleStatus.OFFERED) continue;
         if (item.notes?.includes("Kit de decants")) kitDecants += item.quantity;
-        else if (item.notes?.includes("Decant individual")) individualDecants += item.quantity;
+        else if (item.notes?.includes("Decant individual")) {
+          if (item.sizeMl === 10) tenMlDecants += item.quantity;
+          else fiveMlDecants += item.quantity;
+        }
         else perfumes += item.quantity;
       }
     }
-    return { perfumes, kits: Math.floor(kitDecants / 5), individualDecants };
+    return { perfumes, kits: Math.floor(kitDecants / 5), fiveMlDecants, tenMlDecants };
   }, [sales]);
   const salesTotalPages = Math.max(1, Math.ceil(customerSalesGroups.length / 25));
   const pagedCustomerGroups = customerSalesGroups.slice((salesPage - 1) * 25, salesPage * 25);
@@ -2045,7 +2050,8 @@ export function StockAdminTable({
                 <SaleStatusTotal label="Oferecido" value={0} />
                 <SaleCountTotal label="Perfumes vendidos" value={soldItemTotals.perfumes} />
                 <SaleCountTotal label="Kits vendidos" value={soldItemTotals.kits} />
-                <SaleCountTotal label="Decants individuais" value={soldItemTotals.individualDecants} />
+                <SaleCountTotal label="Decants de 5 ml" value={soldItemTotals.fiveMlDecants} />
+                <SaleCountTotal label="Decants de 10 ml" value={soldItemTotals.tenMlDecants} />
               </div>
             </div>
           )}
@@ -2414,9 +2420,10 @@ function SaleTableRows({
               <div className="space-y-3">
                 {sale.items.map((item, index) => (
                   <div key={item.id} className="rounded-2xl border border-[color:var(--line)] bg-white p-3">
-                    <p className="mb-3 text-sm font-medium text-[color:var(--ink)]">{`${item.notes?.includes("Kit de decants") ? "Perfume do kit" : item.notes?.includes("Decant") ? "Decant" : "Perfume"} ${index + 1} · ${item.quantity} unidade${item.quantity === 1 ? "" : "s"}`}</p>
-                    <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto]">
+                    <p className="mb-3 text-sm font-medium text-[color:var(--ink)]">{`${item.notes?.includes("Kit de decants") ? "Perfume do kit · 5 ml" : item.notes?.includes("Decant individual") ? `Decant ${index + 1} · ${item.sizeMl ?? 5} ml` : `Perfume ${index + 1}`} · ${item.quantity} unidade${item.quantity === 1 ? "" : "s"}`}</p>
+                    <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
                       <Field label="Produto"><SearchableProductSelect name={`saleItem${item.id}`} products={products} placeholder="Pesquisar produto..." initialProductId={item.productId} /></Field>
+                      {item.notes?.includes("Decant individual") ? <Field label="Tamanho"><select name={`saleItemSize${item.id}`} defaultValue={item.sizeMl ?? 5} className="h-12 rounded-2xl border border-[color:var(--line)] bg-white px-4"><option value="5">5 ml · 3,50 €</option><option value="10">10 ml · 6,50 €</option></select></Field> : null}
                       {!item.notes?.includes("Kit de decants") || item.id === firstKitItemId ? <>
                         <Field label="Pagamento"><select name={item.notes?.includes("Kit de decants") ? "kitStatus" : `saleItemStatus${item.id}`} defaultValue={item.status} className="h-12 rounded-2xl border border-[color:var(--line)] bg-white px-4"><option value={StockSaleStatus.PAID}>Pago</option><option value={StockSaleStatus.PENDING}>Por pagar</option><option value={StockSaleStatus.OFFERED}>Oferecido</option></select></Field>
                         <Field label="Entrega"><select name={item.notes?.includes("Kit de decants") ? "kitDelivery" : `saleItemDelivery${item.id}`} defaultValue={item.deliveryStatus} className="h-12 rounded-2xl border border-[color:var(--line)] bg-white px-4"><option value={StockDeliveryStatus.DELIVERED}>Entregue</option><option value={StockDeliveryStatus.PENDING}>Por entregar</option></select></Field>

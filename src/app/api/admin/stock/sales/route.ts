@@ -24,6 +24,7 @@ const statusSchema = z.object({
     productId: z.string().min(1),
     status: z.nativeEnum(StockSaleStatus).optional(),
     deliveryStatus: z.nativeEnum(StockDeliveryStatus).optional(),
+    sizeMl: z.union([z.literal(5), z.literal(10)]).optional(),
   })).max(100).optional(),
 });
 
@@ -36,7 +37,7 @@ export async function GET() {
   });
   const groups = new Map<string, {
     id: string; customerName: string; status: StockSaleStatus; deliveryStatus: StockDeliveryStatus; createdAt: string;
-    totalInCents: number; items: { id: string; productId: string; name: string; quantity: number; unitPriceInCents: number; status: StockSaleStatus; deliveryStatus: StockDeliveryStatus; notes: string | null }[];
+    totalInCents: number; items: { id: string; productId: string; name: string; quantity: number; unitPriceInCents: number; status: StockSaleStatus; deliveryStatus: StockDeliveryStatus; sizeMl: 5 | 10 | null; notes: string | null }[];
   }>();
   for (const movement of movements) {
     const id = movement.saleGroupId ?? movement.id;
@@ -50,7 +51,7 @@ export async function GET() {
       items: [],
     };
     group.totalInCents += movement.quantity * (movement.saleUnitPriceInCents ?? 0);
-    group.items.push({ id: movement.id, productId: movement.productId, name: movement.product.name, quantity: movement.quantity, unitPriceInCents: movement.saleUnitPriceInCents ?? 0, status: movement.saleStatus ?? StockSaleStatus.PAID, deliveryStatus: movement.deliveryStatus ?? StockDeliveryStatus.DELIVERED, notes: movement.notes });
+    group.items.push({ id: movement.id, productId: movement.productId, name: movement.product.name, quantity: movement.quantity, unitPriceInCents: movement.saleUnitPriceInCents ?? 0, status: movement.saleStatus ?? StockSaleStatus.PAID, deliveryStatus: movement.deliveryStatus ?? StockDeliveryStatus.DELIVERED, sizeMl: movement.notes?.includes("Decant individual") ? (movement.notes.includes("10 ml") ? 10 : 5) : null, notes: movement.notes });
     groups.set(id, group);
   }
   for (const group of groups.values()) {
@@ -80,6 +81,7 @@ export async function PATCH(request: Request) {
     const itemChanges = new Map((parsed.data.items ?? []).map((item) => [item.movementId, item.productId]));
     const itemStatuses = new Map((parsed.data.items ?? []).map((item) => [item.movementId, item.status]));
     const itemDeliveryStatuses = new Map((parsed.data.items ?? []).map((item) => [item.movementId, item.deliveryStatus]));
+    const itemSizes = new Map((parsed.data.items ?? []).map((item) => [item.movementId, item.sizeMl]));
     const requestedProductIds = [...new Set(itemChanges.values())];
     const replacementProducts = requestedProductIds.length
       ? await tx.product.findMany({ where: { id: { in: requestedProductIds } } })
@@ -90,10 +92,12 @@ export async function PATCH(request: Request) {
     for (const movement of movements) {
       const nextProductId = itemChanges.get(movement.id) ?? movement.productId;
       const nextProduct = replacements.get(nextProductId) ?? movement.product;
+      const isIndividualDecant = movement.notes?.includes("Decant individual") ?? false;
+      const nextSizeMl = itemSizes.get(movement.id) ?? (movement.notes?.includes("10 ml") ? 10 : 5);
       if (!nextProduct.active) throw new Error(`${nextProduct.name} já não está disponível no site.`);
       if (movement.reason === StockMovementReason.DECANT) {
-        if (movement.notes?.includes("10 ml") && !nextProduct.availableInTenMl) throw new Error(`${nextProduct.name} não está disponível em 10 ml.`);
-        if (!movement.notes?.includes("10 ml") && !nextProduct.availableInFiveMl) throw new Error(`${nextProduct.name} não está disponível em 5 ml.`);
+        if (nextSizeMl === 10 && !nextProduct.availableInTenMl) throw new Error(`${nextProduct.name} não está disponível em 10 ml.`);
+        if (nextSizeMl === 5 && !nextProduct.availableInFiveMl) throw new Error(`${nextProduct.name} não está disponível em 5 ml.`);
       }
       if (nextProductId !== movement.productId && movement.reason === StockMovementReason.SALE) {
         await tx.product.update({ where: { id: movement.productId }, data: { stock: { increment: movement.quantity } } });
@@ -108,9 +112,12 @@ export async function PATCH(request: Request) {
           deliveryStatus: itemDeliveryStatuses.get(movement.id) ?? parsed.data.deliveryStatus,
           customerName: parsed.data.customerName ?? movement.customerName,
           productId: nextProductId,
-          saleUnitPriceInCents: nextProductId !== movement.productId && movement.reason === StockMovementReason.SALE
-            ? getSalePriceInCents(nextProduct)
-            : movement.saleUnitPriceInCents,
+          saleUnitPriceInCents: isIndividualDecant
+            ? (nextSizeMl === 10 ? 650 : 350)
+            : nextProductId !== movement.productId && movement.reason === StockMovementReason.SALE
+              ? getSalePriceInCents(nextProduct)
+              : movement.saleUnitPriceInCents,
+          notes: isIndividualDecant ? `Decant individual · ${nextSizeMl} ml` : movement.notes,
         },
       });
     }
