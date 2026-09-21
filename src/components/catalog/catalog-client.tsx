@@ -7,7 +7,7 @@ import { useSearchParams } from "next/navigation";
 import { useCart } from "@/components/providers/cart-provider";
 import { formatPrice } from "@/lib/format";
 import { buildMetaProductPayload, trackMetaEvent } from "@/lib/meta-pixel";
-import { getProductAudienceLabel, productAudienceOptions, type ProductAudienceValue } from "@/lib/product-audience";
+import { getProductAudienceLabel } from "@/lib/product-audience";
 import { getProductConcentrationDetails } from "@/lib/product-concentration";
 import {
   buildCartLineId,
@@ -19,11 +19,27 @@ import {
 import type { CatalogProduct } from "@/lib/types";
 
 type CatalogClientProps = {
-  brands: { id: string; name: string }[];
   products: CatalogProduct[];
 };
 
 type SortOption = "price" | "name" | "brand";
+type CatalogFilter = "Todos" | "Homem" | "Mulher" | "Unissexo" | "Decants" | "Kits" | "Corpo" | "Casa";
+
+const catalogFilters: CatalogFilter[] = ["Todos", "Homem", "Mulher", "Unissexo", "Decants", "Kits", "Corpo", "Casa"];
+const perfumeTypeSlugs = new Set(["edp", "edt", "parfum", "extrait", "elixir", "eau-de-parfum", "extrait-de-parfum", "oleo-perfumado"]);
+const bodyTypeSlugs = new Set(["pasta-corporal", "body-mist", "all-over-spray", "desodorizante"]);
+
+function matchesCatalogFilter(product: CatalogProduct, filter: CatalogFilter) {
+  const type = product.productType.slug;
+  const category = product.category.slug;
+  if (filter === "Todos") return true;
+  if (filter === "Kits") return type === "gift-set";
+  if (filter === "Casa") return category === "ambientadores" || type === "ambientador";
+  if (filter === "Corpo") return category === "cosmeticos" || category === "pasta-corporal" || bodyTypeSlugs.has(type);
+  const isPerfume = category === "perfumes-arabes" && perfumeTypeSlugs.has(type);
+  if (filter === "Decants") return isPerfume && (product.availableInFiveMl || product.availableInTenMl);
+  return isPerfume && product.audience === ({ Homem: "MASCULINO", Mulher: "FEMININO", Unissexo: "UNISSEXO" }[filter]);
+}
 
 function ProductImage({
   src,
@@ -86,12 +102,11 @@ function Toast({
   );
 }
 
-export function CatalogClient({ brands, products }: CatalogClientProps) {
+export function CatalogClient({ products }: CatalogClientProps) {
   const { addItem } = useCart();
   const searchParams = useSearchParams();
-  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
-  const [selectedAudiences, setSelectedAudiences] = useState<ProductAudienceValue[]>([]);
-  const [hasTouchedAudienceFilter, setHasTouchedAudienceFilter] = useState(false);
+  const [selectedBrand, setSelectedBrand] = useState("");
+  const [selectedFilter, setSelectedFilter] = useState<CatalogFilter | null>(null);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("name");
   const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
@@ -103,29 +118,12 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
     tone: "warning" | "success";
   } | null>(null);
 
-  const audienceFromQuery = useMemo(() => {
+  const filterFromQuery = useMemo(() => {
     const audienceParam = searchParams.get("audience")?.toUpperCase();
-
-    if (
-      audienceParam === "MASCULINO" ||
-      audienceParam === "FEMININO" ||
-      audienceParam === "UNISSEXO"
-    ) {
-      return audienceParam as ProductAudienceValue;
-    }
-
-    return null;
+    return audienceParam === "MASCULINO" ? "Homem" : audienceParam === "FEMININO" ? "Mulher" : audienceParam === "UNISSEXO" ? "Unissexo" : "Todos";
   }, [searchParams]);
-
-  const effectiveSelectedAudiences = useMemo(
-    () =>
-      hasTouchedAudienceFilter
-        ? selectedAudiences
-        : audienceFromQuery
-          ? [audienceFromQuery]
-          : selectedAudiences,
-    [audienceFromQuery, hasTouchedAudienceFilter, selectedAudiences],
-  );
+  const activeFilter = selectedFilter ?? filterFromQuery;
+  const availableBrands = useMemo(() => [...new Map(products.map((product) => [product.brand.id, product.brand])).values()].sort((a, b) => a.name.localeCompare(b.name, "pt-PT")), [products]);
 
   useEffect(() => {
     if (!toast) {
@@ -140,7 +138,7 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
     selectedProduct?.productType?.name ?? selectedProduct?.concentration ?? "EDP",
   );
   const selectedProductSize = selectedProduct
-    ? selectedSizes[selectedProduct.id] ?? "100ml"
+    ? getSelectedSize(selectedProduct)
     : "100ml";
 
   useEffect(() => {
@@ -181,16 +179,13 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
     const query = search.toLowerCase().trim();
 
     const result = products.filter((product) => {
-      const matchesBrand =
-        selectedBrands.length === 0 || selectedBrands.includes(product.brandId);
-      const matchesAudience =
-        effectiveSelectedAudiences.length === 0 ||
-        effectiveSelectedAudiences.includes(product.audience as ProductAudienceValue);
+      const matchesBrand = !selectedBrand || product.brandId === selectedBrand;
+      const matchesCategory = matchesCatalogFilter(product, activeFilter);
       const matchesSearch =
         product.name.toLowerCase().includes(query) ||
         product.brand.name.toLowerCase().includes(query);
 
-      return matchesBrand && matchesAudience && matchesSearch;
+      return matchesBrand && matchesCategory && matchesSearch;
     });
 
     return result.sort((left, right) => {
@@ -213,9 +208,15 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
 
       return left.name.localeCompare(right.name, "pt");
     });
-  }, [effectiveSelectedAudiences, products, search, selectedBrands, sortBy]);
+  }, [activeFilter, products, search, selectedBrand, sortBy]);
 
   function getSelectedSize(product: CatalogProduct) {
+    if (activeFilter === "Decants") {
+      const chosen = selectedSizes[product.id];
+      return chosen === "5ml" && product.availableInFiveMl || chosen === "10ml" && product.availableInTenMl
+        ? chosen
+        : product.availableInFiveMl ? "5ml" : "10ml";
+    }
     return selectedSizes[product.id] ?? "100ml";
   }
 
@@ -252,23 +253,6 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
       imageUrl: product.imageUrl,
       stock: product.stock,
     };
-  }
-
-  function toggleBrand(brandId: string) {
-    setSelectedBrands((current) =>
-      current.includes(brandId)
-        ? current.filter((item) => item !== brandId)
-        : [...current, brandId],
-    );
-  }
-
-  function toggleAudience(audience: ProductAudienceValue) {
-    setHasTouchedAudienceFilter(true);
-    setSelectedAudiences((current) =>
-      current.includes(audience)
-        ? current.filter((item) => item !== audience)
-        : [...current, audience],
-    );
   }
 
   async function handleAddToCart(product: CatalogProduct, size = getSelectedSize(product)) {
@@ -340,7 +324,7 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
                 ) : null}
               </div>
               <div className="flex flex-wrap gap-2">
-                <button
+                {activeFilter !== "Decants" ? <button
                     type="button"
                     onClick={() => setProductSize(selectedProduct.id, "100ml")}
                     className={`rounded-full border px-3 py-2 text-xs font-semibold transition ${
@@ -350,7 +334,7 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
                     }`}
                 >
                   100 ml
-                </button>
+                </button> : null}
                 {selectedProduct.availableInTenMl ? (
                   <button
                     type="button"
@@ -419,52 +403,21 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
           </button>
         </div>
 
+        <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Filtrar por categoria">
+          {catalogFilters.map((filter) => <button key={filter} type="button" onClick={() => setSelectedFilter(filter)} aria-pressed={activeFilter === filter} className={`shrink-0 rounded-full border px-3.5 py-2 text-xs font-medium transition sm:text-sm ${activeFilter === filter ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-white" : "border-[color:var(--line)] bg-white text-slate-700 hover:border-[color:var(--gold)]"}`}>{filter}</button>)}
+        </div>
+        <div className="mt-3 flex items-center gap-2">
+          <label htmlFor="catalog-brand" className="shrink-0 text-sm font-medium text-slate-600">Marca</label>
+          <select id="catalog-brand" value={selectedBrand} onChange={(event) => setSelectedBrand(event.target.value)} className="h-10 min-w-0 max-w-xs flex-1 rounded-full border border-[color:var(--line)] bg-white px-4 text-sm outline-none focus:border-[color:var(--gold)]">
+            <option value="">Todas as marcas</option>
+            {availableBrands.map((brand) => <option key={brand.id} value={brand.id}>{brand.name}</option>)}
+          </select>
+        </div>
+
         {filtersOpen ? (
           <>
             <div className="mt-3 rounded-[1.2rem] border border-[rgba(185,154,118,0.18)] bg-white/90 p-3">
-            <div className="mb-4 flex flex-wrap gap-2">
-              {brands.map((brand) => {
-                const active = selectedBrands.includes(brand.id);
-
-                return (
-                  <label
-                    key={brand.id}
-                    className={`inline-flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition sm:text-sm ${active ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-white shadow-sm" : "border-[color:var(--line)] bg-white text-slate-600 hover:border-[color:var(--gold)]/60"}`}
-                  >
-                    <input
-                      checked={active}
-                      onChange={() => toggleBrand(brand.id)}
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-[color:var(--line)]"
-                    />
-                    {brand.name}
-                  </label>
-                );
-              })}
-            </div>
-
-            <div className="mb-4 flex flex-wrap gap-2">
-              {productAudienceOptions.map((audience) => {
-                const active = effectiveSelectedAudiences.includes(audience.value);
-
-                return (
-                  <label
-                    key={audience.value}
-                    className={`inline-flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition sm:text-sm ${active ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-white shadow-sm" : "border-[color:var(--line)] bg-white text-slate-600 hover:border-[color:var(--gold)]/60"}`}
-                  >
-                    <input
-                      checked={active}
-                      onChange={() => toggleAudience(audience.value)}
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-[color:var(--line)]"
-                    />
-                    {audience.label}
-                  </label>
-                );
-              })}
-            </div>
-
-            <div className="flex flex-col gap-3 border-t border-[color:var(--line)] pt-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div className="flex items-center gap-3">
                 <span className="text-sm font-medium text-slate-600">Ordenar por</span>
                 <select
@@ -480,9 +433,8 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
               <button
                 className="text-left text-sm text-[color:var(--atlantic)] underline-offset-4 hover:underline"
                 onClick={() => {
-                  setSelectedBrands([]);
-                  setSelectedAudiences([]);
-                  setHasTouchedAudienceFilter(true);
+                  setSelectedBrand("");
+                  setSelectedFilter("Todos");
                   setSearch("");
                   setSortBy("name");
                 }}
@@ -587,7 +539,7 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
 
                 <div className="mt-auto space-y-2">
                   <div className="flex flex-nowrap gap-1 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                    <button
+                    {activeFilter !== "Decants" ? <button
                       type="button"
                       onClick={() => setProductSize(product.id, "100ml")}
                       className={`shrink-0 rounded-full border px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.08em] transition ${
@@ -597,7 +549,7 @@ export function CatalogClient({ brands, products }: CatalogClientProps) {
                       }`}
                     >
                       100 ml
-                    </button>
+                    </button> : null}
                     {product.availableInTenMl ? (
                       <button
                         type="button"

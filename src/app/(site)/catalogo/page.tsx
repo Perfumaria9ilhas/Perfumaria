@@ -21,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function CatalogoPage() {
-  const [{ brands, products }, settings] = await Promise.all([getCatalogData(), getStoreSettings()]);
+  const [{ products }, settings] = await Promise.all([getCatalogData(), getStoreSettings()]);
   const catalogJsonLd = buildProductListJsonLd(
     products.slice(0, 20),
     settings.catalogTitle,
@@ -45,7 +45,7 @@ export default async function CatalogoPage() {
           }
         </p>
       </div>
-      <CatalogClient brands={brands} products={products} />
+      <CatalogClient products={products} />
     </div>
   );
 }
