@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { Clock3, Search, ShoppingBag, X } from "lucide-react";
+import { Clock3, MessageCircle, Search, ShoppingBag, X } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useCart } from "@/components/providers/cart-provider";
 import { formatPrice } from "@/lib/format";
@@ -20,6 +20,7 @@ import type { CatalogProduct } from "@/lib/types";
 
 type CatalogClientProps = {
   products: CatalogProduct[];
+  whatsappNumber: string;
 };
 
 type SortOption = "recommended" | "price-asc" | "price-desc" | "recent";
@@ -65,14 +66,27 @@ function getDisplayPrice(product: CatalogProduct, size: ProductSizeValue) {
     : product.priceInCents;
 }
 
+function getBottleSizeLabel(product: CatalogProduct) {
+  const setSize = product.name.match(/\b(\d+)\s*[×x]\s*(\d+)\s*ml\b/i);
+  if (setSize) return `${setSize[1]} × ${setSize[2]} ml`;
+  const volume = product.name.match(/\b(\d+)\s*(ml|g)\b/i);
+  return volume ? `${volume[1]} ${volume[2].toLowerCase()}` : "Frasco";
+}
+
+function getSelectedSizeLabel(product: CatalogProduct, size: ProductSizeValue) {
+  return size === "100ml" ? getBottleSizeLabel(product) : getProductSizeLabel(size);
+}
+
 function ProductImage({
   src,
   alt,
   priority = false,
+  sizes = "(max-width: 640px) 50vw, (max-width: 900px) 50vw, (max-width: 1200px) 33vw, 25vw",
 }: {
   src: string;
   alt: string;
   priority?: boolean;
+  sizes?: string;
 }) {
   const [hasError, setHasError] = useState(false);
 
@@ -99,7 +113,7 @@ function ProductImage({
       priority={priority}
       loading={priority ? "eager" : "lazy"}
       fetchPriority={priority ? "high" : "auto"}
-      sizes="(max-width: 640px) 50vw, (max-width: 900px) 50vw, (max-width: 1200px) 33vw, 25vw"
+      sizes={sizes}
       className="h-full w-full object-contain p-4 transition duration-500 group-hover:scale-[1.04]"
       onError={() => setHasError(true)}
     />
@@ -126,7 +140,7 @@ function Toast({
   );
 }
 
-export function CatalogClient({ products }: CatalogClientProps) {
+export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) {
   const { addItem } = useCart();
   const searchParams = useSearchParams();
   const [selectedBrand, setSelectedBrand] = useState("");
@@ -246,7 +260,7 @@ export function CatalogClient({ products }: CatalogClientProps) {
       productId: product.id,
       name: product.name,
       brand: product.brand.name,
-      sizeLabel: getProductSizeLabel(size),
+      sizeLabel: getSelectedSizeLabel(product, size),
       priceInCents: getDisplayPrice(product, size),
       originalPriceInCents: size === "100ml" ? product.priceInCents : null,
       imageUrl: product.imageUrl,
@@ -255,15 +269,21 @@ export function CatalogClient({ products }: CatalogClientProps) {
   }
 
   async function handleAddToCart(product: CatalogProduct, size = getSelectedSize(product)) {
+    if (product.stock <= 0) return;
     addItem(
       buildCartItem(product, size),
       1,
     );
 
     setToast({
-      message: `${product.name} ${getProductSizeLabel(size)} foi adicionado ao carrinho.`,
+      message: `${product.name} ${getSelectedSizeLabel(product, size)} foi adicionado ao carrinho.`,
       tone: "success",
     });
+  }
+
+  function getReservationUrl(product: CatalogProduct, size: ProductSizeValue) {
+    const message = `Olá! Gostaria de reservar ${product.brand.name} ${product.name} (${getSelectedSizeLabel(product, size)}). Podem confirmar a disponibilidade?`;
+    return `https://wa.me/${whatsappNumber.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`;
   }
 
   return (
@@ -296,6 +316,9 @@ export function CatalogClient({ products }: CatalogClientProps) {
                 >
                   <X className="h-4 w-4" />
                 </button>
+              </div>
+              <div className="relative h-48 overflow-hidden rounded-[1.1rem] bg-[radial-gradient(circle_at_top,_rgba(183,146,107,0.18),_transparent_58%),linear-gradient(180deg,_#fffaf3,_#f4e7d6)] sm:h-64">
+                <ProductImage key={selectedProduct.id} src={selectedProduct.imageUrl} alt={selectedProduct.name} priority sizes="(max-width: 640px) 90vw, 480px" />
               </div>
               <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--atlantic)]">
                 {selectedProduct.category.name} · {getProductAudienceLabel(selectedProduct.audience)}
@@ -332,7 +355,7 @@ export function CatalogClient({ products }: CatalogClientProps) {
                         : "border-[color:var(--line)] bg-[color:var(--sand-soft)] text-[color:var(--ink)]"
                     }`}
                 >
-                  100 ml
+                  {getBottleSizeLabel(selectedProduct)}
                 </button> : null}
                 {selectedProduct.availableInTenMl ? (
                   <button
@@ -364,16 +387,28 @@ export function CatalogClient({ products }: CatalogClientProps) {
               <p className="font-serif text-2xl text-[color:var(--ink)]">
                 {formatPrice(getDisplayPrice(selectedProduct, selectedProductSize))}
               </p>
+              <p className={`text-sm font-semibold ${selectedProduct.stock > 0 ? "text-emerald-700" : "text-amber-700"}`}>
+                {selectedProduct.stock > 0 ? "Em stock" : "Disponível por reserva"}
+              </p>
+              {selectedProduct.stock > 0 ? <button
+                type="button"
+                onClick={() => handleAddToCart(selectedProduct)}
+                className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-[color:var(--atlantic)] px-5 py-3 text-sm font-semibold text-white"
+              >
+                Adicionar ao carrinho
+              </button> : <a
+                href={getReservationUrl(selectedProduct, selectedProductSize)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[color:var(--atlantic)] px-5 py-3 text-sm font-semibold text-white"
+              ><MessageCircle className="h-4 w-4" />Reservar</a>}
+              <div className="space-y-1 text-xs leading-5 text-slate-600">
+                <p>🚗 Entregas em mão na Ilha Terceira</p>
+                <p>📦 Envios via CTT para Açores, Madeira e Portugal Continental</p>
+              </div>
               <div className="whitespace-pre-line text-sm leading-7 text-slate-600">
                 {selectedProduct.description}
               </div>
-              <button
-                type="button"
-                onClick={() => handleAddToCart(selectedProduct)}
-                className="inline-flex items-center justify-center rounded-full bg-[color:var(--atlantic)] px-5 py-3 text-sm font-semibold text-white"
-              >
-                Adicionar ao carrinho
-              </button>
             </div>
           </div>
         </div>
@@ -522,7 +557,7 @@ export function CatalogClient({ products }: CatalogClientProps) {
                           : "border-[color:var(--line)] bg-white text-slate-600 hover:border-[rgba(185,154,118,0.4)]"
                       }`}
                     >
-                      100 ml
+                      {getBottleSizeLabel(product)}
                     </button> : null}
                     {product.availableInTenMl ? (
                       <button
@@ -567,7 +602,7 @@ export function CatalogClient({ products }: CatalogClientProps) {
                     ) : null}
                   </div>
 
-                  <button
+                  {product.stock > 0 ? <button
                     className="inline-flex min-h-[42px] w-full items-center justify-center gap-2 rounded-full bg-[color:var(--atlantic)] px-3 text-[11px] font-semibold text-white transition hover:bg-[color:var(--atlantic-deep)] sm:min-h-[44px] sm:text-sm"
                     onClick={() => handleAddToCart(product, selectedSize)}
                     aria-label="Adicionar ao carrinho"
@@ -575,7 +610,12 @@ export function CatalogClient({ products }: CatalogClientProps) {
                     <ShoppingBag className="h-4 w-4" />
                     <span className="md:hidden">Adicionar</span>
                     <span className="hidden md:inline">Adicionar ao carrinho</span>
-                  </button>
+                  </button> : <a
+                    href={getReservationUrl(product, selectedSize)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex min-h-[42px] w-full items-center justify-center gap-2 rounded-full bg-[color:var(--atlantic)] px-3 text-[11px] font-semibold text-white transition hover:bg-[color:var(--atlantic-deep)] sm:min-h-[44px] sm:text-sm"
+                  ><MessageCircle className="h-4 w-4" />Reservar</a>}
                 </div>
               </div>
             </article>

@@ -45,7 +45,7 @@ export default async function CatalogoPage() {
           }
         </p>
       </div>
-      <CatalogClient products={products} />
+      <CatalogClient products={products} whatsappNumber={settings.whatsappNumber} />
     </div>
   );
 }
