@@ -415,7 +415,7 @@ async function main() {
       phone: "+351 912 345 678",
       whatsappNumber: "351912345678",
       whatsappLabel: "Encomendas e apoio",
-      openingHours: "Segunda a sábado, das 10h00 às 19h00",
+      openingHours: "Todos os dias, das 08h00 às 22h00",
       contactEmail: "geral@9ilhasperfumaria.pt",
       instagramUrl: "https://instagram.com/9ilhasperfumaria",
       facebookUrl: "https://facebook.com/9ilhasperfumaria",

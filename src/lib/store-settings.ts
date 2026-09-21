@@ -56,7 +56,7 @@ const fallbackSettings = {
   phone: "+351 912 345 678",
   whatsappNumber: "351912345678",
   whatsappLabel: "Encomendas e apoio",
-  openingHours: "Segunda a s\u00e1bado, das 10h00 \u00e0s 19h00",
+  openingHours: "Todos os dias, das 08h00 \u00e0s 22h00",
   contactEmail: "",
   instagramUrl: "https://instagram.com/9ilhasperfumaria",
   facebookUrl: "https://facebook.com/9ilhasperfumaria",

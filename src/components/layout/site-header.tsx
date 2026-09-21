@@ -29,7 +29,7 @@ type SiteHeaderProps = {
 
 const topStripItems = [
   "Entrega r\u00e1pida na Ilha Terceira",
-  "Todos os dias das 08h00 \u00e0s 22h00",
+  "Todos os dias, das 08h00 \u00e0s 22h00",
   "Envio para A\u00e7ores, Madeira e Portugal Continental",
 ];
 

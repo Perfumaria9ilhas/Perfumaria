@@ -695,7 +695,7 @@ export async function saveStoreSettings(formData: FormData) {
       whatsappNumber: currentSettings?.whatsappNumber ?? "351965420948",
       whatsappLabel: currentSettings?.whatsappLabel ?? "Apoio por WhatsApp",
       openingHours:
-        currentSettings?.openingHours ?? "Segunda a sábado, das 08h00 às 22h00",
+        currentSettings?.openingHours ?? "Todos os dias, das 08h00 às 22h00",
       contactEmail: currentSettings?.contactEmail ?? "perfumaria9ilhas@hotmail.com",
     },
   });
