@@ -22,7 +22,7 @@ type CatalogClientProps = {
   products: CatalogProduct[];
 };
 
-type SortOption = "price" | "name" | "brand";
+type SortOption = "recommended" | "price-asc" | "price-desc" | "recent";
 type CatalogFilter = "Todos" | "Homem" | "Mulher" | "Unissexo" | "Decants" | "Kits" | "Corpo" | "Casa";
 
 const catalogFilters: CatalogFilter[] = ["Todos", "Homem", "Mulher", "Unissexo", "Decants", "Kits", "Corpo", "Casa"];
@@ -39,6 +39,24 @@ function matchesCatalogFilter(product: CatalogProduct, filter: CatalogFilter) {
   const isPerfume = category === "perfumes-arabes" && perfumeTypeSlugs.has(type);
   if (filter === "Decants") return isPerfume && (product.availableInFiveMl || product.availableInTenMl);
   return isPerfume && product.audience === ({ Homem: "MASCULINO", Mulher: "FEMININO", Unissexo: "UNISSEXO" }[filter]);
+}
+
+function getCatalogProductSize(product: CatalogProduct, filter: CatalogFilter, selectedSizes: Record<string, ProductSizeValue>): ProductSizeValue {
+  if (filter === "Decants") {
+    const chosen = selectedSizes[product.id];
+    return chosen === "5ml" && product.availableInFiveMl || chosen === "10ml" && product.availableInTenMl
+      ? chosen
+      : product.availableInFiveMl ? "5ml" : "10ml";
+  }
+  return selectedSizes[product.id] ?? "100ml";
+}
+
+function getDisplayPrice(product: CatalogProduct, size: ProductSizeValue) {
+  if (size === "5ml") return FIVE_ML_PRICE_IN_CENTS;
+  if (size === "10ml") return TEN_ML_PRICE_IN_CENTS;
+  return product.salePriceInCents && product.salePriceInCents < product.priceInCents
+    ? product.salePriceInCents
+    : product.priceInCents;
 }
 
 function ProductImage({
@@ -108,7 +126,7 @@ export function CatalogClient({ products }: CatalogClientProps) {
   const [selectedBrand, setSelectedBrand] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<CatalogFilter | null>(null);
   const [search, setSearch] = useState("");
-  const [sortBy, setSortBy] = useState<SortOption>("name");
+  const [sortBy, setSortBy] = useState<SortOption>("recommended");
   const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
   const [selectedSizes, setSelectedSizes] = useState<Record<string, ProductSizeValue>>({});
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -188,36 +206,20 @@ export function CatalogClient({ products }: CatalogClientProps) {
       return matchesBrand && matchesCategory && matchesSearch;
     });
 
+    if (sortBy === "recommended") return result;
+
     return result.sort((left, right) => {
-      if (sortBy === "price") {
-        const leftPrice =
-          left.salePriceInCents && left.salePriceInCents < left.priceInCents
-            ? left.salePriceInCents
-            : left.priceInCents;
-        const rightPrice =
-          right.salePriceInCents && right.salePriceInCents < right.priceInCents
-            ? right.salePriceInCents
-            : right.priceInCents;
-
-        return leftPrice - rightPrice;
+      if (sortBy === "recent") {
+        return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
       }
 
-      if (sortBy === "brand") {
-        return left.brand.name.localeCompare(right.brand.name, "pt");
-      }
-
-      return left.name.localeCompare(right.name, "pt");
+      const priceDifference = getDisplayPrice(left, getCatalogProductSize(left, activeFilter, selectedSizes)) - getDisplayPrice(right, getCatalogProductSize(right, activeFilter, selectedSizes));
+      return sortBy === "price-asc" ? priceDifference : -priceDifference;
     });
-  }, [activeFilter, products, search, selectedBrand, sortBy]);
+  }, [activeFilter, products, search, selectedBrand, selectedSizes, sortBy]);
 
   function getSelectedSize(product: CatalogProduct) {
-    if (activeFilter === "Decants") {
-      const chosen = selectedSizes[product.id];
-      return chosen === "5ml" && product.availableInFiveMl || chosen === "10ml" && product.availableInTenMl
-        ? chosen
-        : product.availableInFiveMl ? "5ml" : "10ml";
-    }
-    return selectedSizes[product.id] ?? "100ml";
+    return getCatalogProductSize(product, activeFilter, selectedSizes);
   }
 
   function setProductSize(productId: string, size: ProductSizeValue) {
@@ -225,20 +227,6 @@ export function CatalogClient({ products }: CatalogClientProps) {
       ...current,
       [productId]: size,
     }));
-  }
-
-  function getDisplayPrice(product: CatalogProduct, size: ProductSizeValue) {
-    if (size === "5ml") {
-      return FIVE_ML_PRICE_IN_CENTS;
-    }
-
-    if (size === "10ml") {
-      return TEN_ML_PRICE_IN_CENTS;
-    }
-
-    return product.salePriceInCents && product.salePriceInCents < product.priceInCents
-      ? product.salePriceInCents
-      : product.priceInCents;
   }
 
   function buildCartItem(product: CatalogProduct, size: ProductSizeValue) {
@@ -418,16 +406,18 @@ export function CatalogClient({ products }: CatalogClientProps) {
           <>
             <div className="mt-3 rounded-[1.2rem] border border-[rgba(185,154,118,0.18)] bg-white/90 p-3">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-slate-600">Ordenar por</span>
+              <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                <label htmlFor="catalog-sort" className="text-sm font-medium text-slate-600">Ordenar por</label>
                 <select
+                  id="catalog-sort"
                   value={sortBy}
                   onChange={(event) => setSortBy(event.target.value as SortOption)}
-                  className="h-10 rounded-full border border-[color:var(--line)] bg-white px-4 text-sm outline-none"
+                  className="h-10 min-w-0 w-full rounded-full border border-[color:var(--line)] bg-white px-4 text-sm outline-none sm:w-auto"
                 >
-                  <option value="price">Preço</option>
-                  <option value="name">Nome</option>
-                  <option value="brand">Marca</option>
+                  <option value="recommended">Recomendados</option>
+                  <option value="price-asc">Preço: mais baixo primeiro</option>
+                  <option value="price-desc">Preço: mais alto primeiro</option>
+                  <option value="recent">Mais recentes</option>
                 </select>
               </div>
               <button
@@ -436,7 +426,7 @@ export function CatalogClient({ products }: CatalogClientProps) {
                   setSelectedBrand("");
                   setSelectedFilter("Todos");
                   setSearch("");
-                  setSortBy("name");
+                  setSortBy("recommended");
                 }}
               >
                 Limpar filtros
