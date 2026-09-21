@@ -206,7 +206,13 @@ export function CatalogClient({ products }: CatalogClientProps) {
       return matchesBrand && matchesCategory && matchesSearch;
     });
 
-    if (sortBy === "recommended") return result;
+    if (sortBy === "recommended") {
+      if (activeFilter !== "Todos") return result;
+      return result.sort((left, right) =>
+        left.brand.name.localeCompare(right.brand.name, "pt-PT", { sensitivity: "base" }) ||
+        left.name.localeCompare(right.name, "pt-PT", { sensitivity: "base" }),
+      );
+    }
 
     return result.sort((left, right) => {
       if (sortBy === "recent") {
