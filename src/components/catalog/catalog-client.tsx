@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { ChevronDown, Clock3, Search, ShoppingBag, X } from "lucide-react";
+import { Clock3, Search, ShoppingBag, X } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useCart } from "@/components/providers/cart-provider";
 import { formatPrice } from "@/lib/format";
@@ -23,6 +23,12 @@ type CatalogClientProps = {
 };
 
 type SortOption = "recommended" | "price-asc" | "price-desc" | "recent";
+const sortOptions: { value: SortOption; label: string }[] = [
+  { value: "recommended", label: "Recomendados" },
+  { value: "price-asc", label: "Preço: mais baixo primeiro" },
+  { value: "price-desc", label: "Preço: mais alto primeiro" },
+  { value: "recent", label: "Mais recentes" },
+];
 type CatalogFilter = "Todos" | "Homem" | "Mulher" | "Unissexo" | "Decants" | "Kits" | "Corpo" | "Casa";
 
 const catalogFilters: CatalogFilter[] = ["Todos", "Homem", "Mulher", "Unissexo", "Decants", "Kits", "Corpo", "Casa"];
@@ -129,7 +135,6 @@ export function CatalogClient({ products }: CatalogClientProps) {
   const [sortBy, setSortBy] = useState<SortOption>("recommended");
   const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
   const [selectedSizes, setSelectedSizes] = useState<Record<string, ProductSizeValue>>({});
-  const [filtersOpen, setFiltersOpen] = useState(false);
   const trackedViewContentId = useRef<string | null>(null);
   const [toast, setToast] = useState<{
     message: string;
@@ -375,8 +380,7 @@ export function CatalogClient({ products }: CatalogClientProps) {
       ) : null}
 
       <section className="rounded-[1.6rem] border border-[color:var(--line)] bg-[linear-gradient(180deg,_rgba(255,255,255,0.9),_rgba(253,248,241,0.98))] p-3 shadow-[0_14px_34px_rgba(92,68,47,0.07)] sm:p-4">
-        <div className="flex items-center gap-2.5">
-          <div className="relative min-w-0 flex-1">
+        <div className="relative">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
               value={search}
@@ -384,17 +388,6 @@ export function CatalogClient({ products }: CatalogClientProps) {
               placeholder="Pesquisar perfumes..."
               className="h-11 w-full rounded-full border border-[color:var(--line)] bg-white px-11 text-base outline-none transition focus:border-[color:var(--gold)] md:text-sm"
             />
-          </div>
-          <button
-            type="button"
-            onClick={() => setFiltersOpen((current) => !current)}
-            className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full border border-[color:var(--gold)] bg-white px-4 text-sm font-semibold text-[color:var(--gold)] shadow-[0_8px_18px_rgba(185,154,118,0.08)]"
-          >
-            <span>Filtros</span>
-            <ChevronDown
-              className={`h-4 w-4 transition-transform ${filtersOpen ? "rotate-180" : ""}`}
-            />
-          </button>
         </div>
 
         <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Filtrar por categoria">
@@ -408,39 +401,24 @@ export function CatalogClient({ products }: CatalogClientProps) {
           </select>
         </div>
 
-        {filtersOpen ? (
-          <>
-            <div className="mt-3 rounded-[1.2rem] border border-[rgba(185,154,118,0.18)] bg-white/90 p-3">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-                <label htmlFor="catalog-sort" className="text-sm font-medium text-slate-600">Ordenar por</label>
-                <select
-                  id="catalog-sort"
-                  value={sortBy}
-                  onChange={(event) => setSortBy(event.target.value as SortOption)}
-                  className="h-10 min-w-0 w-full rounded-full border border-[color:var(--line)] bg-white px-4 text-sm outline-none sm:w-auto"
-                >
-                  <option value="recommended">Recomendados</option>
-                  <option value="price-asc">Preço: mais baixo primeiro</option>
-                  <option value="price-desc">Preço: mais alto primeiro</option>
-                  <option value="recent">Mais recentes</option>
-                </select>
-              </div>
-              <button
-                className="text-left text-sm text-[color:var(--atlantic)] underline-offset-4 hover:underline"
-                onClick={() => {
-                  setSelectedBrand("");
-                  setSelectedFilter("Todos");
-                  setSearch("");
-                  setSortBy("recommended");
-                }}
-              >
-                Limpar filtros
-              </button>
-            </div>
-            </div>
-          </>
-        ) : null}
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+          <span className="shrink-0 text-sm font-medium text-slate-600">Ordenar por</span>
+          <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Ordenar produtos">
+            {sortOptions.map((option) => <button key={option.value} type="button" onClick={() => setSortBy(option.value)} aria-pressed={sortBy === option.value} className={`shrink-0 rounded-full border px-3.5 py-2 text-xs font-medium transition sm:text-sm ${sortBy === option.value ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-white" : "border-[color:var(--line)] bg-white text-slate-700 hover:border-[color:var(--gold)]"}`}>{option.label}</button>)}
+          </div>
+        </div>
+        <button
+          type="button"
+          className="mt-2 text-sm text-[color:var(--atlantic)] underline-offset-4 hover:underline"
+          onClick={() => {
+            setSelectedBrand("");
+            setSelectedFilter("Todos");
+            setSearch("");
+            setSortBy("recommended");
+          }}
+        >
+          Limpar filtros
+        </button>
       </section>
 
       {filteredProducts.length === 0 ? (
