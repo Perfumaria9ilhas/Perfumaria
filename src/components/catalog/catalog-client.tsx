@@ -178,6 +178,27 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
   const selectedProductSize = selectedProduct
     ? getSelectedSize(selectedProduct)
     : "100ml";
+  const relatedProducts = useMemo(() => {
+    if (!selectedProduct) return [];
+
+    return products
+      .filter(
+        (product) =>
+          product.id !== selectedProduct.id &&
+          product.audience === selectedProduct.audience,
+      )
+      .sort((left, right) => {
+        const leftSameBrand = left.brandId === selectedProduct.brandId ? 0 : 1;
+        const rightSameBrand = right.brandId === selectedProduct.brandId ? 0 : 1;
+        return (
+          leftSameBrand - rightSameBrand ||
+          left.brand.name.localeCompare(right.brand.name, "pt-PT", { sensitivity: "base" }) ||
+          left.name.localeCompare(right.name, "pt-PT", { sensitivity: "base" })
+        );
+      })
+      .slice(0, 3);
+  }, [products, selectedProduct]);
+  const modalContentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!selectedProduct) {
@@ -287,6 +308,13 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
     return `https://wa.me/${whatsappNumber.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`;
   }
 
+  function openProduct(product: CatalogProduct) {
+    setSelectedProduct(product);
+    window.requestAnimationFrame(() => {
+      modalContentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }
+
   return (
     <div className="space-y-8">
       {toast ? <Toast message={toast.message} tone={toast.tone} /> : null}
@@ -299,7 +327,7 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
             className="flex max-h-[88svh] w-full max-w-[32rem] flex-col overflow-hidden rounded-[1.55rem] border border-[color:var(--line)] bg-white shadow-[0_25px_80px_rgba(43,30,18,0.28)]"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="min-h-0 space-y-3 overflow-y-auto overscroll-contain p-4 sm:p-5">
+            <div ref={modalContentRef} className="min-h-0 space-y-3 overflow-y-auto overscroll-contain p-4 sm:p-5">
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-2">
                   <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--atlantic)]">
@@ -410,6 +438,39 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
               <div className="whitespace-pre-line text-sm leading-7 text-slate-600">
                 {selectedProduct.description}
               </div>
+              {relatedProducts.length > 0 ? (
+                <section className="border-t border-[color:var(--line)] pt-4">
+                  <h4 className="font-serif text-xl text-[color:var(--ink)]">Também pode gostar</h4>
+                  <div className="mt-3 grid grid-cols-3 gap-2 sm:gap-3">
+                    {relatedProducts.map((product) => (
+                      <button
+                        key={product.id}
+                        type="button"
+                        onClick={() => openProduct(product)}
+                        className="min-w-0 rounded-[1rem] border border-[color:var(--line)] bg-[color:var(--sand-soft)] p-2 text-left transition hover:border-[color:var(--gold)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gold)]"
+                        aria-label={`Ver ${product.name}`}
+                      >
+                        <div className="relative h-20 overflow-hidden rounded-xl bg-white sm:h-24">
+                          <ProductImage
+                            src={product.imageUrl}
+                            alt={product.name}
+                            sizes="(max-width: 640px) 30vw, 140px"
+                          />
+                        </div>
+                        <p className="mt-2 line-clamp-2 text-xs font-semibold leading-4 text-[color:var(--ink)]">
+                          {product.name}
+                        </p>
+                        <p className="mt-1 truncate text-[0.65rem] uppercase tracking-[0.08em] text-[color:var(--atlantic)]">
+                          {product.brand.name}
+                        </p>
+                        <p className="mt-1 text-xs font-semibold text-[color:var(--ink)]">
+                          {formatPrice(getDisplayPrice(product, "100ml"))}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
             </div>
           </div>
         </div>
@@ -493,7 +554,7 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
               ) : null}
               <button
                 type="button"
-                onClick={() => setSelectedProduct(product)}
+                onClick={() => openProduct(product)}
                 className="relative h-[168px] bg-[radial-gradient(circle_at_top,_rgba(183,146,107,0.18),_transparent_58%),linear-gradient(180deg,_#fffaf3,_#f4e7d6)] text-left sm:h-[190px] md:h-[220px]"
               >
                 <div className="relative h-full w-full overflow-hidden">
