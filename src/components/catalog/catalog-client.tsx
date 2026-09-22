@@ -11,8 +11,6 @@ import { getProductAudienceLabel } from "@/lib/product-audience";
 import { getProductConcentrationDetails } from "@/lib/product-concentration";
 import {
   buildCartLineId,
-  FIVE_ML_PRICE_IN_CENTS,
-  TEN_ML_PRICE_IN_CENTS,
   getProductSizeLabel,
   type ProductSizeValue,
 } from "@/lib/product-sizes";
@@ -58,12 +56,17 @@ function getCatalogProductSize(product: CatalogProduct, filter: CatalogFilter, s
   return selectedSizes[product.id] ?? "100ml";
 }
 
-function getDisplayPrice(product: CatalogProduct, size: ProductSizeValue) {
-  if (size === "5ml") return FIVE_ML_PRICE_IN_CENTS;
-  if (size === "10ml") return TEN_ML_PRICE_IN_CENTS;
+function getBottlePrice(product: CatalogProduct) {
   return product.salePriceInCents && product.salePriceInCents < product.priceInCents
     ? product.salePriceInCents
     : product.priceInCents;
+}
+
+function getDisplayPrice(product: CatalogProduct, size: ProductSizeValue) {
+  const hasPremiumDecantPrice = getBottlePrice(product) >= 5500;
+  if (size === "5ml") return hasPremiumDecantPrice ? 450 : 350;
+  if (size === "10ml") return hasPremiumDecantPrice ? 750 : 650;
+  return getBottlePrice(product);
 }
 
 function getBottleSizeLabel(product: CatalogProduct) {
@@ -176,7 +179,7 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
     selectedProduct?.productType?.name ?? selectedProduct?.concentration ?? "EDP",
   );
   const selectedProductSize = selectedProduct
-    ? getSelectedSize(selectedProduct)
+    ? selectedSizes[selectedProduct.id] ?? "100ml"
     : "100ml";
   const relatedProducts = useMemo(() => {
     if (!selectedProduct) return [];
@@ -309,6 +312,7 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
   }
 
   function openProduct(product: CatalogProduct) {
+    setSelectedSizes((current) => ({ ...current, [product.id]: "100ml" }));
     setSelectedProduct(product);
     window.requestAnimationFrame(() => {
       modalContentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
@@ -396,7 +400,7 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
                         : "border-[color:var(--line)] bg-[color:var(--sand-soft)] text-[color:var(--ink)]"
                     }`}
                   >
-                    10 ml · {formatPrice(TEN_ML_PRICE_IN_CENTS)}
+                    10 ml · {formatPrice(getDisplayPrice(selectedProduct, "10ml"))}
                   </button>
                 ) : null}
                 {selectedProduct.availableInFiveMl ? (
@@ -409,7 +413,7 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
                         : "border-[color:var(--line)] bg-[color:var(--sand-soft)] text-[color:var(--ink)]"
                     }`}
                   >
-                    5 ml · {formatPrice(FIVE_ML_PRICE_IN_CENTS)}
+                    5 ml · {formatPrice(getDisplayPrice(selectedProduct, "5ml"))}
                   </button>
                 ) : null}
               </div>
@@ -421,7 +425,7 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
               </p>
               {selectedProduct.stock > 0 ? <button
                 type="button"
-                onClick={() => handleAddToCart(selectedProduct)}
+                onClick={() => handleAddToCart(selectedProduct, selectedProductSize)}
                 className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-[color:var(--atlantic)] px-5 py-3 text-sm font-semibold text-white"
               >
                 Adicionar ao carrinho
