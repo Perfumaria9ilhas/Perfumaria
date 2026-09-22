@@ -65,6 +65,7 @@ model Product {
   description      String
   inspiredBy       String?
   durationLabel    String?
+  sizeLabel        String            @default("100 ml")
   imageUrl         String
   priceInCents     Int
   salePriceInCents Int?

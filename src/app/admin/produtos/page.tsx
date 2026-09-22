@@ -334,6 +334,13 @@ export default async function AdminProductsPage({
               className="h-12 rounded-2xl border px-4"
               required
             />
+            <input
+              name="sizeLabel"
+              defaultValue="100 ml"
+              placeholder="Tamanho (ex: 100 ml, 200 g ou 4 × 25 ml)"
+              className="h-12 rounded-2xl border px-4"
+              required
+            />
             <label className="flex min-h-12 items-center rounded-2xl border border-dashed px-4 text-sm text-slate-500 md:col-span-2">
               <input name="imageFile" type="file" accept="image/*" className="w-full" />
             </label>
@@ -648,6 +655,13 @@ export default async function AdminProductsPage({
                             name="stock"
                             type="number"
                             defaultValue={product.stock}
+                            className="h-12 rounded-2xl border px-4"
+                            required
+                          />
+                          <input
+                            name="sizeLabel"
+                            defaultValue={product.sizeLabel}
+                            placeholder="Tamanho (ex: 100 ml)"
                             className="h-12 rounded-2xl border px-4"
                             required
                           />

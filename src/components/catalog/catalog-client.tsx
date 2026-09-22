@@ -67,10 +67,11 @@ function getDisplayPrice(product: CatalogProduct, size: ProductSizeValue) {
 }
 
 function getBottleSizeLabel(product: CatalogProduct) {
+  if (product.sizeLabel?.trim()) return product.sizeLabel.trim();
   const setSize = product.name.match(/\b(\d+)\s*[×x]\s*(\d+)\s*ml\b/i);
   if (setSize) return `${setSize[1]} × ${setSize[2]} ml`;
   const volume = product.name.match(/\b(\d+)\s*(ml|g)\b/i);
-  return volume ? `${volume[1]} ${volume[2].toLowerCase()}` : "Frasco";
+  return volume ? `${volume[1]} ${volume[2].toLowerCase()}` : "100 ml";
 }
 
 function getSelectedSizeLabel(product: CatalogProduct, size: ProductSizeValue) {
