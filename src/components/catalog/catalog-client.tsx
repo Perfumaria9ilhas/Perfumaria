@@ -6,6 +6,7 @@ import { Clock3, MessageCircle, Search, Share2, ShoppingBag, X } from "lucide-re
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCart } from "@/components/providers/cart-provider";
 import { formatPrice } from "@/lib/format";
+import { productMatchesCatalogSearch } from "@/lib/catalog-search";
 import { buildMetaProductPayload, trackMetaEvent } from "@/lib/meta-pixel";
 import { getProductAudienceLabel } from "@/lib/product-audience";
 import { getProductConcentrationDetails } from "@/lib/product-concentration";
@@ -256,14 +257,10 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
   }, [selectedProduct]);
 
   const filteredProducts = useMemo(() => {
-    const query = search.toLowerCase().trim();
-
     const result = products.filter((product) => {
       const matchesBrand = !selectedBrand || product.brandId === selectedBrand;
       const matchesCategory = matchesCatalogFilter(product, activeFilter);
-      const matchesSearch =
-        product.name.toLowerCase().includes(query) ||
-        product.brand.name.toLowerCase().includes(query);
+      const matchesSearch = productMatchesCatalogSearch(product, search);
 
       return matchesBrand && matchesCategory && matchesSearch;
     });
