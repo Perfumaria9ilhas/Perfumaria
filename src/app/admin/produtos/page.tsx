@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { deleteProduct, saveProduct } from "@/actions/admin";
 import { AdminShell } from "@/components/admin/admin-shell";
+import { HomeFeaturedProducts } from "@/components/admin/home-featured-products";
 import { requireAdmin } from "@/lib/auth";
 import { formatPrice } from "@/lib/format";
 import { getProductAudienceLabel, productAudienceOptions } from "@/lib/product-audience";
@@ -203,7 +204,7 @@ function getMlStatusText(availableInFiveMl: boolean, availableInTenMl: boolean, 
 export default async function AdminProductsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ marca?: string; tipo?: string; q?: string }>;
+  searchParams?: Promise<{ marca?: string; tipo?: string; q?: string; preferidos?: string }>;
 }) {
   await requireAdmin();
 
@@ -263,6 +264,20 @@ export default async function AdminProductsPage({
       description="Gerir catalogo, fotografias, prioridade de exibicao, descontos e estado de cada produto."
     >
       <div className="space-y-6">
+        <HomeFeaturedProducts
+          products={products
+            .filter((product) => product.active)
+            .map((product) => ({
+              id: product.id,
+              name: product.name,
+              brandName: product.brand.name,
+            }))}
+          initialSelectedIds={products
+            .filter((product) => product.active && product.featured)
+            .map((product) => product.id)}
+          saved={params.preferidos === "guardados"}
+        />
+
         <section className="rounded-[2rem] border border-[color:var(--line)] bg-white p-6 shadow-sm">
           <h2 className="font-serif text-3xl text-[color:var(--ink)]">Novo produto</h2>
           <form
@@ -360,7 +375,7 @@ export default async function AdminProductsPage({
               placeholder="Duracao / relogio (ex: 6-8h)"
               className="h-12 rounded-2xl border px-4 md:col-span-2"
             />
-            <div className="grid gap-3 md:col-span-2 md:grid-cols-5">
+            <div className="grid gap-3 md:col-span-2 md:grid-cols-4">
               <label className="flex items-center gap-3 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-700">
                 <input
                   name="availableInFiveMl"
@@ -377,10 +392,6 @@ export default async function AdminProductsPage({
               <label className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
                 <input name="active" type="checkbox" defaultChecked className="h-4 w-4" />
                 Ativo
-              </label>
-              <label className="flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-                <input name="featured" type="checkbox" className="h-4 w-4" />
-                Destacado
               </label>
               <label className="flex items-center gap-3 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-700">
                 <input name="bestseller" type="checkbox" className="h-4 w-4" />
@@ -691,7 +702,7 @@ export default async function AdminProductsPage({
                             placeholder="Duracao / relogio (ex: 6-8h)"
                             className="h-12 rounded-2xl border px-4 md:col-span-2"
                           />
-                          <div className="grid gap-3 md:col-span-2 md:grid-cols-5">
+                          <div className="grid gap-3 md:col-span-2 md:grid-cols-4">
                             <label className="flex items-center gap-3 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-700">
                               <input
                                 name="availableInFiveMl"
@@ -718,15 +729,6 @@ export default async function AdminProductsPage({
                                 className="h-4 w-4"
                               />
                               Ativo
-                            </label>
-                            <label className="flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-                              <input
-                                name="featured"
-                                type="checkbox"
-                                defaultChecked={product.featured}
-                                className="h-4 w-4"
-                              />
-                              Destacado
                             </label>
                             <label className="flex items-center gap-3 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-700">
                               <input

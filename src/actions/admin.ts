@@ -60,7 +60,6 @@ const productSchema = z.object({
   availableInFiveMl: z.boolean().default(false),
   availableInTenMl: z.boolean().default(false),
   active: z.boolean().default(false),
-  featured: z.boolean().default(false),
   bestseller: z.boolean().default(false),
 });
 
@@ -430,7 +429,6 @@ export async function saveProduct(formData: FormData) {
     availableInFiveMl: formData.get("availableInFiveMl") === "on",
     availableInTenMl: formData.get("availableInTenMl") === "on",
     active: formData.get("active") === "on",
-    featured: formData.get("featured") === "on",
     bestseller: formData.get("bestseller") === "on",
   });
 
@@ -482,14 +480,13 @@ export async function saveProduct(formData: FormData) {
     availableInFiveMl: parsed.availableInFiveMl,
     availableInTenMl: parsed.availableInTenMl,
     active: parsed.active,
-    featured: parsed.featured,
     bestseller: parsed.bestseller,
   };
 
   if (parsed.id) {
     await prisma.product.update({
       where: { id: parsed.id },
-      data,
+      data: parsed.active ? data : { ...data, featured: false },
     });
   } else {
     await prisma.product.create({
@@ -502,6 +499,39 @@ export async function saveProduct(formData: FormData) {
   revalidatePath("/catalogo");
   revalidatePath("/");
   redirect("/admin/produtos?saved=1");
+}
+
+export async function saveHomeFeaturedProducts(formData: FormData) {
+  await requireAdmin();
+
+  const productIds = [...new Set(formData.getAll("productIds").map(String).filter(Boolean))];
+  if (productIds.length > 5) {
+    throw new Error("Pode selecionar no máximo 5 produtos para a página inicial.");
+  }
+
+  const activeProducts = await prisma.product.findMany({
+    where: { id: { in: productIds }, active: true },
+    select: { id: true },
+  });
+
+  if (activeProducts.length !== productIds.length) {
+    throw new Error("Apenas produtos ativos podem ser preferidos na página inicial.");
+  }
+
+  await prisma.$transaction([
+    prisma.product.updateMany({
+      where: { featured: true },
+      data: { featured: false },
+    }),
+    prisma.product.updateMany({
+      where: { id: { in: productIds }, active: true },
+      data: { featured: true },
+    }),
+  ]);
+
+  revalidatePath("/admin/produtos");
+  revalidatePath("/");
+  redirect("/admin/produtos?preferidos=guardados");
 }
 
 export async function deleteProduct(formData: FormData) {

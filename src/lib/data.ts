@@ -37,15 +37,15 @@ export async function getHomeData() {
     prisma.product.findMany({
       where: {
         active: true,
-        OR: [{ featured: true }, { bestseller: true }],
+        featured: true,
       },
       include: {
         brand: true,
         category: true,
         productType: true,
       },
-      orderBy: [{ bestseller: "desc" }, { featured: "desc" }, { updatedAt: "desc" }],
-      take: 18,
+      orderBy: [{ brand: { name: "asc" } }, { name: "asc" }],
+      take: 5,
     }),
     prisma.storeReview.findMany({
       where: { approved: true },
