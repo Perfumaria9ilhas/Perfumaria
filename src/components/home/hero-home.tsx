@@ -52,6 +52,10 @@ export function HeroHome({
             {description}
           </p>
 
+          <p className="mt-3 max-w-lg text-xs font-medium leading-5 text-[color:var(--atlantic)] sm:text-sm sm:text-white/90">
+            Escolha os seus perfumes e finalize a encomenda pelo WhatsApp.
+          </p>
+
           <div className="mt-5 flex flex-wrap gap-2.5 sm:mt-7 sm:gap-3">
             <Link
               href="/catalogo"

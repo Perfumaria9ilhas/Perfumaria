@@ -58,16 +58,21 @@ export default async function Home() {
         ]}
       />
 
-      <section className="rounded-[2.2rem] border border-[rgba(194,162,119,0.16)] bg-white/92 px-6 py-6 shadow-[0_18px_38px_rgba(95,71,49,0.05)] lg:px-8">
-        <div className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr] lg:items-center">
-          <div className="space-y-4">
-            <p className="text-xs uppercase tracking-[0.34em] text-[color:var(--gold)]">
-              SEO Local
-            </p>
-            <h2 className="text-[2rem] leading-tight text-[color:var(--ink)] sm:text-[2.5rem]">
+      <FeaturedProductsSlider
+        products={featuredProducts}
+        eyebrow=""
+        title={settings.homeFeaturedTitle}
+        description={settings.homeFeaturedDescription}
+        buttonLabel={settings.homeFeaturedButtonLabel}
+      />
+
+      <section className="rounded-[1.6rem] border border-[rgba(194,162,119,0.14)] bg-white/75 px-5 py-4 shadow-[0_10px_24px_rgba(95,71,49,0.04)] lg:px-6">
+        <div className="grid gap-4 lg:grid-cols-[1.4fr_0.6fr] lg:items-center">
+          <div className="space-y-2">
+            <h2 className="text-[1.35rem] leading-tight text-[color:var(--ink)] sm:text-[1.65rem]">
               {"Perfumes \u00e1rabes originais na Ilha Terceira"}
             </h2>
-            <p className="max-w-3xl text-sm leading-7 text-slate-700 sm:text-base">
+            <p className="max-w-3xl text-sm leading-6 text-slate-600">
               {
                 "A Perfumaria 9 Ilhas, na Praia da Vit\u00f3ria, ajuda clientes da Ilha Terceira e de todo o arquip\u00e9lago dos A\u00e7ores a encontrar fragr\u00e2ncias \u00e1rabes originais com apoio pr\u00f3ximo por WhatsApp, entrega local e envios para Madeira e Portugal Continental."
               }
@@ -77,27 +82,13 @@ export default async function Home() {
           <div className="flex flex-wrap gap-3 lg:justify-end">
             <Link
               href="/perfumes-arabes-acores"
-              className="rounded-full bg-[color:var(--atlantic)] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90"
+              className="rounded-full border border-[color:var(--line)] bg-[color:var(--sand-soft)] px-4 py-2.5 text-sm font-semibold text-[color:var(--ink)] transition hover:border-[color:var(--gold)]"
             >
-              {"Ver perfumes \u00e1rabes nos A\u00e7ores"}
-            </Link>
-            <Link
-              href="/sobre-nos"
-              className="rounded-full border border-[color:var(--line)] bg-[color:var(--sand-soft)] px-5 py-3 text-sm font-semibold text-[color:var(--ink)] transition hover:border-[color:var(--gold)]"
-            >
-              Conhecer a perfumaria
+              Saber mais
             </Link>
           </div>
         </div>
       </section>
-
-      <FeaturedProductsSlider
-        products={featuredProducts}
-        eyebrow={settings.homeFeaturedEyebrow}
-        title={settings.homeFeaturedTitle}
-        description={settings.homeFeaturedDescription}
-        buttonLabel={settings.homeFeaturedButtonLabel}
-      />
       <SampleHome
         imageUrl={settings.decantsImageUrl}
         eyebrow={settings.homeDecantsEyebrow}

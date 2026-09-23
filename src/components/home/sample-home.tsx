@@ -19,7 +19,7 @@ export function SampleHome({
 }: SampleHomeProps) {
   return (
     <section className="relative overflow-hidden rounded-[2.2rem] border border-[rgba(194,162,119,0.16)] bg-[color:var(--sand-soft)] shadow-[0_18px_38px_rgba(95,71,49,0.06)]">
-      <div className="relative min-h-[430px] lg:min-h-[360px]">
+      <div className="relative min-h-[340px] sm:min-h-[380px] lg:min-h-[360px]">
         {imageUrl ? (
           <Image
             src={imageUrl}
@@ -35,10 +35,10 @@ export function SampleHome({
         <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/35 to-black/10" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent" />
 
-        <div className="relative flex min-h-[430px] flex-col px-6 py-7 text-white lg:min-h-[360px] lg:px-12">
+        <div className="relative flex min-h-[340px] flex-col px-5 py-6 text-white sm:min-h-[380px] sm:px-6 sm:py-7 lg:min-h-[360px] lg:px-12">
           <div className="max-w-2xl">
             <h2
-  className="text-[2.2rem] font-semibold leading-[1.05] sm:text-[2.8rem]"
+  className="text-[1.9rem] font-semibold leading-[1.05] sm:text-[2.8rem]"
   style={{
     color: "#ffffff",
     textShadow: "0 4px 12px rgba(0,0,0,0.8)",

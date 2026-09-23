@@ -254,9 +254,11 @@ export function FeaturedProductsSlider({
       <section className="space-y-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-2">
-            <p className="text-xs uppercase tracking-[0.34em] text-[color:var(--gold)]">
-              {eyebrow}
-            </p>
+            {eyebrow ? (
+              <p className="text-xs uppercase tracking-[0.34em] text-[color:var(--gold)]">
+                {eyebrow}
+              </p>
+            ) : null}
             <h2 className="text-[2rem] leading-tight text-[color:var(--ink)] sm:text-[2.7rem]">
               {title}
             </h2>

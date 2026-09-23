@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { submitStoreReview } from "@/actions/admin";
 
 type Review = {
@@ -128,7 +129,13 @@ export function TrustHome({ reviews, eyebrow, title }: TrustHomeProps) {
           )}
         </div>
 
-        <div className="flex justify-center">
+        <div className="flex flex-wrap justify-center gap-3">
+          <Link
+            href="/catalogo"
+            className="inline-flex items-center justify-center rounded-full bg-[color:var(--atlantic)] px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90"
+          >
+            Ver Catálogo
+          </Link>
           <button
             type="button"
             onClick={() => setIsModalOpen(true)}
