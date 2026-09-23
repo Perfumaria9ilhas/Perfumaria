@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { Clock3, MessageCircle, Search, Share2, ShoppingBag, X } from "lucide-react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCart } from "@/components/providers/cart-provider";
 import { formatPrice } from "@/lib/format";
 import { buildMetaProductPayload, trackMetaEvent } from "@/lib/meta-pixel";
@@ -146,6 +146,7 @@ function Toast({
 
 export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) {
   const { addItem } = useCart();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [selectedBrand, setSelectedBrand] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<CatalogFilter | null>(null);
@@ -209,9 +210,9 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
 
   useEffect(() => {
     if (selectedProductSlug && !selectedProduct) {
-      window.history.replaceState({ ...window.history.state }, "", "/catalogo");
+      router.replace("/catalogo", { scroll: false });
     }
-  }, [selectedProduct, selectedProductSlug]);
+  }, [router, selectedProduct, selectedProductSlug]);
 
   useEffect(() => {
     if (!selectedProduct) return;
@@ -331,23 +332,14 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
   function openProduct(product: CatalogProduct) {
     setSelectedSizes((current) => ({ ...current, [product.id]: "100ml" }));
     const url = `/catalogo?produto=${encodeURIComponent(product.slug)}`;
-    window.history.pushState(
-      { ...window.history.state, catalogProductModal: true },
-      "",
-      url,
-    );
+    router.push(url, { scroll: false });
     window.requestAnimationFrame(() => {
       modalContentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
     });
   }
 
   function closeProduct() {
-    if (window.history.state?.catalogProductModal) {
-      window.history.back();
-      return;
-    }
-
-    window.history.replaceState({ ...window.history.state }, "", "/catalogo");
+    router.replace("/catalogo", { scroll: false });
   }
 
   async function shareProduct(product: CatalogProduct) {
