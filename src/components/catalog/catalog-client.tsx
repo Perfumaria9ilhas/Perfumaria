@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { Clock3, MessageCircle, Search, ShoppingBag, X } from "lucide-react";
+import { Clock3, MessageCircle, Search, Share2, ShoppingBag, X } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useCart } from "@/components/providers/cart-provider";
 import { formatPrice } from "@/lib/format";
@@ -151,7 +151,6 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
   const [selectedFilter, setSelectedFilter] = useState<CatalogFilter | null>(null);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("recommended");
-  const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
   const [selectedSizes, setSelectedSizes] = useState<Record<string, ProductSizeValue>>({});
   const trackedViewContentId = useRef<string | null>(null);
   const [toast, setToast] = useState<{
@@ -165,6 +164,11 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
   }, [searchParams]);
   const activeFilter = selectedFilter ?? filterFromQuery;
   const availableBrands = useMemo(() => [...new Map(products.map((product) => [product.brand.id, product.brand])).values()].sort((a, b) => a.name.localeCompare(b.name, "pt-PT")), [products]);
+  const selectedProductSlug = searchParams.get("produto");
+  const selectedProduct = useMemo(
+    () => products.find((product) => product.slug === selectedProductSlug) ?? null,
+    [products, selectedProductSlug],
+  );
 
   useEffect(() => {
     if (!toast) {
@@ -202,6 +206,19 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
       .slice(0, 3);
   }, [products, selectedProduct]);
   const modalContentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (selectedProductSlug && !selectedProduct) {
+      window.history.replaceState({ ...window.history.state }, "", "/catalogo");
+    }
+  }, [selectedProduct, selectedProductSlug]);
+
+  useEffect(() => {
+    if (!selectedProduct) return;
+    window.requestAnimationFrame(() => {
+      modalContentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }, [selectedProduct]);
 
   useEffect(() => {
     if (!selectedProduct) {
@@ -313,10 +330,54 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
 
   function openProduct(product: CatalogProduct) {
     setSelectedSizes((current) => ({ ...current, [product.id]: "100ml" }));
-    setSelectedProduct(product);
+    const url = `/catalogo?produto=${encodeURIComponent(product.slug)}`;
+    window.history.pushState(
+      { ...window.history.state, catalogProductModal: true },
+      "",
+      url,
+    );
     window.requestAnimationFrame(() => {
       modalContentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
     });
+  }
+
+  function closeProduct() {
+    if (window.history.state?.catalogProductModal) {
+      window.history.back();
+      return;
+    }
+
+    window.history.replaceState({ ...window.history.state }, "", "/catalogo");
+  }
+
+  async function shareProduct(product: CatalogProduct) {
+    const url = `${window.location.origin}/catalogo?produto=${encodeURIComponent(product.slug)}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${product.brand.name} ${product.name} | Perfumaria 9 Ilhas`,
+          text: `${product.brand.name} ${product.name}`,
+          url,
+        });
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      const input = document.createElement("textarea");
+      input.value = url;
+      input.style.position = "fixed";
+      input.style.opacity = "0";
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand("copy");
+      input.remove();
+    }
+    setToast({ message: "Link copiado", tone: "success" });
   }
 
   return (
@@ -325,7 +386,7 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
       {selectedProduct ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(43,30,18,0.55)] px-4 py-6"
-          onClick={() => setSelectedProduct(null)}
+          onClick={closeProduct}
         >
           <div
             className="flex max-h-[88svh] w-full max-w-[32rem] flex-col overflow-hidden rounded-[1.55rem] border border-[color:var(--line)] bg-white shadow-[0_25px_80px_rgba(43,30,18,0.28)]"
@@ -341,14 +402,24 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
                     {selectedProduct.name}
                   </h3>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setSelectedProduct(null)}
-                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[color:var(--line)] text-[color:var(--ink)]"
-                  aria-label="Fechar"
-                >
-                  <X className="h-4 w-4" />
-                </button>
+                <div className="flex shrink-0 items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => shareProduct(selectedProduct)}
+                    className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-[color:var(--line)] px-3 text-xs font-medium text-[color:var(--ink)]"
+                  >
+                    <Share2 className="h-4 w-4" />
+                    Partilhar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={closeProduct}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--line)] text-[color:var(--ink)]"
+                    aria-label="Fechar"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
               <div className="relative h-48 overflow-hidden rounded-[1.1rem] bg-[radial-gradient(circle_at_top,_rgba(183,146,107,0.18),_transparent_58%),linear-gradient(180deg,_#fffaf3,_#f4e7d6)] sm:h-64">
                 <ProductImage key={selectedProduct.id} src={selectedProduct.imageUrl} alt={selectedProduct.name} priority sizes="(max-width: 640px) 90vw, 480px" />
