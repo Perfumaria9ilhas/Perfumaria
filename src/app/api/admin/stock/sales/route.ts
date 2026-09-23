@@ -129,6 +129,62 @@ export async function PATCH(request: Request) {
   return NextResponse.json({ success: true });
 }
 
+export async function DELETE(request: Request) {
+  await requireAdmin();
+  const parsed = z.object({ saleGroupId: z.string().min(1) }).safeParse(await request.json());
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Venda inválida." }, { status: 400 });
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      const movements = await tx.stockMovement.findMany({
+        where: {
+          type: StockMovementType.SALE,
+          OR: [
+            { saleGroupId: parsed.data.saleGroupId },
+            { id: parsed.data.saleGroupId },
+          ],
+        },
+      });
+
+      if (!movements.length) throw new Error("Venda não encontrada.");
+
+      const stockToRestore = new Map<string, number>();
+      for (const movement of movements) {
+        if (movement.reason !== StockMovementReason.SALE) continue;
+        const deductedQuantity = Math.max(0, movement.previousStock - movement.resultingStock);
+        stockToRestore.set(
+          movement.productId,
+          (stockToRestore.get(movement.productId) ?? 0) + deductedQuantity,
+        );
+      }
+
+      for (const [productId, quantity] of stockToRestore) {
+        if (quantity > 0) {
+          await tx.product.update({
+            where: { id: productId },
+            data: { stock: { increment: quantity } },
+          });
+        }
+      }
+
+      await tx.stockMovement.deleteMany({
+        where: { id: { in: movements.map((movement) => movement.id) } },
+      });
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Não foi possível eliminar a venda." },
+      { status: 400 },
+    );
+  }
+
+  revalidatePath("/admin/stock");
+  revalidatePath("/catalogo");
+  return NextResponse.json({ success: true });
+}
+
 export async function POST(request: Request) {
   await requireAdmin();
   const parsed = schema.safeParse(await request.json());

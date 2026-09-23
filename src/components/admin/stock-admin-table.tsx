@@ -134,6 +134,7 @@ export function StockAdminTable({
   const [expandedSaleId, setExpandedSaleId] = useState<string | null>(null);
   const [expandedCustomerKey, setExpandedCustomerKey] = useState<string | null>(null);
   const [savingSaleId, setSavingSaleId] = useState<string | null>(null);
+  const [deletingSaleId, setDeletingSaleId] = useState<string | null>(null);
   const [importHasErrors, setImportHasErrors] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const deferredQuery = useDeferredValue(searchTerm);
@@ -900,6 +901,27 @@ export function StockAdminTable({
       setBanner({ tone: "error", message: error instanceof Error ? error.message : "Não foi possível guardar a venda." });
     } finally {
       setSavingSaleId(null);
+    }
+  }
+
+  async function deleteSale(sale: StockSaleRow) {
+    const saleDate = new Date(sale.createdAt).toLocaleDateString("pt-PT");
+    if (!window.confirm(`Eliminar a venda de ${sale.customerName}, de ${saleDate}, no valor de ${formatPrice(sale.totalInCents)}? Esta ação não pode ser anulada.`)) return;
+
+    setDeletingSaleId(sale.id);
+    setBanner(null);
+    try {
+      const response = await fetch("/api/admin/stock/sales", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ saleGroupId: sale.id }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error ?? "Não foi possível eliminar a venda.");
+      window.location.reload();
+    } catch (error) {
+      setBanner({ tone: "error", message: error instanceof Error ? error.message : "Não foi possível eliminar a venda." });
+      setDeletingSaleId(null);
     }
   }
 
@@ -2032,10 +2054,10 @@ export function StockAdminTable({
                           <td colSpan={6} className={`px-4 py-4 font-medium text-[color:var(--ink)] ${hasPendingSale ? "border-l-4 border-l-amber-500" : ""}`} title={hasPendingSale ? "Este cliente tem uma ou mais vendas por pagar" : undefined}>{group.customerName}</td>
                         </tr>
                         {expanded && group.sales.length === 1 ? (
-                          <SaleTableRows sale={group.sales[0]} expanded showSummary={false} onToggle={() => undefined} onStatusChange={(status) => updateSaleStatus(group.sales[0].id, status)} onDeliveryStatusChange={(status) => updateDeliveryStatus(group.sales[0].id, status)} onSave={(event) => saveSaleEdits(event, group.sales[0])} saving={savingSaleId === group.sales[0].id} products={rows.filter((row) => row.active)} />
+                          <SaleTableRows sale={group.sales[0]} expanded showSummary={false} onToggle={() => undefined} onStatusChange={(status) => updateSaleStatus(group.sales[0].id, status)} onDeliveryStatusChange={(status) => updateDeliveryStatus(group.sales[0].id, status)} onSave={(event) => saveSaleEdits(event, group.sales[0])} onDelete={() => deleteSale(group.sales[0])} saving={savingSaleId === group.sales[0].id} deleting={deletingSaleId === group.sales[0].id} products={rows.filter((row) => row.active)} />
                         ) : null}
                         {expanded && group.sales.length > 1 ? group.sales.map((sale) => (
-                          <SaleTableRows key={sale.id} sale={sale} expanded={expandedSaleId === sale.id} onToggle={() => setExpandedSaleId((current) => current === sale.id ? null : sale.id)} onStatusChange={(status) => updateSaleStatus(sale.id, status)} onDeliveryStatusChange={(status) => updateDeliveryStatus(sale.id, status)} onSave={(event) => saveSaleEdits(event, sale)} saving={savingSaleId === sale.id} products={rows.filter((row) => row.active)} />
+                          <SaleTableRows key={sale.id} sale={sale} expanded={expandedSaleId === sale.id} onToggle={() => setExpandedSaleId((current) => current === sale.id ? null : sale.id)} onStatusChange={(status) => updateSaleStatus(sale.id, status)} onDeliveryStatusChange={(status) => updateDeliveryStatus(sale.id, status)} onSave={(event) => saveSaleEdits(event, sale)} onDelete={() => deleteSale(sale)} saving={savingSaleId === sale.id} deleting={deletingSaleId === sale.id} products={rows.filter((row) => row.active)} />
                         )) : null}
                       </Fragment>;
                     })}
@@ -2381,7 +2403,9 @@ function SaleTableRows({
   onStatusChange,
   onDeliveryStatusChange,
   onSave,
+  onDelete,
   saving,
+  deleting,
   products,
   showSummary = true,
 }: {
@@ -2391,7 +2415,9 @@ function SaleTableRows({
   onStatusChange: (status: StockSaleStatus) => void;
   onDeliveryStatusChange: (status: StockDeliveryStatus) => void;
   onSave: (event: React.FormEvent<HTMLFormElement>) => void;
+  onDelete: () => void;
   saving: boolean;
+  deleting: boolean;
   products: AdminStockRow[];
   showSummary?: boolean;
 }) {
@@ -2432,7 +2458,10 @@ function SaleTableRows({
                   </div>
                 ))}
               </div>
-              <div className="flex justify-end"><button disabled={saving} className="rounded-full bg-[color:var(--atlantic)] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">{saving ? "A guardar..." : "Guardar alterações"}</button></div>
+              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <button type="button" onClick={onDelete} disabled={saving || deleting} className="inline-flex items-center justify-center gap-2 rounded-full border border-red-200 bg-red-50 px-5 py-3 text-sm font-semibold text-red-700 disabled:opacity-50"><Trash2 className="h-4 w-4" />{deleting ? "A eliminar..." : "Eliminar venda"}</button>
+                <button disabled={saving || deleting} className="rounded-full bg-[color:var(--atlantic)] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">{saving ? "A guardar..." : "Guardar alterações"}</button>
+              </div>
             </form>
           </td>
         </tr>
