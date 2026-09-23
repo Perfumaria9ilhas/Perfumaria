@@ -496,6 +496,7 @@ async function main() {
           availableInFiveMl: true,
           active: product.active,
           featured: product.featured,
+          homeFeatured: product.featured,
           bestseller: product.bestseller,
           brandId: brand.id,
           categoryId: category.id,

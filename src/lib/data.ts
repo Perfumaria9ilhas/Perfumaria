@@ -37,7 +37,7 @@ export async function getHomeData() {
     prisma.product.findMany({
       where: {
         active: true,
-        featured: true,
+        homeFeatured: true,
       },
       include: {
         brand: true,

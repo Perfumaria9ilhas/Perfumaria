@@ -60,6 +60,7 @@ const productSchema = z.object({
   availableInFiveMl: z.boolean().default(false),
   availableInTenMl: z.boolean().default(false),
   active: z.boolean().default(false),
+  featured: z.boolean().default(false),
   bestseller: z.boolean().default(false),
 });
 
@@ -429,6 +430,7 @@ export async function saveProduct(formData: FormData) {
     availableInFiveMl: formData.get("availableInFiveMl") === "on",
     availableInTenMl: formData.get("availableInTenMl") === "on",
     active: formData.get("active") === "on",
+    featured: formData.get("featured") === "on",
     bestseller: formData.get("bestseller") === "on",
   });
 
@@ -480,13 +482,14 @@ export async function saveProduct(formData: FormData) {
     availableInFiveMl: parsed.availableInFiveMl,
     availableInTenMl: parsed.availableInTenMl,
     active: parsed.active,
+    featured: parsed.featured,
     bestseller: parsed.bestseller,
   };
 
   if (parsed.id) {
     await prisma.product.update({
       where: { id: parsed.id },
-      data: parsed.active ? data : { ...data, featured: false },
+      data: parsed.active ? data : { ...data, homeFeatured: false },
     });
   } else {
     await prisma.product.create({
@@ -520,12 +523,12 @@ export async function saveHomeFeaturedProducts(formData: FormData) {
 
   await prisma.$transaction([
     prisma.product.updateMany({
-      where: { featured: true },
-      data: { featured: false },
+      where: { homeFeatured: true },
+      data: { homeFeatured: false },
     }),
     prisma.product.updateMany({
       where: { id: { in: productIds }, active: true },
-      data: { featured: true },
+      data: { homeFeatured: true },
     }),
   ]);
 
