@@ -6,7 +6,10 @@ import { Clock3, MessageCircle, Search, Share2, ShoppingBag, X } from "lucide-re
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCart } from "@/components/providers/cart-provider";
 import { formatPrice } from "@/lib/format";
-import { productMatchesCatalogSearch } from "@/lib/catalog-search";
+import {
+  normalizeCatalogSearchText,
+  productMatchesCatalogSearch,
+} from "@/lib/catalog-search";
 import { buildMetaProductPayload, trackMetaEvent } from "@/lib/meta-pixel";
 import { getProductAudienceLabel } from "@/lib/product-audience";
 import { getProductConcentrationDetails } from "@/lib/product-concentration";
@@ -266,6 +269,12 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
     });
 
     if (sortBy === "recommended") {
+      if (normalizeCatalogSearchText(search).length === 1) {
+        return result.sort((left, right) =>
+          left.name.localeCompare(right.name, "pt-PT", { sensitivity: "base" }),
+        );
+      }
+
       if (activeFilter !== "Todos") return result;
       return result.sort((left, right) =>
         left.brand.name.localeCompare(right.brand.name, "pt-PT", { sensitivity: "base" }) ||
