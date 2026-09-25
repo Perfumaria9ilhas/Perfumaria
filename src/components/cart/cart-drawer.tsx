@@ -100,13 +100,13 @@ export function CartDrawer() {
       ) : null}
 
       <aside
-        className={`cart-drawer fixed right-0 top-0 z-50 flex h-[100dvh] w-full max-w-md flex-col overflow-hidden border-l border-[color:var(--line)] bg-[color:var(--sand-soft)] shadow-2xl backdrop-blur transition-transform duration-300 ${
+        className={`cart-drawer fixed right-0 top-0 z-50 flex h-[100dvh] w-full max-w-full min-w-0 flex-col overflow-hidden border-l border-[color:var(--line)] bg-[color:var(--sand-soft)] shadow-2xl backdrop-blur transition-transform duration-300 sm:max-w-md ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <div className="border-b border-[color:var(--line)] bg-gradient-to-b from-white via-white to-[color:var(--sand-soft)]/70 px-6 py-5">
+        <div className="border-b border-[color:var(--line)] bg-gradient-to-b from-white via-white to-[color:var(--sand-soft)]/70 px-4 py-4 sm:px-6 sm:py-5">
           <div className="flex items-start justify-between gap-4">
-            <div className="space-y-3">
+            <div className="min-w-0 flex-1 space-y-3">
               <Image
                 src="/logo-9-ilhas.svg"
                 alt="9 Ilhas Perfumaria"
@@ -138,7 +138,7 @@ export function CartDrawer() {
           </div>
         </div>
 
-        <div className="cart-content min-h-0 flex-1 overflow-y-auto px-6 py-6 overscroll-contain">
+        <div className="cart-content min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-4 overscroll-contain sm:px-6 sm:py-6">
           {items.length === 0 ? (
             <div className="rounded-[2rem] border border-dashed border-[color:var(--line)] bg-white px-6 py-10 text-center text-sm leading-7 text-slate-600 shadow-[0_16px_40px_rgba(113,80,41,0.06)]">
               O carrinho está vazio. Adicione perfumes para preparar a sua encomenda.
@@ -148,7 +148,7 @@ export function CartDrawer() {
               {items.map((item) => (
                 <div
                   key={item.id}
-                  className="grid grid-cols-[78px_1fr] gap-4 rounded-[1.5rem] border border-[color:var(--line)] bg-white p-3 shadow-[0_12px_35px_rgba(113,80,41,0.08)] transition hover:shadow-[0_16px_40px_rgba(113,80,41,0.12)]"
+                  className="grid min-w-0 grid-cols-[64px_minmax(0,1fr)] gap-3 rounded-[1.5rem] border border-[color:var(--line)] bg-white p-3 shadow-[0_12px_35px_rgba(113,80,41,0.08)] transition hover:shadow-[0_16px_40px_rgba(113,80,41,0.12)] sm:grid-cols-[78px_minmax(0,1fr)] sm:gap-4"
                 >
                   <div className="relative aspect-square overflow-hidden rounded-[1.2rem] bg-[color:var(--sand-soft)]">
                     {item.imageUrl ? (
@@ -172,7 +172,7 @@ export function CartDrawer() {
                     )}
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="min-w-0 space-y-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 space-y-1">
                         <p className="text-[11px] uppercase tracking-[0.25em] text-[color:var(--atlantic)]">
@@ -241,7 +241,7 @@ export function CartDrawer() {
           )}
         </div>
 
-        <div className="cart-footer sticky bottom-0 border-t border-[color:var(--line)] bg-[color:var(--sand-soft)] px-6 py-5 shadow-[0_-14px_35px_rgba(113,80,41,0.08)]">
+        <div className="cart-footer sticky bottom-0 min-w-0 border-t border-[color:var(--line)] bg-[color:var(--sand-soft)] px-4 py-4 shadow-[0_-14px_35px_rgba(113,80,41,0.08)] sm:px-6 sm:py-5">
           <div className="mb-4 rounded-[1.75rem] border border-[color:var(--line)] bg-white p-4 shadow-[0_14px_35px_rgba(113,80,41,0.08)]">
             <div className="mb-4 flex items-center justify-between text-[color:var(--ink)]">
               <span className="text-sm uppercase tracking-[0.25em]">Total</span>

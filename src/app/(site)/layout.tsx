@@ -17,14 +17,14 @@ export default async function SiteLayout({
   ]);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen min-w-0 max-w-full overflow-x-clip">
       <SiteVisitTracker />
       <SiteHeader
         settings={settings}
         socialLinks={socialLinks}
         currentCustomer={currentCustomer}
       />
-      <main>{children}</main>
+      <main className="min-w-0 max-w-full">{children}</main>
       <SiteFooter settings={settings} socialLinks={socialLinks} />
       <FloatingWhatsApp />
     </div>

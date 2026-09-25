@@ -16,7 +16,9 @@ export function BrandLogo({
       <div
         className={cn(
           "relative mx-auto",
-          compact ? "h-12 w-[152px]" : "h-16 w-[236px] lg:h-[4.5rem] lg:w-[16.75rem]",
+          compact
+            ? "h-12 w-[clamp(7rem,39vw,9.5rem)]"
+            : "h-16 w-[min(236px,100%)] lg:h-[4.5rem] lg:w-[16.75rem]",
         )}
       >
         <Image

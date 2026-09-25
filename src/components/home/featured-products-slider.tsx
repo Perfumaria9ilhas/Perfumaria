@@ -162,11 +162,11 @@ export function FeaturedProductsSlider({
     <>
       {selectedProduct ? (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(43,30,18,0.55)] px-4 py-6"
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[rgba(43,30,18,0.55)] p-2 sm:px-4 sm:py-6"
           onClick={() => setSelectedProduct(null)}
         >
           <div
-            className="flex max-h-[88svh] w-full max-w-[32rem] flex-col overflow-hidden rounded-[1.55rem] border border-[color:var(--line)] bg-white shadow-[0_25px_80px_rgba(43,30,18,0.28)]"
+            className="flex max-h-[calc(100svh-1rem)] min-w-0 w-full max-w-[32rem] flex-col overflow-hidden rounded-[1.25rem] border border-[color:var(--line)] bg-white shadow-[0_25px_80px_rgba(43,30,18,0.28)] sm:max-h-[88svh] sm:rounded-[1.55rem]"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="relative aspect-square shrink-0 bg-[radial-gradient(circle_at_top,_rgba(183,146,107,0.18),_transparent_55%),linear-gradient(180deg,_#fbf5ee,_#f1e6d8)]">
@@ -184,7 +184,7 @@ export function FeaturedProductsSlider({
               <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--atlantic)]">
                 {selectedProduct.brand.name}
               </p>
-              <h3 className="text-3xl text-[color:var(--ink)]">{selectedProduct.name}</h3>
+              <h3 className="break-words text-2xl leading-tight text-[color:var(--ink)] sm:text-3xl">{selectedProduct.name}</h3>
               <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--atlantic)]">
                 {selectedProduct.category.name} · {getProductAudienceLabel(selectedProduct.audience)}
               </p>
@@ -235,7 +235,7 @@ export function FeaturedProductsSlider({
                 {formatPrice(getDisplayPrice(selectedProduct, selectedProductSize))}
               </p>
 
-              <div className="whitespace-pre-line text-sm leading-7 text-slate-600">
+              <div className="min-w-0 whitespace-pre-line break-words text-sm leading-7 text-slate-600 [overflow-wrap:anywhere]">
                 {selectedProduct.description}
               </div>
 

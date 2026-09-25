@@ -52,14 +52,14 @@ export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeade
           </div>
         </div>
         <div className="mx-auto max-w-[1320px] px-4 py-2 lg:px-5 lg:py-2.5">
-          <div className="flex items-center justify-between gap-3 lg:hidden">
-            <BrandLogo compact className="shrink-0" />
+          <div className="flex min-w-0 items-center justify-between gap-2 lg:hidden">
+            <BrandLogo compact className="min-w-0 shrink" />
 
             <button
               type="button"
               onClick={openCart}
               title={`Abrir carrinho da ${settings.storeName}`}
-              className="relative z-20 flex min-w-0 select-none items-center gap-2 rounded-full border border-[color:var(--line)] bg-[color:var(--sand-soft)] px-3 py-2 shadow-sm pointer-events-auto"
+              className="relative z-20 flex min-w-0 shrink-0 select-none items-center gap-1.5 rounded-full border border-[color:var(--line)] bg-[color:var(--sand-soft)] px-2 py-2 shadow-sm pointer-events-auto sm:gap-2 sm:px-3"
             >
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[color:var(--atlantic)] shadow-sm">
                 <ShoppingBag className="h-4 w-4" />
@@ -67,19 +67,19 @@ export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeade
               <span className="min-w-0 text-left text-sm font-semibold text-[color:var(--ink)]">
                 {hasHydrated ? itemCount : 0}
               </span>
-              <strong className="font-serif text-base text-[color:var(--ink)]">
+              <strong className="hidden font-serif text-base text-[color:var(--ink)] min-[360px]:block">
                 {formatPrice(hasHydrated ? total : 0)}
               </strong>
             </button>
           </div>
 
-          <nav className="mt-2.5 flex items-center gap-4 overflow-x-auto whitespace-nowrap pb-1 text-sm lg:hidden">
+          <nav className="mt-2.5 flex min-w-0 flex-wrap items-center justify-center gap-x-4 gap-y-1 pb-1 text-xs sm:justify-start sm:text-sm lg:hidden">
             {mobileLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "shrink-0 border-b px-0 pb-1 font-medium transition",
+                  "min-w-0 border-b px-0 pb-1 font-medium transition",
                   pathname === link.href
                     ? "border-[color:var(--gold)] text-[color:var(--gold)]"
                     : "border-transparent text-slate-700 hover:border-[rgba(183,146,107,0.45)] hover:text-[color:var(--ink)]",

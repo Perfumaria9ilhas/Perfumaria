@@ -379,32 +379,32 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
   }
 
   return (
-    <div className="space-y-8">
+    <div className="min-w-0 space-y-8 overflow-x-clip">
       {toast ? <Toast message={toast.message} tone={toast.tone} /> : null}
       {selectedProduct ? (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(43,30,18,0.55)] px-4 py-6"
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[rgba(43,30,18,0.55)] p-2 sm:px-4 sm:py-6"
           onClick={closeProduct}
         >
           <div
-            className="flex max-h-[88svh] w-full max-w-[32rem] flex-col overflow-hidden rounded-[1.55rem] border border-[color:var(--line)] bg-white shadow-[0_25px_80px_rgba(43,30,18,0.28)]"
+            className="flex max-h-[calc(100svh-1rem)] min-w-0 w-full max-w-[32rem] flex-col overflow-hidden rounded-[1.25rem] border border-[color:var(--line)] bg-white shadow-[0_25px_80px_rgba(43,30,18,0.28)] sm:max-h-[88svh] sm:rounded-[1.55rem]"
             onClick={(event) => event.stopPropagation()}
           >
             <div ref={modalContentRef} className="min-h-0 space-y-3 overflow-y-auto overscroll-contain p-4 sm:p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div className="space-y-2">
+              <div className="flex min-w-0 items-start justify-between gap-2 sm:gap-3">
+                <div className="min-w-0 flex-1 space-y-2">
                   <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--atlantic)]">
                     {selectedProduct.brand.name}
                   </p>
-                  <h3 className="font-serif text-3xl text-[color:var(--ink)]">
+                  <h3 className="break-words font-serif text-2xl leading-tight text-[color:var(--ink)] sm:text-3xl">
                     {selectedProduct.name}
                   </h3>
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
+                <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
                   <button
                     type="button"
                     onClick={() => shareProduct(selectedProduct)}
-                    className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-[color:var(--line)] px-3 text-xs font-medium text-[color:var(--ink)]"
+                    className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-[color:var(--line)] px-2.5 text-xs font-medium text-[color:var(--ink)] sm:gap-2 sm:px-3"
                   >
                     <Share2 className="h-4 w-4" />
                     Partilhar
@@ -504,11 +504,11 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
                 rel="noopener noreferrer"
                 className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[color:var(--atlantic)] px-5 py-3 text-sm font-semibold text-white"
               ><MessageCircle className="h-4 w-4" />Reservar</a>}
-              <div className="space-y-1 text-xs leading-5 text-slate-600">
+              <div className="min-w-0 space-y-1 break-words text-xs leading-5 text-slate-600">
                 <p>🚗 Entregas em mão na Ilha Terceira</p>
                 <p>📦 Envios via CTT para Açores, Madeira e Portugal Continental</p>
               </div>
-              <div className="whitespace-pre-line text-sm leading-7 text-slate-600">
+              <div className="min-w-0 whitespace-pre-line break-words text-sm leading-7 text-slate-600 [overflow-wrap:anywhere]">
                 {selectedProduct.description}
               </div>
               {relatedProducts.length > 0 ? (
@@ -549,7 +549,7 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
         </div>
       ) : null}
 
-      <section className="rounded-[1.6rem] border border-[color:var(--line)] bg-[linear-gradient(180deg,_rgba(255,255,255,0.9),_rgba(253,248,241,0.98))] p-3 shadow-[0_14px_34px_rgba(92,68,47,0.07)] sm:p-4">
+      <section className="min-w-0 overflow-hidden rounded-[1.6rem] border border-[color:var(--line)] bg-[linear-gradient(180deg,_rgba(255,255,255,0.9),_rgba(253,248,241,0.98))] p-3 shadow-[0_14px_34px_rgba(92,68,47,0.07)] sm:p-4">
         <div className="relative">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
@@ -560,7 +560,7 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
             />
         </div>
 
-        <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Filtrar por categoria">
+        <div className="mt-3 flex w-full min-w-0 max-w-full gap-2 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Filtrar por categoria">
           {catalogFilters.map((filter) => <button key={filter} type="button" onClick={() => setSelectedFilter(filter)} aria-pressed={activeFilter === filter} className={`shrink-0 rounded-full border px-3.5 py-2 text-xs font-medium transition sm:text-sm ${activeFilter === filter ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-white" : "border-[color:var(--line)] bg-white text-slate-700 hover:border-[color:var(--gold)]"}`}>{filter}</button>)}
         </div>
         <div className="mt-3 flex items-center gap-2">
@@ -573,7 +573,7 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
 
         <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
           <span className="shrink-0 text-sm font-medium text-slate-600">Ordenar por</span>
-          <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Ordenar produtos">
+          <div className="flex w-full min-w-0 max-w-full flex-1 gap-2 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Ordenar produtos">
             {sortOptions.map((option) => <button key={option.value} type="button" onClick={() => setSortBy(option.value)} aria-pressed={sortBy === option.value} className={`shrink-0 rounded-full border px-3.5 py-2 text-xs font-medium transition sm:text-sm ${sortBy === option.value ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-white" : "border-[color:var(--line)] bg-white text-slate-700 hover:border-[color:var(--gold)]"}`}>{option.label}</button>)}
           </div>
         </div>
@@ -597,7 +597,7 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
         </section>
       ) : null}
 
-      <section className="grid grid-cols-2 gap-[10px] md:grid-cols-3 md:gap-4 xl:grid-cols-4 2xl:grid-cols-5">
+      <section className="grid min-w-0 grid-cols-2 gap-[10px] md:grid-cols-3 md:gap-4 xl:grid-cols-4 2xl:grid-cols-5">
         {filteredProducts.map((product, index) => {
           const selectedSize = getSelectedSize(product);
           const concentration = getProductConcentrationDetails(
@@ -617,7 +617,7 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
           return (
             <article
               key={product.id}
-              className="group relative flex h-full flex-col overflow-hidden rounded-[1.05rem] border border-[rgba(185,154,118,0.18)] bg-[linear-gradient(180deg,_rgba(255,255,255,1),_rgba(252,245,236,0.96))] shadow-[0_8px_18px_rgba(92,68,47,0.08)] transition duration-300 hover:-translate-y-1 hover:border-[rgba(185,154,118,0.34)] hover:shadow-[0_16px_30px_rgba(92,68,47,0.14)] sm:rounded-[1.4rem]"
+              className="group relative flex min-w-0 h-full flex-col overflow-hidden rounded-[1.05rem] border border-[rgba(185,154,118,0.18)] bg-[linear-gradient(180deg,_rgba(255,255,255,1),_rgba(252,245,236,0.96))] shadow-[0_8px_18px_rgba(92,68,47,0.08)] transition duration-300 hover:-translate-y-1 hover:border-[rgba(185,154,118,0.34)] hover:shadow-[0_16px_30px_rgba(92,68,47,0.14)] sm:rounded-[1.4rem]"
             >
               <div className="pointer-events-none absolute inset-x-0 top-0 z-0 h-20 bg-[linear-gradient(180deg,_rgba(255,255,255,0.4),_transparent)]" />
               {productBadge ? (
