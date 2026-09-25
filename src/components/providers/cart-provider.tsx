@@ -89,16 +89,26 @@ export function CartProvider({
   whatsappNumber: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [items, setItems] = useState<CartLine[]>(readStoredCart);
-  const hasHydrated = useSyncExternalStore(subscribeHydration, () => true, () => false);
+  const [items, setItems] = useState<CartLine[]>([]);
+  const [hasLoadedStoredCart, setHasLoadedStoredCart] = useState(false);
+  const isClient = useSyncExternalStore(subscribeHydration, () => true, () => false);
+  const hasHydrated = isClient && hasLoadedStoredCart;
 
   useEffect(() => {
+    const hydrationTimer = window.setTimeout(() => {
+      setItems(readStoredCart());
+      setHasLoadedStoredCart(true);
+    }, 0);
+
     const onStorage = () => {
       setItems(readStoredCart());
     };
 
     window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+    return () => {
+      window.clearTimeout(hydrationTimer);
+      window.removeEventListener("storage", onStorage);
+    };
   }, []);
 
   useEffect(() => {
