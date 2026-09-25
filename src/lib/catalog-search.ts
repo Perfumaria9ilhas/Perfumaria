@@ -18,6 +18,16 @@ export function productMatchesCatalogSearch(product: CatalogProduct, search: str
   const query = normalizeCatalogSearchText(search);
   if (!query) return true;
 
+  if (query.length <= 2) {
+    const shortSearchFields = normalizeCatalogSearchText(
+      [product.name, product.brand.name].join(" "),
+    );
+
+    return shortSearchFields
+      .split(/[^a-z0-9]+/)
+      .some((word) => word.startsWith(query));
+  }
+
   const searchableText = normalizeCatalogSearchText(
     [
       product.name,
