@@ -211,7 +211,7 @@ export function CookieConsentProvider({
             className="mx-auto max-w-4xl rounded-[1.5rem] border border-[color:var(--line)] bg-white p-4 shadow-[0_18px_60px_rgba(55,39,28,0.22)] sm:p-5"
             aria-labelledby="cookie-banner-title"
           >
-            <div className="grid min-w-0 gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
+            <div className="grid min-w-0 gap-4">
               <div className="min-w-0">
                 <h2 id="cookie-banner-title" className="text-xl text-[color:var(--ink)]">
                   Privacidade e cookies
@@ -221,7 +221,7 @@ export function CookieConsentProvider({
                   também podemos usar análise e publicidade. Pode alterar a decisão quando quiser.
                 </p>
               </div>
-              <div className="grid min-w-0 gap-2 sm:grid-cols-3 lg:w-[540px]">
+              <div className="grid min-w-0 gap-2 sm:grid-cols-3">
                 <button
                   type="button"
                   onClick={() => savePreference(true, true)}
