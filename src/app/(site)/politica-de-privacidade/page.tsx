@@ -121,9 +121,9 @@ export default async function PoliticaDePrivacidadePage() {
               duração limitada.
             </li>
             <li>
-              <strong>Armazenamento local do navegador:</strong> guarda o carrinho, a última data em que
-              uma visita foi contabilizada e, quando existam, parâmetros de campanha. Estes dados ficam
-              no dispositivo até serem substituídos ou apagados nas definições do navegador.
+              <strong>Armazenamento local do navegador:</strong> guarda o carrinho. Depois da respetiva
+              autorização, pode também guardar a última data em que uma visita foi contabilizada e,
+              quando existam, parâmetros de campanha.
             </li>
             <li>
               <strong>Google Analytics 4:</strong> é utilizado para medir visitas e utilização do site.
@@ -136,8 +136,19 @@ export default async function PoliticaDePrivacidadePage() {
             </li>
           </ul>
           <p className="mt-3">
-            Pode apagar o armazenamento local e gerir ou bloquear cookies nas definições do navegador.
-            O bloqueio de cookies técnicos pode impedir o funcionamento do início de sessão.
+            Na primeira visita pode aceitar todos, rejeitar as tecnologias não essenciais ou escolher
+            separadamente as categorias <strong>Necessários</strong>, <strong>Análise e estatísticas</strong>
+            e <strong>Publicidade</strong>. Os necessários mantêm o carrinho, as sessões e a própria
+            preferência de cookies e estão sempre ativos. O Google Analytics 4 e o contador interno só
+            são ativados com autorização para análise; o Meta Pixel, os eventos Meta e a atribuição de
+            campanhas só são ativados com autorização para publicidade.
+          </p>
+          <p className="mt-3">
+            A escolha é guardada durante seis meses. Pode alterá-la a qualquer momento através de
+            “Definições de cookies” no rodapé. Ao retirar uma autorização, o site bloqueia os eventos
+            posteriores e procura apagar os cookies e dados locais não essenciais relacionados com essa
+            categoria. Também pode gerir ou bloquear cookies nas definições do navegador; bloquear
+            cookies técnicos pode impedir o funcionamento do início de sessão.
           </p>
         </section>
 

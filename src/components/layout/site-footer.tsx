@@ -7,6 +7,7 @@ import {
   Music2,
 } from "lucide-react";
 import { TrackedWhatsAppLink } from "@/components/analytics/tracked-whatsapp-link";
+import { CookieSettingsButton } from "@/components/consent/cookie-settings-button";
 import type { PublicStoreSettings } from "@/lib/types";
 
 export function SiteFooter({
@@ -64,6 +65,7 @@ export function SiteFooter({
               <Link className="block hover:text-white" href="/politica-de-privacidade">
                 Política de Privacidade
               </Link>
+              <CookieSettingsButton />
             </div>
           </div>
 

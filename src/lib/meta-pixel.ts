@@ -1,6 +1,7 @@
 "use client";
 
 import { slugify } from "@/lib/utils";
+import { hasCookieConsent } from "@/lib/cookie-consent";
 
 type MetaPixelValue = string | number | boolean | null | undefined;
 type MetaPixelParams = Record<string, MetaPixelValue | MetaPixelValue[]>;
@@ -77,6 +78,10 @@ function readCurrentMetaUtmParams(): MetaUtmParams {
 }
 
 function getPersistedMetaUtmParams(): MetaUtmParams {
+  if (!hasCookieConsent("marketing")) {
+    return {};
+  }
+
   const currentParams = readCurrentMetaUtmParams();
 
   if (Object.keys(currentParams).length > 0) {
@@ -134,7 +139,11 @@ export function buildMetaProductPayload({
 }
 
 export function trackMetaPageView() {
-  if (typeof window === "undefined" || typeof window.fbq !== "function") {
+  if (
+    typeof window === "undefined" ||
+    !hasCookieConsent("marketing") ||
+    typeof window.fbq !== "function"
+  ) {
     return;
   }
 
@@ -152,7 +161,11 @@ export function trackMetaEvent(
   eventName: AllowedMetaEvent,
   params?: MetaPixelParams
 ) {
-  if (typeof window === "undefined" || typeof window.fbq !== "function") {
+  if (
+    typeof window === "undefined" ||
+    !hasCookieConsent("marketing") ||
+    typeof window.fbq !== "function"
+  ) {
     return;
   }
 

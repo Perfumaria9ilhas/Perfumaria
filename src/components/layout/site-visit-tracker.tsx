@@ -1,14 +1,16 @@
 "use client";
 
-import Script from "next/script";
 import { useEffect } from "react";
 import { getAzoresDateKey } from "@/lib/date";
 
 const VISIT_KEY = "9ilhas-last-visit-date";
-const GA_ID = "G-VQ486TJ198";
 
-export function SiteVisitTracker() {
+export function SiteVisitTracker({ enabled }: { enabled: boolean }) {
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
     const todayKey = getAzoresDateKey();
     const lastTracked = window.localStorage.getItem(VISIT_KEY);
 
@@ -26,27 +28,7 @@ export function SiteVisitTracker() {
           // Ignorar erros
         });
     }
-  }, []);
+  }, [enabled]);
 
-  return (
-    <>
-      <Script
-        src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
-        strategy="afterInteractive"
-      />
-
-      <Script id="google-analytics" strategy="afterInteractive">
-        {`
-          window.dataLayer = window.dataLayer || [];
-
-          function gtag(){
-            dataLayer.push(arguments);
-          }
-
-          gtag('js', new Date());
-          gtag('config', '${GA_ID}');
-        `}
-      </Script>
-    </>
-  );
+  return null;
 }
