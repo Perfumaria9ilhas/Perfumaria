@@ -18,7 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const settings = await getStoreSettings();
 
   return buildPageMetadata({
-    title: "Sobre N\u00f3s",
+    title: "Sobre Nós",
     description:
       "Conhe\u00e7a a Perfumaria 9 Ilhas, da Praia da Vit\u00f3ria, Ilha Terceira, especializada em perfumes \u00e1rabes originais com atendimento pr\u00f3ximo e entrega r\u00e1pida.",
     path: "/sobre-nos",
@@ -54,9 +54,9 @@ export default async function SobreNosPage() {
     <div className="mx-auto max-w-[1240px] px-4 py-4 lg:px-5 lg:py-6">
       <section className="rounded-[2.5rem] border border-[color:var(--line)] bg-[linear-gradient(180deg,_#ffffff,_#f6efe4)] p-8 shadow-sm lg:p-10">
         <p className="text-xs uppercase tracking-[0.32em] text-[color:var(--gold)]">
-          {"Sobre N\u00f3s"}
+          Sobre Nós
         </p>
-        <h1 className="mt-3 text-4xl text-[color:var(--ink)] md:text-5xl">Sobre N\u00f3s</h1>
+        <h1 className="mt-3 text-4xl text-[color:var(--ink)] md:text-5xl">Sobre Nós</h1>
         <div className="mt-6 max-w-4xl space-y-4 text-base leading-8 text-slate-700">
           <p>{settings.contactIntro}</p>
           <p>

@@ -61,8 +61,8 @@ export function SiteFooter({
               <Link className="block hover:text-white" href="/condicoes">
                 {"Condi\u00e7\u00f5es"}
               </Link>
-              <Link className="block hover:text-white" href="/condicoes">
-                {"Pol\u00edtica de Privacidade"}
+              <Link className="block hover:text-white" href="/politica-de-privacidade">
+                Política de Privacidade
               </Link>
             </div>
           </div>
