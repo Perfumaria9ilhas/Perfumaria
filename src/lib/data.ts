@@ -5,30 +5,59 @@ import { getAdminStockTableData } from "@/lib/stock-server";
 
 export async function getCatalogData() {
   noStore();
-  const [brands, categories, products] = await Promise.all([
-    prisma.brand.findMany({
-      orderBy: { name: "asc" },
-    }),
-    prisma.category.findMany({
-      orderBy: { name: "asc" },
-    }),
-    prisma.product.findMany({
-      where: { active: true },
-      include: {
-        brand: true,
-        category: true,
-        productType: true,
+  const catalogRows = await prisma.product.findMany({
+    where: { active: true },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      description: true,
+      inspiredBy: true,
+      durationLabel: true,
+      sizeLabel: true,
+      imageUrl: true,
+      priceInCents: true,
+      salePriceInCents: true,
+      stock: true,
+      audience: true,
+      concentration: true,
+      availableInFiveMl: true,
+      availableInTenMl: true,
+      featured: true,
+      bestseller: true,
+      createdAt: true,
+      brand: {
+        select: { id: true, name: true, slug: true },
       },
-      orderBy: [
-        { bestseller: "desc" },
-        { featured: "desc" },
-        { updatedAt: "desc" },
-        { name: "asc" },
-      ],
-    }),
-  ]);
+      category: {
+        select: { name: true, slug: true },
+      },
+      productType: {
+        select: { name: true, slug: true },
+      },
+    },
+    orderBy: [
+      { bestseller: "desc" },
+      { featured: "desc" },
+      { updatedAt: "desc" },
+      { name: "asc" },
+    ],
+  });
 
-  return { brands, categories, products };
+  const recentRankById = new Map(
+    [...catalogRows]
+      .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())
+      .map((product, index) => [product.id, index]),
+  );
+  const products = catalogRows.map(({ createdAt, ...product }) => {
+    void createdAt;
+    return {
+      ...product,
+      recentRank: recentRankById.get(product.id) ?? catalogRows.length,
+    };
+  });
+
+  return { products };
 }
 
 export async function getHomeData() {

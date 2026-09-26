@@ -4,14 +4,34 @@ import type {
   HeroSlide,
   OutOfStockWish,
   Product,
+  ProductAudience,
+  ProductConcentration,
   ProductType,
   StoreSettings,
 } from "@prisma/client";
 
-export type CatalogProduct = Product & {
-  brand: Brand;
-  category: Category;
-  productType: ProductType;
+export type CatalogProduct = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  inspiredBy: string | null;
+  durationLabel: string | null;
+  sizeLabel: string;
+  imageUrl: string;
+  priceInCents: number;
+  salePriceInCents: number | null;
+  stock: number;
+  audience: ProductAudience;
+  concentration: ProductConcentration;
+  availableInFiveMl: boolean;
+  availableInTenMl: boolean;
+  featured: boolean;
+  bestseller: boolean;
+  recentRank?: number;
+  brand: Pick<Brand, "id" | "name" | "slug">;
+  category: Pick<Category, "name" | "slug">;
+  productType: Pick<ProductType, "name" | "slug">;
 };
 
 export type CartLine = {

@@ -25,6 +25,8 @@ type CatalogClientProps = {
   whatsappNumber: string;
 };
 
+const INITIAL_VISIBLE_PRODUCTS = 24;
+
 type SortOption = "recommended" | "price-asc" | "price-desc" | "recent";
 const sortOptions: { value: SortOption; label: string }[] = [
   { value: "recommended", label: "Recomendados" },
@@ -117,7 +119,6 @@ function ProductImage({
       src={src}
       alt={alt}
       fill
-      unoptimized
       priority={priority}
       loading={priority ? "eager" : "lazy"}
       fetchPriority={priority ? "high" : "auto"}
@@ -156,6 +157,7 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
   const [selectedFilter, setSelectedFilter] = useState<CatalogFilter | null>(null);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("recommended");
+  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_PRODUCTS);
   const [selectedSizes, setSelectedSizes] = useState<Record<string, ProductSizeValue>>({});
   const trackedViewContentId = useRef<string | null>(null);
   const [toast, setToast] = useState<{
@@ -200,8 +202,8 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
           product.audience === selectedProduct.audience,
       )
       .sort((left, right) => {
-        const leftSameBrand = left.brandId === selectedProduct.brandId ? 0 : 1;
-        const rightSameBrand = right.brandId === selectedProduct.brandId ? 0 : 1;
+        const leftSameBrand = left.brand.id === selectedProduct.brand.id ? 0 : 1;
+        const rightSameBrand = right.brand.id === selectedProduct.brand.id ? 0 : 1;
         return (
           leftSameBrand - rightSameBrand ||
           left.brand.name.localeCompare(right.brand.name, "pt-PT", { sensitivity: "base" }) ||
@@ -261,7 +263,7 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
 
   const filteredProducts = useMemo(() => {
     const result = products.filter((product) => {
-      const matchesBrand = !selectedBrand || product.brandId === selectedBrand;
+      const matchesBrand = !selectedBrand || product.brand.id === selectedBrand;
       const matchesCategory = matchesCatalogFilter(product, activeFilter);
       const matchesSearch = productMatchesCatalogSearch(product, search);
 
@@ -284,13 +286,15 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
 
     return result.sort((left, right) => {
       if (sortBy === "recent") {
-        return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime();
+        return (left.recentRank ?? products.length) - (right.recentRank ?? products.length);
       }
 
       const priceDifference = getDisplayPrice(left, getCatalogProductSize(left, activeFilter, selectedSizes)) - getDisplayPrice(right, getCatalogProductSize(right, activeFilter, selectedSizes));
       return sortBy === "price-asc" ? priceDifference : -priceDifference;
     });
   }, [activeFilter, products, search, selectedBrand, selectedSizes, sortBy]);
+
+  const visibleProducts = filteredProducts.slice(0, visibleCount);
 
   function getSelectedSize(product: CatalogProduct) {
     return getCatalogProductSize(product, activeFilter, selectedSizes);
@@ -554,18 +558,21 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
             <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setVisibleCount(INITIAL_VISIBLE_PRODUCTS);
+              }}
               placeholder="Pesquisar perfumes..."
               className="h-11 w-full rounded-full border border-[color:var(--line)] bg-white px-11 text-base outline-none transition focus:border-[color:var(--gold)] md:text-sm"
             />
         </div>
 
         <div className="mt-3 flex w-full min-w-0 max-w-full gap-2 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Filtrar por categoria">
-          {catalogFilters.map((filter) => <button key={filter} type="button" onClick={() => setSelectedFilter(filter)} aria-pressed={activeFilter === filter} className={`shrink-0 rounded-full border px-3.5 py-2 text-xs font-medium transition sm:text-sm ${activeFilter === filter ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-white" : "border-[color:var(--line)] bg-white text-slate-700 hover:border-[color:var(--gold)]"}`}>{filter}</button>)}
+          {catalogFilters.map((filter) => <button key={filter} type="button" onClick={() => { setSelectedFilter(filter); setVisibleCount(INITIAL_VISIBLE_PRODUCTS); }} aria-pressed={activeFilter === filter} className={`shrink-0 rounded-full border px-3.5 py-2 text-xs font-medium transition sm:text-sm ${activeFilter === filter ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-white" : "border-[color:var(--line)] bg-white text-slate-700 hover:border-[color:var(--gold)]"}`}>{filter}</button>)}
         </div>
         <div className="mt-3 flex items-center gap-2">
           <label htmlFor="catalog-brand" className="shrink-0 text-sm font-medium text-slate-600">Marca</label>
-          <select id="catalog-brand" value={selectedBrand} onChange={(event) => setSelectedBrand(event.target.value)} className="h-10 min-w-0 max-w-xs flex-1 rounded-full border border-[color:var(--line)] bg-white px-4 text-sm outline-none focus:border-[color:var(--gold)]">
+          <select id="catalog-brand" value={selectedBrand} onChange={(event) => { setSelectedBrand(event.target.value); setVisibleCount(INITIAL_VISIBLE_PRODUCTS); }} className="h-10 min-w-0 max-w-xs flex-1 rounded-full border border-[color:var(--line)] bg-white px-4 text-sm outline-none focus:border-[color:var(--gold)]">
             <option value="">Todas as marcas</option>
             {availableBrands.map((brand) => <option key={brand.id} value={brand.id}>{brand.name}</option>)}
           </select>
@@ -574,7 +581,7 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
         <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
           <span className="shrink-0 text-sm font-medium text-slate-600">Ordenar por</span>
           <div className="flex w-full min-w-0 max-w-full flex-1 gap-2 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Ordenar produtos">
-            {sortOptions.map((option) => <button key={option.value} type="button" onClick={() => setSortBy(option.value)} aria-pressed={sortBy === option.value} className={`shrink-0 rounded-full border px-3.5 py-2 text-xs font-medium transition sm:text-sm ${sortBy === option.value ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-white" : "border-[color:var(--line)] bg-white text-slate-700 hover:border-[color:var(--gold)]"}`}>{option.label}</button>)}
+            {sortOptions.map((option) => <button key={option.value} type="button" onClick={() => { setSortBy(option.value); setVisibleCount(INITIAL_VISIBLE_PRODUCTS); }} aria-pressed={sortBy === option.value} className={`shrink-0 rounded-full border px-3.5 py-2 text-xs font-medium transition sm:text-sm ${sortBy === option.value ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-white" : "border-[color:var(--line)] bg-white text-slate-700 hover:border-[color:var(--gold)]"}`}>{option.label}</button>)}
           </div>
         </div>
         <button
@@ -585,6 +592,7 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
             setSelectedFilter("Todos");
             setSearch("");
             setSortBy("recommended");
+            setVisibleCount(INITIAL_VISIBLE_PRODUCTS);
           }}
         >
           Limpar filtros
@@ -598,7 +606,7 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
       ) : null}
 
       <section className="grid min-w-0 grid-cols-2 gap-[10px] md:grid-cols-3 md:gap-4 xl:grid-cols-4 2xl:grid-cols-5">
-        {filteredProducts.map((product, index) => {
+        {visibleProducts.map((product, index) => {
           const selectedSize = getSelectedSize(product);
           const concentration = getProductConcentrationDetails(
             product.productType?.name ?? product.concentration,
@@ -607,7 +615,7 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
             product.salePriceInCents !== null &&
             product.salePriceInCents < product.priceInCents;
           const currentPrice = getDisplayPrice(product, selectedSize);
-          const shouldPreloadImage = index < 8;
+          const shouldPreloadImage = index === 0;
           const productBadge = product.bestseller
             ? "Mais vendido"
             : product.featured
@@ -757,6 +765,17 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
           );
         })}
       </section>
+      {visibleCount < filteredProducts.length ? (
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={() => setVisibleCount((current) => current + INITIAL_VISIBLE_PRODUCTS)}
+            className="inline-flex min-h-11 items-center justify-center rounded-full border border-[color:var(--line)] bg-white px-6 text-sm font-semibold text-[color:var(--ink)] transition hover:border-[color:var(--gold)]"
+          >
+            Ver mais
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

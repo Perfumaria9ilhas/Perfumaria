@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import type { CatalogProduct, PublicStoreSettings } from "@/lib/types";
+import type { PublicStoreSettings } from "@/lib/types";
 import { normalizeText } from "@/lib/text";
 
 export const SITE_URL = "https://www.perfumaria9ilhas.pt";
@@ -234,7 +234,18 @@ export function buildStoreJsonLd(settings: PublicStoreSettings) {
   };
 }
 
-function getDisplayPriceInEuros(product: CatalogProduct) {
+type SeoProduct = {
+  id: string;
+  name: string;
+  description: string;
+  imageUrl: string;
+  priceInCents: number;
+  salePriceInCents: number | null;
+  brand: { name: string };
+  category: { name: string };
+};
+
+function getDisplayPriceInEuros(product: SeoProduct) {
   const cents =
     product.salePriceInCents && product.salePriceInCents < product.priceInCents
       ? product.salePriceInCents
@@ -244,7 +255,7 @@ function getDisplayPriceInEuros(product: CatalogProduct) {
 }
 
 export function buildProductListJsonLd(
-  products: CatalogProduct[],
+  products: SeoProduct[],
   listName: string,
   listPath: string,
 ) {
