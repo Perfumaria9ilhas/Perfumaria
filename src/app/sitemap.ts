@@ -2,6 +2,8 @@ import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
 import { SITE_URL } from "@/lib/seo";
 
+export const dynamic = "force-dynamic";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let settingsUpdatedAt: Date | null = null;
   let activeProducts: { slug: string; updatedAt: Date }[] = [];
