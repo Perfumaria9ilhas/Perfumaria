@@ -1,40 +1,47 @@
 import { unstable_noStore as noStore } from "next/cache";
+import { cache } from "react";
 import { getAzoresDateKey } from "@/lib/date";
 import { prisma } from "@/lib/prisma";
 import { getAdminStockTableData } from "@/lib/stock-server";
+
+const publicProductSelect = {
+  id: true,
+  name: true,
+  slug: true,
+  description: true,
+  inspiredBy: true,
+  durationLabel: true,
+  sizeLabel: true,
+  imageUrl: true,
+  priceInCents: true,
+  salePriceInCents: true,
+  stock: true,
+  audience: true,
+  concentration: true,
+  availableInFiveMl: true,
+  availableInTenMl: true,
+  featured: true,
+  bestseller: true,
+  brand: { select: { id: true, name: true, slug: true } },
+  category: { select: { name: true, slug: true } },
+  productType: { select: { name: true, slug: true } },
+} as const;
+
+export const getCatalogProductBySlug = cache(async (slug: string) => {
+  noStore();
+  return prisma.product.findFirst({
+    where: { slug, active: true },
+    select: publicProductSelect,
+  });
+});
 
 export async function getCatalogData() {
   noStore();
   const catalogRows = await prisma.product.findMany({
     where: { active: true },
     select: {
-      id: true,
-      name: true,
-      slug: true,
-      description: true,
-      inspiredBy: true,
-      durationLabel: true,
-      sizeLabel: true,
-      imageUrl: true,
-      priceInCents: true,
-      salePriceInCents: true,
-      stock: true,
-      audience: true,
-      concentration: true,
-      availableInFiveMl: true,
-      availableInTenMl: true,
-      featured: true,
-      bestseller: true,
+      ...publicProductSelect,
       createdAt: true,
-      brand: {
-        select: { id: true, name: true, slug: true },
-      },
-      category: {
-        select: { name: true, slug: true },
-      },
-      productType: {
-        select: { name: true, slug: true },
-      },
     },
     orderBy: [
       { bestseller: "desc" },

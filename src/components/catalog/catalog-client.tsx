@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Clock3, MessageCircle, Search, Share2, ShoppingBag, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCart } from "@/components/providers/cart-provider";
@@ -15,6 +16,7 @@ import { getProductAudienceLabel } from "@/lib/product-audience";
 import { getProductConcentrationDetails } from "@/lib/product-concentration";
 import {
   buildCartLineId,
+  getProductBottleSizeLabel,
   getProductSizeLabel,
   type ProductSizeValue,
 } from "@/lib/product-sizes";
@@ -75,16 +77,8 @@ function getDisplayPrice(product: CatalogProduct, size: ProductSizeValue) {
   return getBottlePrice(product);
 }
 
-function getBottleSizeLabel(product: CatalogProduct) {
-  if (product.sizeLabel?.trim()) return product.sizeLabel.trim();
-  const setSize = product.name.match(/\b(\d+)\s*[×x]\s*(\d+)\s*ml\b/i);
-  if (setSize) return `${setSize[1]} × ${setSize[2]} ml`;
-  const volume = product.name.match(/\b(\d+)\s*(ml|g)\b/i);
-  return volume ? `${volume[1]} ${volume[2].toLowerCase()}` : "100 ml";
-}
-
 function getSelectedSizeLabel(product: CatalogProduct, size: ProductSizeValue) {
-  return size === "100ml" ? getBottleSizeLabel(product) : getProductSizeLabel(size);
+  return size === "100ml" ? getProductBottleSizeLabel(product) : getProductSizeLabel(size);
 }
 
 function ProductImage({
@@ -339,10 +333,8 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
     return `https://wa.me/${whatsappNumber.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`;
   }
 
-  function openProduct(product: CatalogProduct) {
+  function prepareProductOpen(product: CatalogProduct) {
     setSelectedSizes((current) => ({ ...current, [product.id]: "100ml" }));
-    const url = `/catalogo?produto=${encodeURIComponent(product.slug)}`;
-    router.push(url, { scroll: false });
     window.requestAnimationFrame(() => {
       modalContentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
     });
@@ -461,7 +453,7 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
                         : "border-[color:var(--line)] bg-[color:var(--sand-soft)] text-[color:var(--ink)]"
                     }`}
                 >
-                  {getBottleSizeLabel(selectedProduct)}
+                  {getProductBottleSizeLabel(selectedProduct)}
                 </button> : null}
                 {selectedProduct.availableInTenMl ? (
                   <button
@@ -520,10 +512,11 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
                   <h4 className="font-serif text-xl text-[color:var(--ink)]">Também pode gostar</h4>
                   <div className="mt-3 grid grid-cols-3 gap-2 sm:gap-3">
                     {relatedProducts.map((product) => (
-                      <button
+                      <Link
                         key={product.id}
-                        type="button"
-                        onClick={() => openProduct(product)}
+                        href={`/catalogo?produto=${encodeURIComponent(product.slug)}`}
+                        scroll={false}
+                        onClick={() => prepareProductOpen(product)}
                         className="min-w-0 rounded-[1rem] border border-[color:var(--line)] bg-[color:var(--sand-soft)] p-2 text-left transition hover:border-[color:var(--gold)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gold)]"
                         aria-label={`Ver ${product.name}`}
                       >
@@ -543,7 +536,7 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
                         <p className="mt-1 text-xs font-semibold text-[color:var(--ink)]">
                           {formatPrice(getDisplayPrice(product, "100ml"))}
                         </p>
-                      </button>
+                      </Link>
                     ))}
                   </div>
                 </section>
@@ -633,9 +626,10 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
                   {productBadge}
                 </div>
               ) : null}
-              <button
-                type="button"
-                onClick={() => openProduct(product)}
+              <Link
+                href={`/catalogo?produto=${encodeURIComponent(product.slug)}`}
+                scroll={false}
+                onClick={() => prepareProductOpen(product)}
                 className="relative h-[168px] bg-[radial-gradient(circle_at_top,_rgba(183,146,107,0.18),_transparent_58%),linear-gradient(180deg,_#fffaf3,_#f4e7d6)] text-left sm:h-[190px] md:h-[220px]"
               >
                 <div className="relative h-full w-full overflow-hidden">
@@ -647,7 +641,7 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
                   />
                 </div>
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-[linear-gradient(180deg,_transparent,_rgba(255,248,239,0.92))]" />
-              </button>
+              </Link>
 
               <div className="relative flex flex-1 flex-col gap-2 p-2.5 sm:p-3">
                 <div className="space-y-1.5">
@@ -700,7 +694,7 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
                           : "border-[color:var(--line)] bg-white text-slate-600 hover:border-[rgba(185,154,118,0.4)]"
                       }`}
                     >
-                      {getBottleSizeLabel(product)}
+                      {getProductBottleSizeLabel(product)}
                     </button> : null}
                     {product.availableInTenMl ? (
                       <button

@@ -292,6 +292,56 @@ export function buildProductListJsonLd(
   };
 }
 
+type ProductDetailSeo = SeoProduct & {
+  slug: string;
+  stock: number;
+};
+
+export function buildProductJsonLd(product: ProductDetailSeo, productPath: string) {
+  const url = absoluteUrl(productPath);
+  return {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: normalizeText(product.name),
+    sku: product.slug,
+    url,
+    image: [resolveSocialImage(product.imageUrl)],
+    description: normalizeText(product.description),
+    brand: {
+      "@type": "Brand",
+      name: normalizeText(product.brand.name),
+    },
+    category: normalizeText(product.category.name),
+    offers: {
+      "@type": "Offer",
+      url,
+      priceCurrency: "EUR",
+      price: getDisplayPriceInEuros(product),
+      availability: product.stock > 0
+        ? "https://schema.org/InStock"
+        : "https://schema.org/BackOrder",
+      itemCondition: "https://schema.org/NewCondition",
+      seller: {
+        "@id": `${SITE_URL}/#store`,
+        "@type": "Organization",
+        name: SITE_NAME,
+      },
+    },
+  };
+}
+
+export function buildProductBreadcrumbJsonLd(productName: string, productPath: string) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Início", item: absoluteUrl("/") },
+      { "@type": "ListItem", position: 2, name: "Catálogo", item: absoluteUrl("/catalogo") },
+      { "@type": "ListItem", position: 3, name: normalizeText(productName), item: absoluteUrl(productPath) },
+    ],
+  };
+}
+
 export function buildFaqJsonLd(items: { question: string; answer: string }[]) {
   return {
     "@context": "https://schema.org",
