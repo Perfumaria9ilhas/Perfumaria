@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useCart } from "@/components/providers/cart-provider";
 import { formatPrice } from "@/lib/format";
 import { buildMetaProductPayload, trackMetaEvent } from "@/lib/meta-pixel";
+import { trackInternalEvent } from "@/lib/internal-analytics";
 import { getProductAudienceLabel } from "@/lib/product-audience";
 import {
   buildCartLineId,
@@ -69,6 +70,7 @@ export function FeaturedProductsSlider({
   const [selectedProduct, setSelectedProduct] = useState<CatalogProduct | null>(null);
   const [selectedSizes, setSelectedSizes] = useState<Record<string, ProductSizeValue>>({});
   const trackedViewContentId = useRef<string | null>(null);
+  const trackedInternalViewId = useRef<string | null>(null);
 
   const selectedProductSize = selectedProduct
     ? selectedSizes[selectedProduct.id] ?? "100ml"
@@ -86,6 +88,7 @@ export function FeaturedProductsSlider({
   useEffect(() => {
     if (!selectedProduct) {
       trackedViewContentId.current = null;
+      trackedInternalViewId.current = null;
       return;
     }
 
@@ -101,6 +104,11 @@ export function FeaturedProductsSlider({
           value: getDisplayPrice(selectedProduct, selectedProductSize) / 100,
         }),
       );
+    }
+
+    if (trackedInternalViewId.current !== selectedProduct.id) {
+      trackedInternalViewId.current = selectedProduct.id;
+      trackInternalEvent({ event: "product_view", productId: selectedProduct.id });
     }
   }, [selectedProduct, selectedProductSize]);
 

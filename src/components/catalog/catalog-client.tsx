@@ -12,6 +12,7 @@ import {
   productMatchesCatalogSearch,
 } from "@/lib/catalog-search";
 import { buildMetaProductPayload, trackMetaEvent } from "@/lib/meta-pixel";
+import { trackInternalEvent, trackInternalSearch } from "@/lib/internal-analytics";
 import { getProductAudienceLabel } from "@/lib/product-audience";
 import { getProductConcentrationDetails } from "@/lib/product-concentration";
 import {
@@ -154,6 +155,8 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_PRODUCTS);
   const [selectedSizes, setSelectedSizes] = useState<Record<string, ProductSizeValue>>({});
   const trackedViewContentId = useRef<string | null>(null);
+  const trackedInternalViewId = useRef<string | null>(null);
+  const lastTrackedSearch = useRef<string | null>(null);
   const [toast, setToast] = useState<{
     message: string;
     tone: "warning" | "success";
@@ -224,6 +227,7 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
   useEffect(() => {
     if (!selectedProduct) {
       trackedViewContentId.current = null;
+      trackedInternalViewId.current = null;
       return;
     }
 
@@ -239,6 +243,11 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
           value: getDisplayPrice(selectedProduct, selectedProductSize) / 100,
         }),
       );
+    }
+
+    if (trackedInternalViewId.current !== selectedProduct.id) {
+      trackedInternalViewId.current = selectedProduct.id;
+      trackInternalEvent({ event: "product_view", productId: selectedProduct.id });
     }
   }, [selectedProduct, selectedProductSize]);
 
@@ -289,6 +298,21 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
   }, [activeFilter, products, search, selectedBrand, selectedSizes, sortBy]);
 
   const visibleProducts = filteredProducts.slice(0, visibleCount);
+
+  useEffect(() => {
+    const normalized = normalizeCatalogSearchText(search).trim();
+    if (normalized.length < 2 || normalized.length > 80) {
+      lastTrackedSearch.current = null;
+      return;
+    }
+    const interactionKey = `${normalized}|${activeFilter}|${selectedBrand}|${filteredProducts.length}`;
+    if (lastTrackedSearch.current === interactionKey) return;
+    const timer = window.setTimeout(() => {
+      trackInternalSearch(search, filteredProducts.length);
+      lastTrackedSearch.current = interactionKey;
+    }, 850);
+    return () => window.clearTimeout(timer);
+  }, [activeFilter, filteredProducts.length, search, selectedBrand]);
 
   function getSelectedSize(product: CatalogProduct) {
     return getCatalogProductSize(product, activeFilter, selectedSizes);
@@ -496,6 +520,7 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
                 Adicionar ao carrinho
               </button> : <a
                 href={getReservationUrl(selectedProduct, selectedProductSize)}
+                onClick={() => trackInternalEvent({ event: "product_reservation", productId: selectedProduct.id })}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[color:var(--atlantic)] px-5 py-3 text-sm font-semibold text-white"
@@ -554,6 +579,15 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
               onChange={(event) => {
                 setSearch(event.target.value);
                 setVisibleCount(INITIAL_VISIBLE_PRODUCTS);
+              }}
+              onKeyDown={(event) => {
+                if (event.key !== "Enter") return;
+                const normalized = normalizeCatalogSearchText(search).trim();
+                if (normalized.length < 2 || normalized.length > 80) return;
+                const interactionKey = `${normalized}|${activeFilter}|${selectedBrand}|${filteredProducts.length}`;
+                if (lastTrackedSearch.current === interactionKey) return;
+                trackInternalSearch(search, filteredProducts.length);
+                lastTrackedSearch.current = interactionKey;
               }}
               placeholder="Pesquisar perfumes..."
               className="h-11 w-full rounded-full border border-[color:var(--line)] bg-white px-11 text-base outline-none transition focus:border-[color:var(--gold)] md:text-sm"
@@ -749,6 +783,7 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
                     <span className="hidden md:inline">Adicionar ao carrinho</span>
                   </button> : <a
                     href={getReservationUrl(product, selectedSize)}
+                    onClick={() => trackInternalEvent({ event: "product_reservation", productId: product.id })}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex min-h-[42px] w-full items-center justify-center gap-2 rounded-full bg-[color:var(--atlantic)] px-3 text-[11px] font-semibold text-white transition hover:bg-[color:var(--atlantic-deep)] sm:min-h-[44px] sm:text-sm"

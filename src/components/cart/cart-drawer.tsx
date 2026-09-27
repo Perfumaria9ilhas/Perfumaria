@@ -6,6 +6,7 @@ import { CreditCard, Lock, MapPinned, Minus, Plus, Truck, Trash2, X } from "luci
 import { useCart } from "@/components/providers/cart-provider";
 import { formatPrice } from "@/lib/format";
 import { buildMetaContentId, trackMetaEvent } from "@/lib/meta-pixel";
+import { trackInternalEvent } from "@/lib/internal-analytics";
 
 const trustPoints = [
   { icon: MapPinned, label: "Entrega Local Ilha Terceira" },
@@ -74,6 +75,11 @@ export function CartDrawer() {
       };
 
       if (!response.ok || !data.whatsappUrl) return;
+
+      trackInternalEvent({
+        event: "checkout_whatsapp",
+        items: items.map((item) => ({ productId: item.productId, quantity: item.quantity })),
+      });
 
       trackMetaEvent("Contact", {
         content_name: "WhatsApp checkout",

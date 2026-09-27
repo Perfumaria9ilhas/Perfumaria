@@ -11,6 +11,7 @@ import {
 } from "react";
 import { formatPrice } from "@/lib/format";
 import { buildMetaProductPayload, trackMetaEvent } from "@/lib/meta-pixel";
+import { trackInternalEvent } from "@/lib/internal-analytics";
 import type { CartLine } from "@/lib/types";
 
 type CartItemInput = Omit<CartLine, "quantity">;
@@ -170,6 +171,7 @@ export function CartProvider({
         quantity: safeQuantity,
       }),
     );
+    trackInternalEvent({ event: "add_to_cart", productId: item.productId, quantity: safeQuantity });
 
     return "added";
   }

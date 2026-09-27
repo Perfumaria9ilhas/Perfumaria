@@ -92,6 +92,7 @@ model Product {
   wishes           OutOfStockWish[]
   orderItems       SiteOrderItem[]
   stockMovements   StockMovement[]
+  analyticsDaily   ProductAnalyticsDaily[]
 
   @@index([brandId])
   @@index([categoryId])
@@ -258,6 +259,57 @@ model DailySiteVisit {
   updatedAt  DateTime @updatedAt
 
   @@index([dateKey])
+}
+
+model AnalyticsDaily {
+  id                      String   @id @default(cuid())
+  dateKey                 String   @unique
+  visits                  Int      @default(0)
+  productViews            Int      @default(0)
+  addToCartEvents         Int      @default(0)
+  addedUnits              Int      @default(0)
+  checkoutWhatsapp        Int      @default(0)
+  reservations            Int      @default(0)
+  generalWhatsappContacts Int      @default(0)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@index([dateKey])
+}
+
+model ProductAnalyticsDaily {
+  id                String   @id @default(cuid())
+  dateKey           String
+  productId         String
+  views             Int      @default(0)
+  addToCartEvents   Int      @default(0)
+  addedUnits        Int      @default(0)
+  checkoutEvents    Int      @default(0)
+  checkoutUnits     Int      @default(0)
+  reservationEvents Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([dateKey, productId])
+  @@index([dateKey])
+  @@index([productId, dateKey])
+}
+
+model SearchAnalyticsDaily {
+  id               String   @id @default(cuid())
+  dateKey          String
+  normalizedTerm   String
+  displayTerm      String
+  searchCount      Int      @default(0)
+  resultCountTotal Int      @default(0)
+  zeroResultCount  Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([dateKey, normalizedTerm])
+  @@index([dateKey])
+  @@index([normalizedTerm, dateKey])
 }
 
 model StoredImage {

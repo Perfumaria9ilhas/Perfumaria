@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { trackMetaEvent } from "@/lib/meta-pixel";
+import { trackInternalEvent } from "@/lib/internal-analytics";
 
 type TrackedWhatsAppLinkProps = {
   href: string;
@@ -27,12 +28,13 @@ export function TrackedWhatsAppLink({
       rel="noopener noreferrer"
       className={className}
       aria-label={ariaLabel}
-      onClick={() =>
+      onClick={() => {
+        trackInternalEvent({ event: "general_whatsapp" });
         trackMetaEvent("Contact", {
           content_name: contentName,
           content_type: "contact",
-        })
-      }
+        });
+      }}
     >
       {children}
     </a>

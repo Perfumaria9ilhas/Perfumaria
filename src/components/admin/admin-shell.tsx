@@ -3,6 +3,7 @@ import { logoutAdmin } from "@/actions/admin";
 
 const navLinks = [
   { href: "/admin", label: "Dashboard" },
+  { href: "/admin/estatisticas", label: "Estatísticas" },
   { href: "/admin/marcas", label: "Marcas" },
   { href: "/admin/categorias", label: "Categorias" },
   { href: "/admin/produtos", label: "Produtos" },
