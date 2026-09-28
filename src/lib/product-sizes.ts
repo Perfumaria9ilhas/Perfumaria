@@ -1,6 +1,11 @@
 export const FIVE_ML_PRICE_IN_CENTS = 350;
 export const TEN_ML_PRICE_IN_CENTS = 650;
 
+export function getDecantPriceInCents(bottlePriceInCents: number, size: "5ml" | "10ml") {
+  if (size === "5ml") return bottlePriceInCents >= 5500 ? 450 : FIVE_ML_PRICE_IN_CENTS;
+  return bottlePriceInCents >= 5500 ? 750 : TEN_ML_PRICE_IN_CENTS;
+}
+
 export type ProductSizeValue = "100ml" | "10ml" | "5ml";
 
 export function getProductSizeLabel(size: ProductSizeValue) {

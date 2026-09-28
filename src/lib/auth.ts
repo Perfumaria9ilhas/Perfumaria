@@ -6,9 +6,17 @@ import { prisma } from "@/lib/prisma";
 
 const sessionCookieName = "nineilhas_admin_session";
 const customerSessionCookieName = "nineilhas_customer_session";
-const sessionSecret = new TextEncoder().encode(
-  process.env.ADMIN_SESSION_SECRET ?? "troca-esta-chave-por-uma-chave-segura",
-);
+const configuredSessionSecret = process.env.ADMIN_SESSION_SECRET;
+const configuredAdminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+if (!configuredSessionSecret) {
+  throw new Error("ADMIN_SESSION_SECRET não está configurada.");
+}
+if (!configuredAdminEmail) {
+  throw new Error("ADMIN_EMAIL não está configurado.");
+}
+const customerSessionSecret = new TextEncoder().encode(configuredSessionSecret);
+// A versão separa os tokens Admin dos tokens de cliente e invalida apenas sessões Admin antigas.
+const adminSessionSecret = new TextEncoder().encode(`${configuredSessionSecret}:admin-session-v2`);
 
 type SessionPayload = {
   sub: string;
@@ -23,21 +31,6 @@ type CustomerSessionPayload = {
   lastName: string;
 };
 
-const sharedAdminAccounts = [
-  {
-    id: "shared-admin-perfumaria9ilhas",
-    email: "perfumaria9ilhas@hotmail.com",
-    name: "Admin 9 Ilhas",
-    password: process.env.PERFUMARIA9ILHAS_ADMIN_PASSWORD ?? "Casafeliz",
-  },
-  {
-    id: "shared-admin-d3agl3z0r123",
-    email: "d3agl3z0r123@gmail.com",
-    name: "Admin 9 Ilhas",
-    password: process.env.D3AGL3Z0R123_ADMIN_PASSWORD ?? "Casafeliz",
-  },
-];
-
 export async function createSession(payload: SessionPayload) {
   const token = await new SignJWT({
     email: payload.email,
@@ -47,7 +40,7 @@ export async function createSession(payload: SessionPayload) {
     .setSubject(payload.sub)
     .setIssuedAt()
     .setExpirationTime("7d")
-    .sign(sessionSecret);
+    .sign(adminSessionSecret);
 
   const cookieStore = await cookies();
   cookieStore.set(sessionCookieName, token, {
@@ -74,7 +67,7 @@ export async function createCustomerSession(payload: CustomerSessionPayload) {
     .setSubject(payload.sub)
     .setIssuedAt()
     .setExpirationTime("30d")
-    .sign(sessionSecret);
+    .sign(customerSessionSecret);
 
   const cookieStore = await cookies();
   cookieStore.set(customerSessionCookieName, token, {
@@ -100,7 +93,7 @@ export async function getCurrentAdmin() {
   }
 
   try {
-    const { payload } = await jwtVerify(token, sessionSecret);
+    const { payload } = await jwtVerify(token, adminSessionSecret);
 
     return {
       id: payload.sub,
@@ -121,7 +114,7 @@ export async function getCurrentCustomer() {
   }
 
   try {
-    const { payload } = await jwtVerify(token, sessionSecret);
+    const { payload } = await jwtVerify(token, customerSessionSecret);
 
     return {
       id: payload.sub as string,
@@ -146,28 +139,21 @@ export async function requireAdmin() {
 
 export async function validateAdminCredentials(email: string, password: string) {
   const normalizedEmail = email.trim().toLowerCase();
-
-  const sharedAdmin = sharedAdminAccounts.find((account) => account.email === normalizedEmail);
-
-  if (sharedAdmin && password === sharedAdmin.password) {
-    return sharedAdmin;
-  }
+  if (normalizedEmail !== configuredAdminEmail) return null;
 
   const user = await prisma.adminUser.findUnique({
     where: { email: normalizedEmail },
   });
 
-  if (!user) {
-    return null;
+  if (user) {
+    const isValid = await compare(password, user.passwordHash);
+    if (isValid) return user;
   }
 
-  const isValid = await compare(password, user.passwordHash);
-
-  if (!isValid) {
-    return null;
-  }
-
-  return user;
+  const configuredPassword = process.env.ADMIN_PASSWORD;
+  if (!configuredPassword) return null;
+  if (password !== configuredPassword) return null;
+  return { id: "configured-admin", email: configuredAdminEmail, name: "Admin 9 Ilhas" };
 }
 
 export async function validateCustomerCredentials(email: string, password: string) {

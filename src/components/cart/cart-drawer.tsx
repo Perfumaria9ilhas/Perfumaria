@@ -57,12 +57,8 @@ export function CartDrawer() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           items: items.map((item) => ({
-            id: item.id,
-            productId: item.productId,
-            name: item.name,
-            brand: item.brand,
-            sizeLabel: item.sizeLabel,
-            priceInCents: item.priceInCents,
+            productId: item.productId.split(":")[0],
+            variant: /^5\s*ml$/i.test(item.sizeLabel) ? "5ml" : /^10\s*ml$/i.test(item.sizeLabel) ? "10ml" : "bottle",
             quantity: item.quantity,
           })),
         }),

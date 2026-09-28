@@ -366,11 +366,12 @@ const products = [
 ];
 
 async function main() {
-  const adminEmail = process.env.ADMIN_EMAIL ?? "admin@9ilhas.pt";
-  const adminPassword = process.env.ADMIN_PASSWORD ?? "noveilhas123";
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (!adminEmail || !adminPassword) {
+    throw new Error("ADMIN_EMAIL e ADMIN_PASSWORD são obrigatórias para executar o seed.");
+  }
   const passwordHash = await hash(adminPassword, 10);
-  const sharedAdminPassword = process.env.ADMIN_SHARED_PASSWORD ?? "Casafeliz";
-  const sharedAdminPasswordHash = await hash(sharedAdminPassword, 10);
 
   await prisma.adminUser.upsert({
     where: { email: adminEmail },
@@ -381,18 +382,6 @@ async function main() {
       name: "Admin 9 Ilhas",
     },
   });
-
-  for (const sharedAdminEmail of ["perfumaria9ilhas@hotmail.com", "d3agl3z0r123@gmail.com"]) {
-    await prisma.adminUser.upsert({
-      where: { email: sharedAdminEmail },
-      update: { passwordHash: sharedAdminPasswordHash, name: "Admin 9 Ilhas" },
-      create: {
-        email: sharedAdminEmail,
-        passwordHash: sharedAdminPasswordHash,
-        name: "Admin 9 Ilhas",
-      },
-    });
-  }
 
   await prisma.storeSettings.upsert({
     where: { id: "main" },

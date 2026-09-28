@@ -98,9 +98,9 @@ export default async function AdminStatisticsPage({ searchParams }: PageProps) {
   const metricParam = stringParam(query.metric);
   const metric = (metrics.some((item) => item.value === metricParam) ? metricParam : "visits") as StatisticsMetric;
   const data = await getStatisticsData(range);
-  const funnel = [
-    ["Visitas contabilizadas", data.totals.visits], ["Produtos vistos", data.totals.views],
-    ["Adições ao carrinho", data.totals.addToCartEvents], ["Avanços para WhatsApp", data.totals.checkout],
+  const funnel: [string, number | null][] = [
+    ["Visitas contabilizadas", data.availability.visits ? data.totals.visits : null], ["Produtos vistos", data.availability.views ? data.totals.views : null],
+    ["Adições ao carrinho", data.availability.cart ? data.totals.addToCartEvents : null], ["Avanços para WhatsApp", data.availability.whatsapp ? data.totals.checkout : null],
     ["Pedidos iniciados", data.orders.count], ["Vendas pagas", data.sales.paidCount],
   ] as const;
 
@@ -120,7 +120,7 @@ export default async function AdminStatisticsPage({ searchParams }: PageProps) {
 
     <section className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-6">
       {[
-        ["Visitas contabilizadas", data.totals.visits.toLocaleString("pt-PT")],
+        ["Visitas contabilizadas", data.availability.visits ? data.totals.visits.toLocaleString("pt-PT") : "Sem dados"],
         ["Pedidos iniciados", data.orders.count.toLocaleString("pt-PT")],
         ["Vendas pagas", data.sales.paidCount.toLocaleString("pt-PT")],
         ["Valor pago", formatPrice(data.sales.paidValue)],
@@ -134,7 +134,7 @@ export default async function AdminStatisticsPage({ searchParams }: PageProps) {
     <section className="mt-5 grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
       <article className="rounded-[1.5rem] border border-[color:var(--line)] bg-white p-4 sm:p-5">
         <h2 className="font-serif text-2xl">Funil agregado</h2><p className="mt-1 text-xs text-slate-500">Relações entre contagens agregadas, não conversão individual de utilizadores.</p>
-        <div className="mt-4 space-y-2">{funnel.map(([label, value], index) => <div key={label}><div className="flex items-center justify-between rounded-xl bg-[color:var(--sand-soft)] px-3 py-2.5"><span className="text-sm">{label}</span><strong>{value.toLocaleString("pt-PT")}</strong></div>{index < funnel.length - 1 ? <p className="text-center text-slate-300">↓</p> : null}</div>)}</div>
+        <div className="mt-4 space-y-2">{funnel.map(([label, value], index) => <div key={label}><div className="flex items-center justify-between rounded-xl bg-[color:var(--sand-soft)] px-3 py-2.5"><span className="text-sm">{label}</span><strong>{value === null ? "Sem dados" : value.toLocaleString("pt-PT")}</strong></div>{index < funnel.length - 1 ? <p className="text-center text-slate-300">↓</p> : null}</div>)}</div>
       </article>
       <div className="min-w-0 space-y-3">
         <div className="flex max-w-full gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{metrics.map((item) => <Link key={item.value} href={`/admin/estatisticas?period=${range.period}&from=${range.from}&to=${range.to}&metric=${item.value}`} className={`shrink-0 rounded-full border px-3 py-2 text-xs ${metric === item.value ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-white" : "border-[color:var(--line)] bg-white"}`}>{item.label}</Link>)}</div>

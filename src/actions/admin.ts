@@ -1,7 +1,7 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { ProductAudience, ProductConcentration, StockMovementType } from "@prisma/client";
+import { Prisma, ProductAudience, ProductConcentration, StockMovementType } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -455,8 +455,6 @@ export async function saveProduct(formData: FormData) {
       ? rawSalePriceInCents
       : null;
 
-  const slug = slugify(parsed.name);
-
   let finalImageUrl = currentImageUrl || defaultProductImage;
 
   if (typeof imageFile !== "string" && imageFile && imageFile.size > 0) {
@@ -465,7 +463,6 @@ export async function saveProduct(formData: FormData) {
 
   const data = {
     name: parsed.name,
-    slug,
     brandId: parsed.brandId,
     categoryId: parsed.categoryId,
     description: parsed.description,
@@ -492,9 +489,16 @@ export async function saveProduct(formData: FormData) {
       data: parsed.active ? data : { ...data, homeFeatured: false },
     });
   } else {
-    await prisma.product.create({
-      data,
-    });
+    const baseSlug = slugify(parsed.name) || "produto";
+    for (let suffix = 1; ; suffix += 1) {
+      const slug = suffix === 1 ? baseSlug : `${baseSlug}-${suffix}`;
+      try {
+        await prisma.product.create({ data: { ...data, slug } });
+        break;
+      } catch (error) {
+        if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")) throw error;
+      }
+    }
   }
 
   revalidatePath("/admin");

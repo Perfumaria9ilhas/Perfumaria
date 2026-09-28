@@ -8,7 +8,7 @@ export function AdminLoginForm({ hasError }: { hasError: boolean }) {
         <input
           name="email"
           type="email"
-          defaultValue="admin@9ilhas.pt"
+          autoComplete="username"
           className="h-12 w-full rounded-2xl border border-[color:var(--line)] bg-white px-4 outline-none transition focus:border-[color:var(--atlantic)]"
           required
         />
@@ -18,7 +18,7 @@ export function AdminLoginForm({ hasError }: { hasError: boolean }) {
         <input
           name="password"
           type="password"
-          defaultValue="noveilhas123"
+          autoComplete="current-password"
           className="h-12 w-full rounded-2xl border border-[color:var(--line)] bg-white px-4 outline-none transition focus:border-[color:var(--atlantic)]"
           required
         />

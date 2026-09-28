@@ -17,6 +17,7 @@ import { getProductAudienceLabel } from "@/lib/product-audience";
 import { getProductConcentrationDetails } from "@/lib/product-concentration";
 import {
   buildCartLineId,
+  getDecantPriceInCents,
   getProductBottleSizeLabel,
   getProductSizeLabel,
   type ProductSizeValue,
@@ -72,9 +73,7 @@ function getBottlePrice(product: CatalogProduct) {
 }
 
 function getDisplayPrice(product: CatalogProduct, size: ProductSizeValue) {
-  const hasPremiumDecantPrice = getBottlePrice(product) >= 5500;
-  if (size === "5ml") return hasPremiumDecantPrice ? 450 : 350;
-  if (size === "10ml") return hasPremiumDecantPrice ? 750 : 650;
+  if (size === "5ml" || size === "10ml") return getDecantPriceInCents(getBottlePrice(product), size);
   return getBottlePrice(product);
 }
 

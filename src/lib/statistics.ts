@@ -68,7 +68,7 @@ export function resolveStatisticsRange(input: { period?: string; from?: string; 
 
 export async function getStatisticsData(range: { from: string; to: string }) {
   const createdAt = { gte: azoresMidnightUtc(range.from), lt: azoresMidnightUtc(addDays(range.to, 1)) };
-  const [daily, productDaily, searches, orders, movements, firstDaily, firstProductDaily, firstOrder, firstSale, migratedVisitDays] = await Promise.all([
+  const [daily, productDaily, searches, orders, movements, firstDaily, firstProductDaily, firstSearch, firstOrder, firstSale, migratedVisitDays] = await Promise.all([
     prisma.analyticsDaily.findMany({ where: { dateKey: { gte: range.from, lte: range.to } }, orderBy: { dateKey: "asc" } }),
     prisma.productAnalyticsDaily.findMany({ where: { dateKey: { gte: range.from, lte: range.to } }, include: { product: { select: { name: true } } } }),
     prisma.searchAnalyticsDaily.findMany({ where: { dateKey: { gte: range.from, lte: range.to } } }),
@@ -79,6 +79,7 @@ export async function getStatisticsData(range: { from: string; to: string }) {
     }),
     prisma.analyticsDaily.findFirst({ orderBy: { dateKey: "asc" }, select: { dateKey: true } }),
     prisma.productAnalyticsDaily.findFirst({ orderBy: { dateKey: "asc" }, select: { dateKey: true } }),
+    prisma.searchAnalyticsDaily.findFirst({ orderBy: { dateKey: "asc" }, select: { dateKey: true } }),
     prisma.siteOrder.findFirst({ orderBy: { createdAt: "asc" }, select: { createdAt: true } }),
     prisma.stockMovement.findFirst({ where: { type: StockMovementType.SALE }, orderBy: { createdAt: "asc" }, select: { createdAt: true } }),
     prisma.dailySiteVisit.count(),
@@ -123,7 +124,7 @@ export async function getStatisticsData(range: { from: string; to: string }) {
       current.value += row[field];
       map.set(row.productId, current);
     }
-    return [...map.values()].sort((a, b) => b.value - a.value || a.name.localeCompare(b.name, "pt-PT")).slice(0, 5);
+    return [...map.values()].filter((item) => item.value > 0).sort((a, b) => b.value - a.value || a.name.localeCompare(b.name, "pt-PT")).slice(0, 5);
   };
   const whatsappProducts = new Map<string, { name: string; value: number }>();
   for (const row of productDaily) {
@@ -167,6 +168,17 @@ export async function getStatisticsData(range: { from: string; to: string }) {
     sales: firstSale ? getAzoresDateKey(firstSale.createdAt) : null,
     revenue: firstSale ? getAzoresDateKey(firstSale.createdAt) : null,
   } satisfies Record<StatisticsMetric, string | null>;
+  const behaviorStarts = {
+    visits: starts.visits,
+    views: starts.views,
+    cart: starts.cart,
+    whatsapp: starts.whatsapp,
+    reservations: firstDaily?.dateKey && firstDaily.dateKey > BEHAVIOR_TRACKING_START ? firstDaily.dateKey : BEHAVIOR_TRACKING_START,
+    searches: firstSearch?.dateKey ?? BEHAVIOR_TRACKING_START,
+  };
+  const availability = Object.fromEntries(
+    Object.entries(behaviorStarts).map(([metric, start]) => [metric, Boolean(start && range.to >= start)]),
+  ) as Record<keyof typeof behaviorStarts, boolean>;
   const days = enumerateDays(range.from, range.to);
   const series = days.map((dateKey) => ({
     dateKey,
@@ -186,12 +198,13 @@ export async function getStatisticsData(range: { from: string; to: string }) {
     rankings: {
       viewed: aggregateProducts("views"),
       added: aggregateProducts("addedUnits"),
-      whatsapp: [...whatsappProducts.values()].sort((a, b) => b.value - a.value).slice(0, 5),
-      sold: [...soldProducts.values()].sort((a, b) => b.value - a.value).slice(0, 5),
-      searches: [...searchRanking.values()].sort((a, b) => b.value - a.value).slice(0, 5),
+      whatsapp: [...whatsappProducts.values()].filter((item) => item.value > 0).sort((a, b) => b.value - a.value).slice(0, 5),
+      sold: [...soldProducts.values()].filter((item) => item.value > 0).sort((a, b) => b.value - a.value).slice(0, 5),
+      searches: [...searchRanking.values()].filter((item) => item.value > 0).sort((a, b) => b.value - a.value).slice(0, 5),
     },
     series,
     starts,
+    availability,
     migratedVisitDays,
   };
 }
