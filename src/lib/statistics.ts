@@ -94,9 +94,24 @@ export async function getStatisticsData(range: { from: string; to: string }) {
     contacts: sum.contacts + row.generalWhatsappContacts,
   }), { visits: 0, views: 0, addToCartEvents: 0, addedUnits: 0, checkout: 0, reservations: 0, contacts: 0 });
 
-  const paidMovements = movements.filter((movement) => (movement.saleStatus ?? StockSaleStatus.PAID) === StockSaleStatus.PAID);
+  const movementGroups = new Map<string, typeof movements>();
+  for (const movement of movements) {
+    const groupId = movement.saleGroupId ?? movement.id;
+    movementGroups.set(groupId, [...(movementGroups.get(groupId) ?? []), movement]);
+  }
+  const paidGroupIds = new Set(
+    [...movementGroups.entries()]
+      .filter(([, items]) =>
+        !items.some((item) => item.saleStatus === StockSaleStatus.PENDING) &&
+        items.some((item) => (item.saleStatus ?? StockSaleStatus.PAID) === StockSaleStatus.PAID),
+      )
+      .map(([groupId]) => groupId),
+  );
+  const paidMovements = movements.filter((movement) =>
+    paidGroupIds.has(movement.saleGroupId ?? movement.id) &&
+    (movement.saleStatus ?? StockSaleStatus.PAID) === StockSaleStatus.PAID,
+  );
   const pendingMovements = movements.filter((movement) => movement.saleStatus === StockSaleStatus.PENDING);
-  const paidGroups = new Set(paidMovements.map((movement) => movement.saleGroupId ?? movement.id));
   const paidValue = paidMovements.reduce((sum, movement) => sum + movement.quantity * (movement.saleUnitPriceInCents ?? 0), 0);
   const pendingValue = pendingMovements.reduce((sum, movement) => sum + movement.quantity * (movement.saleUnitPriceInCents ?? 0), 0);
   const paidUnits = paidMovements.reduce((sum, movement) => sum + movement.quantity, 0);
@@ -167,7 +182,7 @@ export async function getStatisticsData(range: { from: string; to: string }) {
   return {
     totals,
     orders: { count: orders.length, potentialValue: orders.reduce((sum, order) => sum + order.totalInCents, 0), cancelled: orders.filter((order) => order.status === "cancelado").length },
-    sales: { paidCount: paidGroups.size, paidValue, pendingValue, paidUnits, ticketAverage: paidGroups.size ? Math.round(paidValue / paidGroups.size) : 0 },
+    sales: { paidCount: paidGroupIds.size, paidValue, pendingValue, paidUnits, ticketAverage: paidGroupIds.size ? Math.round(paidValue / paidGroupIds.size) : 0 },
     rankings: {
       viewed: aggregateProducts("views"),
       added: aggregateProducts("addedUnits"),
