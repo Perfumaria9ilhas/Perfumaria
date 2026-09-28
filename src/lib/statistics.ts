@@ -124,7 +124,7 @@ export async function getStatisticsData(range: { from: string; to: string }) {
       current.value += row[field];
       map.set(row.productId, current);
     }
-    return [...map.values()].filter((item) => item.value > 0).sort((a, b) => b.value - a.value || a.name.localeCompare(b.name, "pt-PT")).slice(0, 5);
+    return [...map.values()].filter((item) => item.value > 0).sort((a, b) => b.value - a.value || a.name.localeCompare(b.name, "pt-PT"));
   };
   const whatsappProducts = new Map<string, { name: string; value: number }>();
   for (const row of productDaily) {
@@ -191,17 +191,26 @@ export async function getStatisticsData(range: { from: string; to: string }) {
     revenue: dateKey <= getAzoresDateKey() && starts.revenue && dateKey >= starts.revenue ? revenueDays.get(dateKey) ?? 0 : null,
   }));
 
+  const allRankings = {
+    viewed: aggregateProducts("views"),
+    added: aggregateProducts("addedUnits"),
+    whatsapp: [...whatsappProducts.values()].filter((item) => item.value > 0).sort((a, b) => b.value - a.value || a.name.localeCompare(b.name, "pt-PT")),
+    sold: [...soldProducts.values()].filter((item) => item.value > 0).sort((a, b) => b.value - a.value || a.name.localeCompare(b.name, "pt-PT")),
+    searches: [...searchRanking.values()].filter((item) => item.value > 0).sort((a, b) => b.value - a.value || a.name.localeCompare(b.name, "pt-PT")),
+  };
+
   return {
     totals,
     orders: { count: orders.length, potentialValue: orders.reduce((sum, order) => sum + order.totalInCents, 0), cancelled: orders.filter((order) => order.status === "cancelado").length },
     sales: { paidCount: paidGroupIds.size, paidValue, pendingValue, paidUnits, ticketAverage: paidGroupIds.size ? Math.round(paidValue / paidGroupIds.size) : 0 },
     rankings: {
-      viewed: aggregateProducts("views"),
-      added: aggregateProducts("addedUnits"),
-      whatsapp: [...whatsappProducts.values()].filter((item) => item.value > 0).sort((a, b) => b.value - a.value).slice(0, 5),
-      sold: [...soldProducts.values()].filter((item) => item.value > 0).sort((a, b) => b.value - a.value).slice(0, 5),
-      searches: [...searchRanking.values()].filter((item) => item.value > 0).sort((a, b) => b.value - a.value).slice(0, 5),
+      viewed: allRankings.viewed.slice(0, 5),
+      added: allRankings.added.slice(0, 5),
+      whatsapp: allRankings.whatsapp.slice(0, 5),
+      sold: allRankings.sold.slice(0, 5),
+      searches: allRankings.searches.slice(0, 5),
     },
+    allRankings,
     series,
     starts,
     availability,
