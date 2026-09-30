@@ -284,7 +284,7 @@ export function FeaturedProductsSlider({
           </Link>
         </div>
 
-        <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:grid sm:snap-none sm:grid-cols-2 sm:gap-x-4 sm:gap-y-9 sm:overflow-visible sm:px-0 sm:pb-0 md:grid-cols-3 xl:grid-cols-5">
+        <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:gap-4 sm:px-0 sm:pb-3">
           {visibleProducts.map((product) => {
             const selectedSize = getSelectedSize(product);
             const currentPrice = getDisplayPrice(product, selectedSize);
@@ -297,7 +297,7 @@ export function FeaturedProductsSlider({
             return (
               <article
                 key={product.id}
-                className="group relative flex h-full w-[44%] min-w-[44%] shrink-0 snap-start flex-col sm:w-auto sm:min-w-0 sm:overflow-hidden sm:rounded-[1.1rem] sm:border sm:border-[rgba(194,162,119,0.14)] sm:bg-white sm:shadow-[0_3px_14px_rgba(95,71,49,0.045)] sm:transition sm:duration-300 sm:hover:-translate-y-0.5 sm:hover:border-[rgba(194,162,119,0.3)] sm:hover:shadow-[0_10px_24px_rgba(95,71,49,0.09)]"
+                className="group relative flex h-full w-[44%] min-w-[44%] shrink-0 snap-start flex-col sm:w-[calc((100%_-_1rem)/2)] sm:min-w-[calc((100%_-_1rem)/2)] sm:overflow-hidden sm:rounded-[1.1rem] sm:border sm:border-[rgba(194,162,119,0.14)] sm:bg-white sm:shadow-[0_3px_14px_rgba(95,71,49,0.045)] sm:transition sm:duration-300 sm:hover:-translate-y-0.5 sm:hover:border-[rgba(194,162,119,0.3)] sm:hover:shadow-[0_10px_24px_rgba(95,71,49,0.09)] md:w-[31%] md:min-w-[31%] xl:w-[calc((100%_-_4rem)/5)] xl:min-w-[calc((100%_-_4rem)/5)]"
               >
                 <Link
                   href={`/catalogo?produto=${product.slug}`}
