@@ -5,13 +5,17 @@ import {
   Camera,
   Globe2,
   MessageCircleMore,
+  Menu,
   Music2,
   ShoppingBag,
+  X,
 } from "lucide-react";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { CartDrawer } from "@/components/cart/cart-drawer";
 import { TrackedWhatsAppLink } from "@/components/analytics/tracked-whatsapp-link";
 import { BrandLogo } from "@/components/layout/brand-logo";
+import { HeaderSearch } from "@/components/layout/header-search";
 import { useCart } from "@/components/providers/cart-provider";
 import { navigationLinks } from "@/lib/constants";
 import { formatPrice } from "@/lib/format";
@@ -34,6 +38,7 @@ const topStripItems = [
 ];
 
 export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeaderProps) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const { itemCount, total, openCart, hasHydrated } = useCart();
   const mobileLinks = [
@@ -43,19 +48,20 @@ export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeade
 
   return (
     <>
-      <header className="sticky top-0 z-30 border-b border-[color:var(--line)] bg-white/92 backdrop-blur-xl">
-        <div className="hidden border-b border-[rgba(255,255,255,0.16)] bg-[linear-gradient(90deg,_#ba8a48,_#d5ad6b)] lg:block">
-          <div className="mx-auto flex max-w-[1320px] items-center justify-center gap-8 px-5 py-2 text-[11px] font-medium text-white">
+      <header className="sticky top-0 z-30 border-b border-[color:var(--line)] bg-[rgba(255,253,250,0.94)] backdrop-blur-xl">
+        <div className="hidden bg-[color:var(--ink)] lg:block">
+          <div className="mx-auto flex max-w-[1420px] items-center justify-center gap-10 px-6 py-2 text-[10px] font-medium uppercase tracking-[0.12em] text-white/82">
             {topStripItems.map((item) => (
               <span key={item}>{item}</span>
             ))}
           </div>
         </div>
-        <div className="mx-auto max-w-[1320px] px-4 py-2 lg:px-5 lg:py-2.5">
+        <div className="mx-auto max-w-[1420px] px-4 py-2.5 lg:px-6 lg:py-3">
           <div className="flex min-w-0 items-center justify-between gap-2 lg:hidden">
             <BrandLogo compact className="min-w-0 shrink" />
-
-            <button
+            <div className="flex items-center gap-1">
+              <HeaderSearch />
+              <button
               type="button"
               onClick={openCart}
               title={`Abrir carrinho da ${settings.storeName}`}
@@ -67,34 +73,39 @@ export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeade
               <span className="min-w-0 text-left text-sm font-semibold text-[color:var(--ink)]">
                 {hasHydrated ? itemCount : 0}
               </span>
-              <strong className="hidden font-serif text-base text-[color:var(--ink)] min-[360px]:block">
+              <strong className="hidden font-serif text-base text-[color:var(--ink)] min-[430px]:block">
                 {formatPrice(hasHydrated ? total : 0)}
               </strong>
-            </button>
+              </button>
+              <button type="button" onClick={() => setMobileMenuOpen((open) => !open)} className="inline-flex h-11 w-11 items-center justify-center rounded-full text-[color:var(--ink)] hover:bg-[color:var(--sand-soft)]" aria-label={mobileMenuOpen ? "Fechar menu" : "Abrir menu"} aria-expanded={mobileMenuOpen}>
+                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </button>
+            </div>
           </div>
 
-          <nav className="mt-2.5 flex min-w-0 flex-wrap items-center justify-center gap-x-4 gap-y-1 pb-1 text-xs sm:justify-start sm:text-sm lg:hidden">
+          {mobileMenuOpen ? <nav className="mt-2 grid min-w-0 grid-cols-2 gap-1 border-t border-[color:var(--line)] pt-2 text-sm lg:hidden">
             {mobileLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
+                onClick={() => setMobileMenuOpen(false)}
                 className={cn(
-                  "min-w-0 border-b px-0 pb-1 font-medium transition",
+                  "min-h-11 rounded-lg px-3 py-3 font-medium transition",
                   pathname === link.href
-                    ? "border-[color:var(--gold)] text-[color:var(--gold)]"
-                    : "border-transparent text-slate-700 hover:border-[rgba(183,146,107,0.45)] hover:text-[color:var(--ink)]",
+                    ? "bg-[color:var(--sand-soft)] text-[color:var(--gold)]"
+                    : "text-slate-700 hover:bg-[color:var(--sand-soft)] hover:text-[color:var(--ink)]",
                 )}
               >
                 {link.label}
               </Link>
             ))}
-          </nav>
+          </nav> : null}
 
-          <div className="hidden flex-col gap-2.5 lg:flex">
-            <div className="flex items-center justify-between gap-4">
+          <div className="hidden items-center justify-between gap-8 lg:flex">
+            <div className="flex shrink-0 items-center gap-5">
               <BrandLogo />
 
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2">
                 {socialLinks.map(({ href, label }) =>
                   href ? (
                     label === "WhatsApp" ? (
@@ -131,16 +142,17 @@ export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeade
               </div>
             </div>
 
-            <div className="flex items-center justify-between gap-4">
-              <nav className="flex flex-wrap gap-1.5">
+            <div className="flex flex-1 items-center justify-end gap-5">
+              <nav className="flex items-center gap-1">
+                <HeaderSearch />
                 {navigationLinks.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
                     className={cn(
-                      "rounded-full px-3 py-1.25 text-sm font-medium transition",
+                      "rounded-full px-3.5 py-2 text-sm font-medium transition",
                       pathname === link.href
-                        ? "bg-[color:var(--gold)] text-white shadow-sm"
+                        ? "bg-[color:var(--ink)] text-white"
                         : "text-slate-600 hover:bg-[color:var(--sand-soft)] hover:text-[color:var(--ink)]",
                     )}
                   >
@@ -149,7 +161,7 @@ export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeade
                 ))}
                 <Link
                   href="/conta"
-                  className="rounded-full px-3 py-1.25 text-sm font-medium text-slate-600 transition hover:bg-[color:var(--sand-soft)] hover:text-[color:var(--ink)]"
+                className="rounded-full px-3.5 py-2 text-sm font-medium text-slate-600 transition hover:bg-[color:var(--sand-soft)] hover:text-[color:var(--ink)]"
                 >
                   {currentCustomer ? `Ol\u00e1, ${currentCustomer.firstName}` : "Login"}
                 </Link>
@@ -159,7 +171,7 @@ export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeade
                 type="button"
                 onClick={openCart}
                 title={`Abrir carrinho da ${settings.storeName}`}
-                className="flex items-center justify-between gap-3 rounded-full border border-[color:var(--line)] bg-[color:var(--sand-soft)] px-3.5 py-2 text-left transition hover:border-[color:var(--gold)]"
+                className="flex items-center justify-between gap-3 rounded-full border border-[color:var(--line)] bg-white px-3.5 py-2 text-left shadow-[0_4px_16px_rgba(45,35,28,0.04)] transition hover:border-[color:var(--gold)]"
               >
                 <div className="flex items-center gap-3">
                   <div className="rounded-full bg-white p-2 text-[color:var(--atlantic)] shadow-sm">

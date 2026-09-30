@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { FeaturedProductsSlider } from "@/components/home/featured-products-slider";
+import { ExploreHome } from "@/components/home/explore-home";
 import { HeroHome } from "@/components/home/hero-home";
 import { SampleHome } from "@/components/home/sample-home";
 import { TrustHome } from "@/components/home/trust-home";
@@ -38,7 +39,7 @@ export default async function Home() {
   );
 
   return (
-    <div className="mx-auto flex max-w-[1320px] flex-col gap-8 px-4 py-5 lg:px-5 lg:py-6">
+    <div className="mx-auto flex max-w-[1420px] flex-col gap-12 px-4 py-5 sm:gap-16 lg:px-6 lg:py-8">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(featuredJsonLd) }}
@@ -66,7 +67,9 @@ export default async function Home() {
         buttonLabel={settings.homeFeaturedButtonLabel}
       />
 
-      <section className="rounded-[1.6rem] border border-[rgba(194,162,119,0.14)] bg-white/75 px-5 py-4 shadow-[0_10px_24px_rgba(95,71,49,0.04)] lg:px-6">
+      <ExploreHome products={featuredProducts} />
+
+      <section className="border-y border-[rgba(170,128,83,0.16)] px-1 py-7 lg:px-2">
         <div className="grid gap-4 lg:grid-cols-[1.4fr_0.6fr] lg:items-center">
           <div className="space-y-2">
             <h2 className="text-[1.35rem] leading-tight text-[color:var(--ink)] sm:text-[1.65rem]">

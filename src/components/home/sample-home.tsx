@@ -18,7 +18,7 @@ export function SampleHome({
   buttonLabel,
 }: SampleHomeProps) {
   return (
-    <section className="relative overflow-hidden rounded-[2.2rem] border border-[rgba(194,162,119,0.16)] bg-[color:var(--sand-soft)] shadow-[0_18px_38px_rgba(95,71,49,0.06)]">
+    <section className="relative overflow-hidden rounded-[1.5rem] border border-[rgba(170,128,83,0.16)] bg-[color:var(--sand-soft)] shadow-[0_18px_46px_rgba(50,37,28,0.07)] sm:rounded-[1.8rem]">
       <div className="relative min-h-[340px] sm:min-h-[380px] lg:min-h-[360px]">
         {imageUrl ? (
           <Image

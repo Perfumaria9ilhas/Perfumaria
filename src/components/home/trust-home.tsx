@@ -115,7 +115,7 @@ export function TrustHome({ reviews, eyebrow, title }: TrustHomeProps) {
             reviews.slice(0, 3).map((review) => (
               <article
                 key={review.id}
-                className="rounded-[1.8rem] border border-[rgba(194,162,119,0.16)] bg-white/92 px-5 py-6 text-center shadow-[0_14px_30px_rgba(95,71,49,0.05)]"
+                className="rounded-[1.15rem] border border-[rgba(170,128,83,0.14)] bg-white px-6 py-7 text-center shadow-[0_6px_22px_rgba(50,37,28,0.045)]"
               >
                 <p className="text-sm text-[color:#b98544]">{renderStars(review.rating)}</p>
                 <p className="mt-4 text-sm leading-7 text-slate-700">{review.comment}</p>

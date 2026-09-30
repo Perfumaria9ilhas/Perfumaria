@@ -148,3 +148,27 @@ textarea,
 .font-serif {
   font-family: var(--font-display), serif;
 }
+
+.public-site {
+  --background: #f8f5ef;
+  --foreground: #29231f;
+  --ink: #29231f;
+  --atlantic: #76573f;
+  --atlantic-deep: #4d392c;
+  --gold: #aa8053;
+  --green: #66705d;
+  --sand-soft: #fbf8f3;
+  --line: #e8dfd3;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(170, 128, 83, 0.08), transparent 22rem),
+    #f8f5ef;
+}
+
+.public-site :focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+
+.public-site ::selection {
+  background: rgba(170, 128, 83, 0.24);
+}

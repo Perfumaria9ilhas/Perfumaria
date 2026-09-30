@@ -102,11 +102,11 @@ export function CartDrawer() {
       ) : null}
 
       <aside
-        className={`cart-drawer fixed right-0 top-0 z-50 flex h-[100dvh] w-full max-w-full min-w-0 flex-col overflow-hidden border-l border-[color:var(--line)] bg-[color:var(--sand-soft)] shadow-2xl backdrop-blur transition-transform duration-300 sm:max-w-md ${
+        className={`cart-drawer fixed right-0 top-0 z-50 flex h-[100dvh] w-full max-w-full min-w-0 flex-col overflow-hidden border-l border-[color:var(--line)] bg-[color:#faf8f4] shadow-2xl backdrop-blur transition-transform duration-300 sm:max-w-[30rem] ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <div className="border-b border-[color:var(--line)] bg-gradient-to-b from-white via-white to-[color:var(--sand-soft)]/70 px-4 py-4 sm:px-6 sm:py-5">
+        <div className="border-b border-[color:var(--line)] bg-white px-4 pb-4 pt-[calc(env(safe-area-inset-top)+1rem)] sm:px-6 sm:py-5">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 flex-1 space-y-3">
               <Image
@@ -150,7 +150,7 @@ export function CartDrawer() {
               {items.map((item) => (
                 <div
                   key={item.id}
-                  className="grid min-w-0 grid-cols-[64px_minmax(0,1fr)] gap-3 rounded-[1.5rem] border border-[color:var(--line)] bg-white p-3 shadow-[0_12px_35px_rgba(113,80,41,0.08)] transition hover:shadow-[0_16px_40px_rgba(113,80,41,0.12)] sm:grid-cols-[78px_minmax(0,1fr)] sm:gap-4"
+                  className="grid min-w-0 grid-cols-[64px_minmax(0,1fr)] gap-3 rounded-[1rem] border border-[color:var(--line)] bg-white p-3 shadow-[0_5px_18px_rgba(50,37,28,0.05)] sm:grid-cols-[78px_minmax(0,1fr)] sm:gap-4"
                 >
                   <div className="relative aspect-square overflow-hidden rounded-[1.2rem] bg-[color:var(--sand-soft)]">
                     {item.imageUrl ? (
@@ -243,8 +243,8 @@ export function CartDrawer() {
           )}
         </div>
 
-        <div className="cart-footer sticky bottom-0 min-w-0 border-t border-[color:var(--line)] bg-[color:var(--sand-soft)] px-4 py-4 shadow-[0_-14px_35px_rgba(113,80,41,0.08)] sm:px-6 sm:py-5">
-          <div className="mb-4 rounded-[1.75rem] border border-[color:var(--line)] bg-white p-4 shadow-[0_14px_35px_rgba(113,80,41,0.08)]">
+        <div className="cart-footer sticky bottom-0 min-w-0 border-t border-[color:var(--line)] bg-[color:#faf8f4] px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-4 shadow-[0_-10px_30px_rgba(50,37,28,0.06)] sm:px-6 sm:py-5">
+          <div className="mb-4 rounded-[1rem] border border-[color:var(--line)] bg-white p-4">
             <div className="mb-4 flex items-center justify-between text-[color:var(--ink)]">
               <span className="text-sm uppercase tracking-[0.25em]">Total</span>
               <strong className="font-serif text-[2rem]">{formatPrice(total)}</strong>

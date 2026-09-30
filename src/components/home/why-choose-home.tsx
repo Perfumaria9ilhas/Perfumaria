@@ -34,14 +34,14 @@ export function WhyChooseHome({ eyebrow, title, items }: WhyChooseHomeProps) {
         </h2>
       </div>
 
-      <div className="grid grid-cols-2 gap-2.5 sm:gap-4 xl:grid-cols-5">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-5">
         {visibleItems.map((item, index) => {
           const Icon = trustIcons[index] ?? PackageCheck;
 
           return (
             <article
               key={`${item.title}-${index}`}
-              className="rounded-[1.25rem] border border-[rgba(194,162,119,0.18)] bg-white/92 p-3.5 shadow-[0_10px_24px_rgba(95,71,49,0.05)] last:col-span-2 sm:rounded-[1.8rem] sm:p-5 sm:last:col-span-1"
+              className="rounded-[1rem] border border-[rgba(170,128,83,0.14)] bg-white p-3.5 shadow-[0_5px_18px_rgba(50,37,28,0.04)] last:col-span-2 sm:p-5 sm:last:col-span-1"
             >
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[rgba(183,146,107,0.12)] text-[color:var(--gold)] sm:h-12 sm:w-12 sm:rounded-2xl">
                 <Icon className="h-5 w-5" />

@@ -18,7 +18,7 @@ export default async function SiteLayout({
 
   return (
     <CookieConsentProvider metaPixelId={process.env.META_PIXEL_ID}>
-      <div className="min-h-screen min-w-0 max-w-full overflow-x-clip">
+      <div className="public-site min-h-screen min-w-0 max-w-full overflow-x-clip">
         <SiteHeader
           settings={settings}
           socialLinks={socialLinks}

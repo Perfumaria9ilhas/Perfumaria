@@ -18,8 +18,8 @@ export function SiteFooter({
   socialLinks: { href?: string; label: string }[];
 }) {
   return (
-    <footer className="mt-12 border-t border-[rgba(194,162,119,0.16)] bg-[linear-gradient(180deg,_#2a1f18,_#1d1510)] text-[color:#f3e7d6]">
-      <div className="mx-auto max-w-[1320px] px-4 py-12 lg:px-5">
+    <footer className="mt-16 border-t border-black/10 bg-[color:#211b17] text-[color:#f3e7d6]">
+      <div className="mx-auto max-w-[1420px] px-5 py-14 lg:px-6 lg:py-16">
         <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr_0.9fr_1fr]">
           <div className="space-y-5">
             <Image

@@ -13,6 +13,7 @@ import {
   buildCartLineId,
   FIVE_ML_PRICE_IN_CENTS,
   TEN_ML_PRICE_IN_CENTS,
+  getProductBottleSizeLabel,
   getProductSizeLabel,
   type ProductSizeValue,
 } from "@/lib/product-sizes";
@@ -45,7 +46,7 @@ function FeaturedProductImage({
       alt={name}
       fill
       unoptimized
-      className="object-contain p-3 transition duration-500 group-hover:scale-[1.03]"
+      className="object-contain p-3 transition duration-500 group-hover:scale-[1.025] sm:p-4"
     />
   );
 }
@@ -283,7 +284,7 @@ export function FeaturedProductsSlider({
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-5">
+        <div className="grid grid-cols-2 gap-x-2.5 gap-y-7 sm:gap-x-4 sm:gap-y-9 md:grid-cols-3 xl:grid-cols-5">
           {visibleProducts.map((product) => {
             const selectedSize = getSelectedSize(product);
             const currentPrice = getDisplayPrice(product, selectedSize);
@@ -296,47 +297,47 @@ export function FeaturedProductsSlider({
             return (
               <article
                 key={product.id}
-                className="group relative flex h-full flex-col rounded-[1.5rem] border border-[rgba(194,162,119,0.16)] bg-[linear-gradient(180deg,_rgba(255,255,255,1),_rgba(252,246,238,0.96))] p-3 shadow-[0_14px_32px_rgba(95,71,49,0.06)] transition duration-300 hover:-translate-y-1.5 hover:shadow-[0_24px_42px_rgba(95,71,49,0.12)]"
+                className="group relative flex h-full min-w-0 flex-col overflow-hidden rounded-[0.9rem] border border-[rgba(194,162,119,0.14)] bg-white shadow-[0_3px_14px_rgba(95,71,49,0.045)] transition duration-300 hover:-translate-y-0.5 hover:border-[rgba(194,162,119,0.3)] hover:shadow-[0_10px_24px_rgba(95,71,49,0.09)] sm:rounded-[1.1rem]"
               >
                 <button
                   type="button"
                   onClick={() => setSelectedProduct(product)}
-                  className="relative block aspect-square overflow-hidden rounded-[1.45rem] border border-[rgba(194,162,119,0.1)] bg-[linear-gradient(180deg,_#fffaf3,_#f3e8d8)]"
+                  className="relative block h-[190px] overflow-hidden bg-[color:#faf7f2] min-[360px]:h-[215px] sm:h-[250px]"
                 >
                   <FeaturedProductImage imageUrl={product.imageUrl} name={product.name} />
                 </button>
 
-                <div className="mt-4 flex flex-1 flex-col">
-                  <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--atlantic)]">
+                <div className="flex flex-1 flex-col p-2.5 sm:p-4">
+                  <p className="truncate text-[9px] font-medium uppercase tracking-[0.18em] text-[color:#7a624d] sm:text-[10px]">
                     {product.brand.name}
                   </p>
 
-                  <h3 className="mt-1.5 text-lg leading-tight text-[color:var(--ink)]">
+                  <h3 className="mt-1 line-clamp-2 min-h-[2.35rem] font-serif text-[0.98rem] leading-[1.18] text-[color:var(--ink)] sm:min-h-[2.8rem] sm:text-[1.16rem]">
                     {product.name}
                   </h3>
 
-                  <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-[color:var(--gold)]">
-                    {audience}
+                  <p className="mt-1 truncate text-[9px] uppercase tracking-[0.12em] text-slate-500 sm:text-[10px]">
+                    {audience} · {selectedSize === "100ml" ? getProductBottleSizeLabel(product) : getProductSizeLabel(selectedSize)}
                   </p>
 
-                  <div className="mt-3 flex flex-wrap gap-1.5">
+                  <div className="mt-3 flex flex-nowrap gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                     <button
                       type="button"
                       onClick={() => setProductSize(product.id, "100ml")}
-                      className={`rounded-md border px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.1em] transition ${
+                      className={`shrink-0 rounded-full border px-2 py-1 text-[8px] font-semibold uppercase tracking-[0.06em] transition sm:text-[9px] ${
                         selectedSize === "100ml"
                           ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-white"
                           : "border-[color:var(--line)] bg-[color:var(--sand-soft)] text-slate-600"
                       }`}
                     >
-                      Frasco Original 100ml
+                      {getProductBottleSizeLabel(product)}
                     </button>
 
                     {product.availableInTenMl ? (
                       <button
                         type="button"
                         onClick={() => setProductSize(product.id, "10ml")}
-                        className={`rounded-md border px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.1em] transition ${
+                        className={`shrink-0 rounded-full border px-2 py-1 text-[8px] font-semibold uppercase tracking-[0.06em] transition sm:text-[9px] ${
                           selectedSize === "10ml"
                             ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-white"
                             : "border-[color:var(--line)] bg-[color:var(--sand-soft)] text-slate-600"
@@ -350,7 +351,7 @@ export function FeaturedProductsSlider({
                       <button
                         type="button"
                         onClick={() => setProductSize(product.id, "5ml")}
-                        className={`rounded-md border px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.1em] transition ${
+                        className={`shrink-0 rounded-full border px-2 py-1 text-[8px] font-semibold uppercase tracking-[0.06em] transition sm:text-[9px] ${
                           selectedSize === "5ml"
                             ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-white"
                             : "border-[color:var(--line)] bg-[color:var(--sand-soft)] text-slate-600"
@@ -361,30 +362,22 @@ export function FeaturedProductsSlider({
                     ) : null}
                   </div>
 
-                  <div className="mt-4">
+                  <div className="mt-auto pt-3">
                     {hasDiscount ? (
                       <p className="text-xs text-slate-400 line-through">
                         {formatPrice(product.priceInCents)}
                       </p>
                     ) : null}
-                    <p className="text-[1.5rem] leading-none text-[color:var(--ink)]">
+                    <p className="font-serif text-[1.18rem] leading-none text-[color:var(--ink)] sm:text-[1.3rem]">
                       {formatPrice(currentPrice)}
                     </p>
                   </div>
 
-                  <div className="mt-5 grid gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedProduct(product)}
-                      className="inline-flex items-center justify-center rounded-full border border-[rgba(194,162,119,0.18)] bg-white px-4 py-2.5 text-xs font-semibold text-[color:var(--ink)] transition hover:border-[color:var(--gold)] hover:text-[color:var(--gold)]"
-                    >
-                      Ver opções
-                    </button>
-
+                  <div className="mt-3 grid gap-1.5">
                     <button
                       type="button"
                       onClick={() => handleAddToCart(product, selectedSize)}
-                      className="inline-flex items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,_#b88746,_#d1a15f)] px-4 py-2.5 text-xs font-semibold text-white shadow-[0_10px_18px_rgba(184,135,70,0.16)]"
+                      className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full bg-[color:var(--atlantic)] px-2 py-2 text-[10px] font-semibold text-white transition hover:bg-[color:var(--atlantic-deep)] sm:text-xs"
                     >
                       <Flame className="h-4 w-4" />
                       Comprar
