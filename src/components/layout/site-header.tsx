@@ -2,11 +2,8 @@
 
 import Link from "next/link";
 import {
-  Menu,
   ShoppingBag,
-  X,
 } from "lucide-react";
-import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { CartDrawer } from "@/components/cart/cart-drawer";
 import { TrackedWhatsAppLink } from "@/components/analytics/tracked-whatsapp-link";
@@ -64,12 +61,12 @@ function socialIconClass(label: string) {
 }
 
 export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeaderProps) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const isHome = pathname === "/";
   const { itemCount, total, openCart, hasHydrated } = useCart();
   const mobileLinks = [
     ...navigationLinks,
-    { href: "/conta", label: currentCustomer ? `Ol\u00e1, ${currentCustomer.firstName}` : "Login" },
+    { href: "/conta", label: "Login" },
   ];
 
   return (
@@ -85,7 +82,7 @@ export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeade
         <div className="mx-auto max-w-[1420px] px-4 py-2.5 lg:px-6 lg:py-3">
           <div className="flex min-w-0 items-center justify-between gap-2 lg:hidden">
             <BrandLogo compact className="min-w-0 shrink" />
-            <div className="flex items-center gap-1">
+            <div className="flex min-w-0 items-center gap-0.5">
               <HeaderSearch />
               <button
               type="button"
@@ -103,50 +100,49 @@ export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeade
                 {formatPrice(hasHydrated ? total : 0)}
               </strong>
               </button>
-              <button type="button" onClick={() => setMobileMenuOpen((open) => !open)} className="inline-flex h-11 w-11 items-center justify-center rounded-full text-[color:var(--ink)] hover:bg-[color:var(--sand-soft)]" aria-label={mobileMenuOpen ? "Fechar menu" : "Abrir menu"} aria-expanded={mobileMenuOpen}>
-                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              </button>
             </div>
           </div>
 
-          {mobileMenuOpen ? <nav className="mt-2 grid min-w-0 grid-cols-2 gap-1 border-t border-[color:var(--line)] pt-2 text-sm lg:hidden">
+          <nav className="mt-2 grid min-w-0 grid-cols-5 border-t border-[color:var(--line)] pt-2 lg:hidden" aria-label="Navegação principal">
             {mobileLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                onClick={() => setMobileMenuOpen(false)}
                 className={cn(
-                  "min-h-11 rounded-lg px-3 py-3 font-medium transition",
+                  "min-w-0 px-0.5 py-1.5 text-center text-[10px] font-medium leading-tight transition min-[360px]:text-[11px] min-[390px]:text-xs",
                   pathname === link.href
-                    ? "bg-[color:var(--sand-soft)] text-[color:var(--gold)]"
-                    : "text-slate-700 hover:bg-[color:var(--sand-soft)] hover:text-[color:var(--ink)]",
+                    ? "text-[color:var(--gold)]"
+                    : "text-slate-700 hover:text-[color:var(--gold)]",
                 )}
               >
                 {link.label}
               </Link>
             ))}
-            <div className="col-span-2 mt-1 flex items-center justify-center gap-2 border-t border-[color:var(--line)] pt-3" aria-label="Redes sociais">
+          </nav>
+
+          {isHome ? (
+            <div className="mt-2 flex items-center justify-center gap-2 border-t border-[color:var(--line)] pt-2 lg:hidden" aria-label="Redes sociais">
               {socialLinks.map(({ href, label }) =>
                 href ? (
                   label === "WhatsApp" ? (
-                    <TrackedWhatsAppLink key={label} href={href} ariaLabel={label} contentName="WhatsApp menu mobile" target="_self" className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition ${socialIconClass(label)}`}>
+                    <TrackedWhatsAppLink key={label} href={href} ariaLabel={label} contentName="WhatsApp header mobile" target="_self" className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition ${socialIconClass(label)}`}>
                       <WhatsAppIcon />
                     </TrackedWhatsAppLink>
                   ) : (
-                    <Link key={label} href={href} aria-label={label} className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition ${socialIconClass(label)}`}>
+                    <Link key={label} href={href} aria-label={label} className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition ${socialIconClass(label)}`}>
                       <SocialIcon label={label} />
                     </Link>
                   )
                 ) : null,
               )}
             </div>
-          </nav> : null}
+          ) : null}
 
           <div className="hidden items-center justify-between gap-8 lg:flex">
             <div className="flex shrink-0 items-center gap-5">
               <BrandLogo />
 
-              <div className="flex items-center gap-2">
+              {isHome ? <div className="flex items-center gap-2">
                 {socialLinks.map(({ href, label }) =>
                   href ? (
                     label === "WhatsApp" ? (
@@ -172,7 +168,7 @@ export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeade
                     )
                   ) : null,
                 )}
-              </div>
+              </div> : null}
             </div>
 
             <div className="flex flex-1 items-center justify-end gap-5">
