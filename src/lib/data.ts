@@ -82,7 +82,7 @@ export async function getHomeData() {
         productType: true,
       },
       orderBy: [{ brand: { name: "asc" } }, { name: "asc" }],
-      take: 5,
+      take: 20,
     }),
     prisma.storeReview.findMany({
       where: { approved: true },

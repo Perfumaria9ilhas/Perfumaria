@@ -42,8 +42,8 @@ export function HomeFeaturedProducts({
         return next;
       }
 
-      if (next.size >= 5) {
-        setWarning("Pode selecionar no máximo 5 produtos para a página inicial.");
+      if (next.size >= 20) {
+        setWarning("Pode selecionar no máximo 20 produtos para a página inicial.");
         return current;
       }
 
@@ -61,12 +61,12 @@ export function HomeFeaturedProducts({
             Preferidos na página inicial
           </h2>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
-            Escolha até 5 produtos ativos para a secção “Os Preferidos dos Nossos Clientes”.
+            Escolha até 20 produtos ativos para a secção “Os Preferidos dos Nossos Clientes”.
             Produtos sem stock também podem ser selecionados.
           </p>
         </div>
         <span className="w-fit rounded-full bg-[color:var(--sand-soft)] px-4 py-2 text-sm font-semibold text-[color:var(--ink)]">
-          {selectedIds.size}/5 selecionados
+          {selectedIds.size}/20 selecionados
         </span>
       </div>
 

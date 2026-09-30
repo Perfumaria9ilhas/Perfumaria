@@ -77,7 +77,7 @@ export function FeaturedProductsSlider({
     ? selectedSizes[selectedProduct.id] ?? "100ml"
     : "100ml";
 
-  const visibleProducts = useMemo(() => products.slice(0, 5), [products]);
+  const visibleProducts = useMemo(() => products.slice(0, 20), [products]);
 
   useEffect(() => {
     if (!feedback) return;
@@ -297,7 +297,7 @@ export function FeaturedProductsSlider({
             return (
               <article
                 key={product.id}
-                className="group relative flex h-full w-[calc((100vw-3.5rem)/2)] min-w-[calc((100vw-3.5rem)/2)] snap-start flex-col sm:w-auto sm:min-w-0 sm:overflow-hidden sm:rounded-[1.1rem] sm:border sm:border-[rgba(194,162,119,0.14)] sm:bg-white sm:shadow-[0_3px_14px_rgba(95,71,49,0.045)] sm:transition sm:duration-300 sm:hover:-translate-y-0.5 sm:hover:border-[rgba(194,162,119,0.3)] sm:hover:shadow-[0_10px_24px_rgba(95,71,49,0.09)]"
+                className="group relative flex h-full w-[44%] min-w-[44%] shrink-0 snap-start flex-col sm:w-auto sm:min-w-0 sm:overflow-hidden sm:rounded-[1.1rem] sm:border sm:border-[rgba(194,162,119,0.14)] sm:bg-white sm:shadow-[0_3px_14px_rgba(95,71,49,0.045)] sm:transition sm:duration-300 sm:hover:-translate-y-0.5 sm:hover:border-[rgba(194,162,119,0.3)] sm:hover:shadow-[0_10px_24px_rgba(95,71,49,0.09)]"
               >
                 <Link
                   href={`/catalogo?produto=${product.slug}`}
@@ -307,11 +307,11 @@ export function FeaturedProductsSlider({
                 </Link>
 
                 <div className="flex flex-1 flex-col pt-2 sm:p-4">
-                  <p className="truncate text-[9px] font-medium uppercase tracking-[0.18em] text-[color:#7a624d] sm:text-[10px]">
+                  <p className="line-clamp-1 text-[10px] font-medium uppercase tracking-[0.14em] text-[color:#7a624d] sm:text-[10px] sm:tracking-[0.18em]">
                     {product.brand.name}
                   </p>
 
-                  <h3 className="mt-1 line-clamp-2 min-h-[2.35rem] font-serif text-[0.98rem] leading-[1.18] text-[color:var(--ink)] sm:min-h-[2.8rem] sm:text-[1.16rem]">
+                  <h3 className="mt-1 line-clamp-2 min-h-[2.65rem] font-serif text-[1.05rem] leading-[1.22] text-[color:var(--ink)] sm:min-h-[2.8rem] sm:text-[1.16rem]">
                     <Link href={`/catalogo?produto=${product.slug}`}>{product.name}</Link>
                   </h3>
 
@@ -367,7 +367,7 @@ export function FeaturedProductsSlider({
                         {formatPrice(product.priceInCents)}
                       </p>
                     ) : null}
-                    <p className="font-serif text-[1.18rem] leading-none text-[color:var(--ink)] sm:text-[1.3rem]">
+                    <p className="font-serif text-[1.28rem] leading-none text-[color:var(--ink)] sm:text-[1.3rem]">
                       {formatPrice(currentPrice)}
                     </p>
                   </div>

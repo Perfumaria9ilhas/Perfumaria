@@ -512,8 +512,8 @@ export async function saveHomeFeaturedProducts(formData: FormData) {
   await requireAdmin();
 
   const productIds = [...new Set(formData.getAll("productIds").map(String).filter(Boolean))];
-  if (productIds.length > 5) {
-    throw new Error("Pode selecionar no máximo 5 produtos para a página inicial.");
+  if (productIds.length > 20) {
+    throw new Error("Pode selecionar no máximo 20 produtos para a página inicial.");
   }
 
   const activeProducts = await prisma.product.findMany({
