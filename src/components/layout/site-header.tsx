@@ -109,34 +109,6 @@ export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeade
             </div>
           </div>
 
-          <div className="mt-2 flex items-center justify-center gap-2 border-t border-[color:var(--line)] pt-2 lg:hidden" aria-label="Redes sociais">
-            {socialLinks.map(({ href, label }) =>
-              href ? (
-                label === "WhatsApp" ? (
-                  <TrackedWhatsAppLink
-                    key={label}
-                    href={href}
-                    ariaLabel={label}
-                    contentName="WhatsApp header mobile"
-                    target="_self"
-                    className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition ${socialIconClass(label)}`}
-                  >
-                    <WhatsAppIcon />
-                  </TrackedWhatsAppLink>
-                ) : (
-                  <Link
-                    key={label}
-                    href={href}
-                    aria-label={label}
-                    className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition ${socialIconClass(label)}`}
-                  >
-                    <SocialIcon label={label} />
-                  </Link>
-                )
-              ) : null,
-            )}
-          </div>
-
           {mobileMenuOpen ? <nav className="mt-2 grid min-w-0 grid-cols-2 gap-1 border-t border-[color:var(--line)] pt-2 text-sm lg:hidden">
             {mobileLinks.map((link) => (
               <Link
@@ -153,6 +125,21 @@ export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeade
                 {link.label}
               </Link>
             ))}
+            <div className="col-span-2 mt-1 flex items-center justify-center gap-2 border-t border-[color:var(--line)] pt-3" aria-label="Redes sociais">
+              {socialLinks.map(({ href, label }) =>
+                href ? (
+                  label === "WhatsApp" ? (
+                    <TrackedWhatsAppLink key={label} href={href} ariaLabel={label} contentName="WhatsApp menu mobile" target="_self" className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition ${socialIconClass(label)}`}>
+                      <WhatsAppIcon />
+                    </TrackedWhatsAppLink>
+                  ) : (
+                    <Link key={label} href={href} aria-label={label} className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition ${socialIconClass(label)}`}>
+                      <SocialIcon label={label} />
+                    </Link>
+                  )
+                ) : null,
+              )}
+            </div>
           </nav> : null}
 
           <div className="hidden items-center justify-between gap-8 lg:flex">

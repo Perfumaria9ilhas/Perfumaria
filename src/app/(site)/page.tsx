@@ -39,7 +39,7 @@ export default async function Home() {
   );
 
   return (
-    <div className="mx-auto flex max-w-[1420px] flex-col gap-12 px-4 py-5 sm:gap-16 lg:px-6 lg:py-8">
+    <div className="mx-auto flex max-w-[1420px] flex-col gap-8 px-4 py-4 sm:gap-16 sm:py-5 lg:px-6 lg:py-8">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(featuredJsonLd) }}

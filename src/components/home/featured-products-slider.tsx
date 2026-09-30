@@ -260,7 +260,7 @@ export function FeaturedProductsSlider({
         </div>
       ) : null}
 
-      <section className="space-y-5">
+      <section className="min-w-0 space-y-4 sm:space-y-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-2">
             {eyebrow ? (
@@ -271,20 +271,20 @@ export function FeaturedProductsSlider({
             <h2 className="text-[2rem] leading-tight text-[color:var(--ink)] sm:text-[2.7rem]">
               {title}
             </h2>
-            <p className="max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
+            <p className="hidden max-w-2xl text-sm leading-7 text-slate-600 sm:block sm:text-base">
               {description}
             </p>
           </div>
 
           <Link
             href="/catalogo"
-            className="inline-flex items-center justify-center rounded-full border border-[rgba(194,162,119,0.2)] bg-white px-5 py-3 text-sm font-semibold text-[color:var(--ink)] shadow-[0_10px_24px_rgba(95,71,49,0.05)] transition hover:border-[color:var(--gold)] hover:text-[color:var(--gold)]"
+            className="hidden items-center justify-center rounded-full border border-[rgba(194,162,119,0.2)] bg-white px-5 py-3 text-sm font-semibold text-[color:var(--ink)] shadow-[0_10px_24px_rgba(95,71,49,0.05)] transition hover:border-[color:var(--gold)] hover:text-[color:var(--gold)] sm:inline-flex"
           >
             {buttonLabel}
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 gap-x-2.5 gap-y-7 sm:gap-x-4 sm:gap-y-9 md:grid-cols-3 xl:grid-cols-5">
+        <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:grid sm:snap-none sm:grid-cols-2 sm:gap-x-4 sm:gap-y-9 sm:overflow-visible sm:px-0 sm:pb-0 md:grid-cols-3 xl:grid-cols-5">
           {visibleProducts.map((product) => {
             const selectedSize = getSelectedSize(product);
             const currentPrice = getDisplayPrice(product, selectedSize);
@@ -297,30 +297,29 @@ export function FeaturedProductsSlider({
             return (
               <article
                 key={product.id}
-                className="group relative flex h-full min-w-0 flex-col overflow-hidden rounded-[0.9rem] border border-[rgba(194,162,119,0.14)] bg-white shadow-[0_3px_14px_rgba(95,71,49,0.045)] transition duration-300 hover:-translate-y-0.5 hover:border-[rgba(194,162,119,0.3)] hover:shadow-[0_10px_24px_rgba(95,71,49,0.09)] sm:rounded-[1.1rem]"
+                className="group relative flex h-full w-[calc((100vw-3.5rem)/2)] min-w-[calc((100vw-3.5rem)/2)] snap-start flex-col sm:w-auto sm:min-w-0 sm:overflow-hidden sm:rounded-[1.1rem] sm:border sm:border-[rgba(194,162,119,0.14)] sm:bg-white sm:shadow-[0_3px_14px_rgba(95,71,49,0.045)] sm:transition sm:duration-300 sm:hover:-translate-y-0.5 sm:hover:border-[rgba(194,162,119,0.3)] sm:hover:shadow-[0_10px_24px_rgba(95,71,49,0.09)]"
               >
-                <button
-                  type="button"
-                  onClick={() => setSelectedProduct(product)}
-                  className="relative block h-[190px] overflow-hidden bg-[color:#faf7f2] min-[360px]:h-[215px] sm:h-[250px]"
+                <Link
+                  href={`/catalogo?produto=${product.slug}`}
+                  className="relative block aspect-[4/5] overflow-hidden bg-[color:#faf7f2] sm:h-[250px] sm:aspect-auto"
                 >
                   <FeaturedProductImage imageUrl={product.imageUrl} name={product.name} />
-                </button>
+                </Link>
 
-                <div className="flex flex-1 flex-col p-2.5 sm:p-4">
+                <div className="flex flex-1 flex-col pt-2 sm:p-4">
                   <p className="truncate text-[9px] font-medium uppercase tracking-[0.18em] text-[color:#7a624d] sm:text-[10px]">
                     {product.brand.name}
                   </p>
 
                   <h3 className="mt-1 line-clamp-2 min-h-[2.35rem] font-serif text-[0.98rem] leading-[1.18] text-[color:var(--ink)] sm:min-h-[2.8rem] sm:text-[1.16rem]">
-                    {product.name}
+                    <Link href={`/catalogo?produto=${product.slug}`}>{product.name}</Link>
                   </h3>
 
-                  <p className="mt-1 truncate text-[9px] uppercase tracking-[0.12em] text-slate-500 sm:text-[10px]">
+                  <p className="mt-1 hidden truncate text-[9px] uppercase tracking-[0.12em] text-slate-500 sm:block sm:text-[10px]">
                     {audience} · {selectedSize === "100ml" ? getProductBottleSizeLabel(product) : getProductSizeLabel(selectedSize)}
                   </p>
 
-                  <div className="mt-3 flex flex-nowrap gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <div className="mt-3 hidden flex-nowrap gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex">
                     <button
                       type="button"
                       onClick={() => setProductSize(product.id, "100ml")}
@@ -373,7 +372,7 @@ export function FeaturedProductsSlider({
                     </p>
                   </div>
 
-                  <div className="mt-3 grid gap-1.5">
+                  <div className="mt-3 hidden gap-1.5 sm:grid">
                     <button
                       type="button"
                       onClick={() => handleAddToCart(product, selectedSize)}
@@ -387,6 +386,15 @@ export function FeaturedProductsSlider({
               </article>
             );
           })}
+        </div>
+
+        <div className="flex justify-end sm:hidden">
+          <Link
+            href="/catalogo"
+            className="inline-flex min-h-11 items-center justify-center rounded-full border border-[color:var(--line)] bg-white px-5 py-2.5 text-sm font-semibold text-[color:var(--ink)]"
+          >
+            {buttonLabel}
+          </Link>
         </div>
 
         {feedback ? <p className="text-center text-sm text-[color:#8a623a]">{feedback}</p> : null}
