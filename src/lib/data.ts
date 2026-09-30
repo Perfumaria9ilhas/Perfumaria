@@ -74,7 +74,11 @@ export async function getHomeData() {
     prisma.product.findMany({
       where: {
         active: true,
-        homeFeatured: true,
+        OR: [
+          { homeFeatured: true },
+          { featured: true },
+          { bestseller: true },
+        ],
       },
       include: {
         brand: true,
@@ -82,7 +86,6 @@ export async function getHomeData() {
         productType: true,
       },
       orderBy: [{ brand: { name: "asc" } }, { name: "asc" }],
-      take: 20,
     }),
     prisma.storeReview.findMany({
       where: { approved: true },

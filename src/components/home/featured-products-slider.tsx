@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Flame } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCart } from "@/components/providers/cart-provider";
 import { formatPrice } from "@/lib/format";
 import { buildMetaProductPayload, trackMetaEvent } from "@/lib/meta-pixel";
@@ -77,7 +77,7 @@ export function FeaturedProductsSlider({
     ? selectedSizes[selectedProduct.id] ?? "100ml"
     : "100ml";
 
-  const visibleProducts = useMemo(() => products.slice(0, 20), [products]);
+  const visibleProducts = products;
 
   useEffect(() => {
     if (!feedback) return;
