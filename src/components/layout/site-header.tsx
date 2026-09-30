@@ -56,6 +56,13 @@ function SocialIcon({ label }: { label: string }) {
   return <WhatsAppIcon />;
 }
 
+function socialIconClass(label: string) {
+  if (label === "Facebook") return "border-[#3b5998] bg-[#3b5998] text-white hover:border-[#2f477c] hover:bg-[#2f477c]";
+  if (label === "Instagram") return "border-[#8a4b35] bg-[#8a4b35] text-white hover:border-[#713b2b] hover:bg-[#713b2b]";
+  if (label === "TikTok") return "border-black bg-black text-white hover:border-[#242424] hover:bg-[#242424]";
+  return "border-[#2f8f63] bg-[#2f8f63] text-white hover:border-[#267552] hover:bg-[#267552]";
+}
+
 export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
@@ -102,6 +109,35 @@ export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeade
             </div>
           </div>
 
+          <div className="mt-2 flex items-center justify-center gap-2 border-t border-[color:var(--line)] pt-2 lg:hidden" aria-label="Redes sociais">
+            {socialLinks.map(({ href, label }) =>
+              href ? (
+                label === "WhatsApp" ? (
+                  <TrackedWhatsAppLink
+                    key={label}
+                    href={href}
+                    ariaLabel={label}
+                    contentName="WhatsApp header mobile"
+                    className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition ${socialIconClass(label)}`}
+                  >
+                    <WhatsAppIcon />
+                  </TrackedWhatsAppLink>
+                ) : (
+                  <Link
+                    key={label}
+                    href={href}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    aria-label={label}
+                    className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition ${socialIconClass(label)}`}
+                  >
+                    <SocialIcon label={label} />
+                  </Link>
+                )
+              ) : null,
+            )}
+          </div>
+
           {mobileMenuOpen ? <nav className="mt-2 grid min-w-0 grid-cols-2 gap-1 border-t border-[color:var(--line)] pt-2 text-sm lg:hidden">
             {mobileLinks.map((link) => (
               <Link
@@ -133,7 +169,7 @@ export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeade
                         href={href}
                         ariaLabel={label}
                         contentName="WhatsApp header"
-                        className="rounded-full border border-[color:var(--line)] p-2 text-slate-500 transition hover:border-[color:var(--gold)] hover:text-[color:var(--atlantic)]"
+                        className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition ${socialIconClass(label)}`}
                       >
                         <WhatsAppIcon />
                       </TrackedWhatsAppLink>
@@ -143,7 +179,7 @@ export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeade
                         href={href}
                         target="_blank"
                         rel="noreferrer noopener"
-                        className="rounded-full border border-[color:var(--line)] p-2 text-slate-500 transition hover:border-[color:var(--gold)] hover:text-[color:var(--atlantic)]"
+                        className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition ${socialIconClass(label)}`}
                         aria-label={label}
                       >
                         <SocialIcon label={label} />
