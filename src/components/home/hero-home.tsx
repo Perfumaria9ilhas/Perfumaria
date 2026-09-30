@@ -29,7 +29,7 @@ export function HeroHome({
             fill
             unoptimized
             priority
-            className="h-full w-full object-contain object-center sm:scale-[1.14] sm:object-cover sm:object-[center_72%]"
+            className="h-full w-full object-contain object-center sm:scale-100 sm:object-cover sm:object-center"
           />
         ) : (
           <div className="h-full w-full bg-slate-900/10" />
