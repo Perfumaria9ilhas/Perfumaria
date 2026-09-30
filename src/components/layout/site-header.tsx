@@ -118,6 +118,7 @@ export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeade
                     href={href}
                     ariaLabel={label}
                     contentName="WhatsApp header mobile"
+                    target="_self"
                     className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition ${socialIconClass(label)}`}
                   >
                     <WhatsAppIcon />
@@ -126,8 +127,6 @@ export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeade
                   <Link
                     key={label}
                     href={href}
-                    target="_blank"
-                    rel="noreferrer noopener"
                     aria-label={label}
                     className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition ${socialIconClass(label)}`}
                   >
@@ -169,6 +168,7 @@ export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeade
                         href={href}
                         ariaLabel={label}
                         contentName="WhatsApp header"
+                        target="_self"
                         className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition ${socialIconClass(label)}`}
                       >
                         <WhatsAppIcon />
@@ -177,8 +177,6 @@ export function SiteHeader({ settings, socialLinks, currentCustomer }: SiteHeade
                       <Link
                         key={label}
                         href={href}
-                        target="_blank"
-                        rel="noreferrer noopener"
                         className={`inline-flex h-10 w-10 items-center justify-center rounded-full border transition ${socialIconClass(label)}`}
                         aria-label={label}
                       >
