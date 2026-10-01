@@ -29,7 +29,7 @@ export function HeroHome({
             fill
             unoptimized
             priority
-            className="h-full w-full object-contain object-center sm:scale-100 sm:object-cover sm:object-center"
+            className="h-full w-full object-contain object-center sm:scale-100 sm:object-cover sm:!object-top"
           />
         ) : (
           <div className="h-full w-full bg-slate-900/10" />
@@ -42,7 +42,7 @@ export function HeroHome({
         </p>
       </div>
 
-      <div className="hidden text-white sm:relative sm:flex sm:h-[500px] sm:flex-col sm:justify-center sm:bg-transparent sm:px-10 sm:py-10 sm:text-left lg:h-[560px] lg:px-16 xl:h-[590px] xl:px-20">
+      <div className="hidden text-white sm:relative sm:flex sm:h-[430px] sm:flex-col sm:justify-center sm:bg-transparent sm:px-10 sm:py-10 sm:text-left lg:h-[450px] lg:px-16 xl:h-[470px] xl:px-20 2xl:h-[480px]">
         <div className="max-w-[520px]">
           <p className="mb-2 text-[9px] font-medium uppercase tracking-[0.22em] text-white drop-shadow-sm sm:mb-3 sm:text-xs sm:tracking-[0.34em] sm:text-slate-100/80">
             {"Bem-vindo \u00e0 9 Ilhas"}
