@@ -18,6 +18,16 @@ function addDays(dateKey: string, days: number) {
   return date.toISOString().slice(0, 10);
 }
 
+function daysBetween(from: string, to: string) {
+  return Math.round((new Date(`${to}T12:00:00Z`).getTime() - new Date(`${from}T12:00:00Z`).getTime()) / 86_400_000) + 1;
+}
+
+export function previousStatisticsRange(range: { from: string; to: string }) {
+  const length = daysBetween(range.from, range.to);
+  const to = addDays(range.from, -1);
+  return { from: addDays(to, -(length - 1)), to };
+}
+
 function enumerateDays(from: string, to: string) {
   const values: string[] = [];
   for (let current = from; current <= to; current = addDays(current, 1)) values.push(current);
@@ -70,12 +80,12 @@ export async function getStatisticsData(range: { from: string; to: string }) {
   const createdAt = { gte: azoresMidnightUtc(range.from), lt: azoresMidnightUtc(addDays(range.to, 1)) };
   const [daily, productDaily, searches, orders, movements, firstDaily, firstProductDaily, firstSearch, firstOrder, firstSale, migratedVisitDays] = await Promise.all([
     prisma.analyticsDaily.findMany({ where: { dateKey: { gte: range.from, lte: range.to } }, orderBy: { dateKey: "asc" } }),
-    prisma.productAnalyticsDaily.findMany({ where: { dateKey: { gte: range.from, lte: range.to } }, include: { product: { select: { name: true } } } }),
+    prisma.productAnalyticsDaily.findMany({ where: { dateKey: { gte: range.from, lte: range.to } }, include: { product: { select: { name: true, audience: true, brand: { select: { name: true } } } } } }),
     prisma.searchAnalyticsDaily.findMany({ where: { dateKey: { gte: range.from, lte: range.to } } }),
     prisma.siteOrder.findMany({ where: { createdAt }, select: { id: true, status: true, totalInCents: true, createdAt: true } }),
     prisma.stockMovement.findMany({
       where: { type: StockMovementType.SALE, createdAt },
-      select: { id: true, saleGroupId: true, saleStatus: true, saleUnitPriceInCents: true, quantity: true, createdAt: true, reason: true, productId: true, product: { select: { name: true } } },
+      select: { id: true, saleGroupId: true, saleStatus: true, saleUnitPriceInCents: true, quantity: true, createdAt: true, reason: true, notes: true, productId: true, product: { select: { name: true, audience: true, brand: { select: { name: true } } } } },
     }),
     prisma.analyticsDaily.findFirst({ orderBy: { dateKey: "asc" }, select: { dateKey: true } }),
     prisma.productAnalyticsDaily.findFirst({ orderBy: { dateKey: "asc" }, select: { dateKey: true } }),
@@ -126,12 +136,8 @@ export async function getStatisticsData(range: { from: string; to: string }) {
     }
     return [...map.values()].filter((item) => item.value > 0).sort((a, b) => b.value - a.value || a.name.localeCompare(b.name, "pt-PT"));
   };
-  const whatsappProducts = new Map<string, { name: string; value: number }>();
-  for (const row of productDaily) {
-    const current = whatsappProducts.get(row.productId) ?? { name: row.product.name, value: 0 };
-    current.value += row.checkoutUnits + row.reservationEvents;
-    whatsappProducts.set(row.productId, current);
-  }
+  const checkoutProducts = aggregateProducts("checkoutUnits");
+  const reservationProducts = aggregateProducts("reservationEvents");
   const soldProducts = new Map<string, { name: string; value: number }>();
   for (const movement of paidMovements) {
     if (movement.reason !== StockMovementReason.SALE && movement.reason !== StockMovementReason.DECANT) continue;
@@ -146,6 +152,25 @@ export async function getStatisticsData(range: { from: string; to: string }) {
     current.zero += row.zeroResultCount;
     searchRanking.set(row.normalizedTerm, current);
   }
+
+  const aggregateProductDimension = (dimension: "brand" | "audience") => {
+    const values = new Map<string, number>();
+    for (const movement of paidMovements) {
+      if (movement.reason !== StockMovementReason.SALE && movement.reason !== StockMovementReason.DECANT) continue;
+      const name = dimension === "brand" ? movement.product.brand.name : movement.product.audience === "MASCULINO" ? "Homem" : movement.product.audience === "FEMININO" ? "Mulher" : "Unissexo";
+      values.set(name, (values.get(name) ?? 0) + movement.quantity);
+    }
+    return [...values].map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value || a.name.localeCompare(b.name, "pt-PT"));
+  };
+  const paidBottles = paidMovements.filter((movement) => movement.reason === StockMovementReason.SALE).reduce((sum, movement) => sum + movement.quantity, 0);
+  const paidFiveMl = paidMovements.filter((movement) => movement.reason === StockMovementReason.DECANT && /5\s*ml/i.test(movement.notes ?? "") && !/10\s*ml/i.test(movement.notes ?? "")).reduce((sum, movement) => sum + movement.quantity, 0);
+  const paidTenMl = paidMovements.filter((movement) => movement.reason === StockMovementReason.DECANT && /10\s*ml/i.test(movement.notes ?? "")).reduce((sum, movement) => sum + movement.quantity, 0);
+  const decantKitGroups = new Map<string, number>();
+  for (const movement of paidMovements.filter((item) => item.reason === StockMovementReason.DECANT && /kit de decants/i.test(item.notes ?? ""))) {
+    const groupId = movement.saleGroupId ?? movement.id;
+    decantKitGroups.set(groupId, Math.max(decantKitGroups.get(groupId) ?? 0, movement.quantity));
+  }
+  const paidDecantKits = [...decantKitGroups.values()].reduce((sum, quantity) => sum + quantity, 0);
 
   const dayMap = new Map(daily.map((row) => [row.dateKey, row]));
   const orderDays = new Map<string, number>();
@@ -194,21 +219,29 @@ export async function getStatisticsData(range: { from: string; to: string }) {
   const allRankings = {
     viewed: aggregateProducts("views"),
     added: aggregateProducts("addedUnits"),
-    whatsapp: [...whatsappProducts.values()].filter((item) => item.value > 0).sort((a, b) => b.value - a.value || a.name.localeCompare(b.name, "pt-PT")),
+    whatsapp: checkoutProducts,
+    reservations: reservationProducts,
     sold: [...soldProducts.values()].filter((item) => item.value > 0).sort((a, b) => b.value - a.value || a.name.localeCompare(b.name, "pt-PT")),
     searches: [...searchRanking.values()].filter((item) => item.value > 0).sort((a, b) => b.value - a.value || a.name.localeCompare(b.name, "pt-PT")),
+    zeroSearches: [...searchRanking.values()].filter((item) => item.zero > 0).map((item) => ({ name: item.name, value: item.zero })).sort((a, b) => b.value - a.value || a.name.localeCompare(b.name, "pt-PT")),
+    brands: aggregateProductDimension("brand"),
+    audiences: aggregateProductDimension("audience"),
   };
 
   return {
     totals,
-    orders: { count: orders.length, potentialValue: orders.reduce((sum, order) => sum + order.totalInCents, 0), cancelled: orders.filter((order) => order.status === "cancelado").length },
-    sales: { paidCount: paidGroupIds.size, paidValue, pendingValue, paidUnits, ticketAverage: paidGroupIds.size ? Math.round(paidValue / paidGroupIds.size) : 0 },
+    orders: { count: orders.length, potentialValue: orders.reduce((sum, order) => sum + order.totalInCents, 0), cancelled: orders.filter((order) => order.status.toLocaleLowerCase("pt-PT") === "cancelado").length },
+    sales: { paidCount: paidGroupIds.size, paidValue, pendingValue, paidUnits, ticketAverage: paidGroupIds.size ? Math.round(paidValue / paidGroupIds.size) : 0, bottles: paidBottles, fiveMl: paidFiveMl, tenMl: paidTenMl, decantKits: paidDecantKits },
     rankings: {
       viewed: allRankings.viewed.slice(0, 5),
       added: allRankings.added.slice(0, 5),
       whatsapp: allRankings.whatsapp.slice(0, 5),
+      reservations: allRankings.reservations.slice(0, 5),
       sold: allRankings.sold.slice(0, 5),
       searches: allRankings.searches.slice(0, 5),
+      zeroSearches: allRankings.zeroSearches.slice(0, 5),
+      brands: allRankings.brands.slice(0, 5),
+      audiences: allRankings.audiences.slice(0, 5),
     },
     allRankings,
     series,
