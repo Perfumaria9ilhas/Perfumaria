@@ -66,7 +66,6 @@ export function CartDrawer() {
 
       const data = (await response.json()) as {
         whatsappUrl?: string;
-        orderId?: string;
         reference?: string;
       };
 

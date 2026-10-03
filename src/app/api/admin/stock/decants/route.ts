@@ -3,7 +3,9 @@ import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
+import { getSalePriceInCents } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
+import { getDecantPriceInCents } from "@/lib/product-sizes";
 
 const schema = z.object({
   mode: z.enum(["KIT", "INDIVIDUAL"]),
@@ -32,8 +34,8 @@ export async function POST(request: Request) {
 
   const { mode, productIds, customerName } = parsed.data;
   const lines = mode === "KIT"
-    ? productIds.map((productId) => ({ productId, sizeMl: 5 as const, quantity: 1, unitPrice: 330 }))
-    : parsed.data.lines!.map((line) => ({ ...line, unitPrice: line.sizeMl === 5 ? 350 : 650 }));
+    ? productIds.map((productId) => ({ productId, sizeMl: 5 as const, quantity: 1 }))
+    : parsed.data.lines!;
   try {
     await prisma.$transaction(async (tx) => {
       const uniqueProductIds = [...new Set(lines.map((line) => line.productId))];
@@ -44,9 +46,10 @@ export async function POST(request: Request) {
         if (!product.active) throw new Error(`${product.name} já não está disponível no site.`);
         if (line.sizeMl === 5 && !product.availableInFiveMl) throw new Error(`${product.name} não está disponível em 5 ml.`);
         if (line.sizeMl === 10 && !product.availableInTenMl) throw new Error(`${product.name} não está disponível em 10 ml.`);
+        const unitPrice = mode === "KIT" ? 330 : getDecantPriceInCents(getSalePriceInCents(product), line.sizeMl === 5 ? "5ml" : "10ml");
         await tx.stockMovement.create({ data: {
           productId: product.id, type: StockMovementType.SALE, reason: StockMovementReason.DECANT,
-          customerName, saleUnitPriceInCents: line.unitPrice, quantity: line.quantity,
+          customerName, saleUnitPriceInCents: unitPrice, quantity: line.quantity,
           previousStock: product.stock, resultingStock: product.stock,
           notes: mode === "KIT" ? "Kit de decants · 5 ml" : `Decant individual · ${line.sizeMl} ml`,
         } });

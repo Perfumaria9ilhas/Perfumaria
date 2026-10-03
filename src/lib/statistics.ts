@@ -3,7 +3,7 @@ import { getAzoresDateKey } from "@/lib/date";
 import { prisma } from "@/lib/prisma";
 
 export type StatisticsPeriod = "today" | "7d" | "30d" | "month" | "year" | "previous-year" | "custom";
-export type StatisticsMetric = "visits" | "views" | "cart" | "whatsapp" | "orders" | "sales" | "revenue";
+export type StatisticsMetric = "visits" | "views" | "cart" | "whatsapp" | "sales" | "revenue";
 const BEHAVIOR_TRACKING_START = "2026-09-27";
 
 function validDateKey(value?: string) {
@@ -78,11 +78,10 @@ export function resolveStatisticsRange(input: { period?: string; from?: string; 
 
 export async function getStatisticsData(range: { from: string; to: string }) {
   const createdAt = { gte: azoresMidnightUtc(range.from), lt: azoresMidnightUtc(addDays(range.to, 1)) };
-  const [daily, productDaily, searches, orders, movements, firstDaily, firstProductDaily, firstSearch, firstOrder, firstSale, migratedVisitDays] = await Promise.all([
+  const [daily, productDaily, searches, movements, firstDaily, firstProductDaily, firstSearch, firstSale, migratedVisitDays] = await Promise.all([
     prisma.analyticsDaily.findMany({ where: { dateKey: { gte: range.from, lte: range.to } }, orderBy: { dateKey: "asc" } }),
     prisma.productAnalyticsDaily.findMany({ where: { dateKey: { gte: range.from, lte: range.to } }, include: { product: { select: { name: true, audience: true, brand: { select: { name: true } } } } } }),
     prisma.searchAnalyticsDaily.findMany({ where: { dateKey: { gte: range.from, lte: range.to } } }),
-    prisma.siteOrder.findMany({ where: { createdAt }, select: { id: true, status: true, totalInCents: true, createdAt: true } }),
     prisma.stockMovement.findMany({
       where: { type: StockMovementType.SALE, createdAt },
       select: { id: true, saleGroupId: true, saleStatus: true, saleUnitPriceInCents: true, quantity: true, createdAt: true, reason: true, notes: true, productId: true, product: { select: { name: true, audience: true, brand: { select: { name: true } } } } },
@@ -90,7 +89,6 @@ export async function getStatisticsData(range: { from: string; to: string }) {
     prisma.analyticsDaily.findFirst({ orderBy: { dateKey: "asc" }, select: { dateKey: true } }),
     prisma.productAnalyticsDaily.findFirst({ orderBy: { dateKey: "asc" }, select: { dateKey: true } }),
     prisma.searchAnalyticsDaily.findFirst({ orderBy: { dateKey: "asc" }, select: { dateKey: true } }),
-    prisma.siteOrder.findFirst({ orderBy: { createdAt: "asc" }, select: { createdAt: true } }),
     prisma.stockMovement.findFirst({ where: { type: StockMovementType.SALE }, orderBy: { createdAt: "asc" }, select: { createdAt: true } }),
     prisma.dailySiteVisit.count(),
   ]);
@@ -163,7 +161,7 @@ export async function getStatisticsData(range: { from: string; to: string }) {
     return [...values].map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value || a.name.localeCompare(b.name, "pt-PT"));
   };
   const paidBottles = paidMovements.filter((movement) => movement.reason === StockMovementReason.SALE).reduce((sum, movement) => sum + movement.quantity, 0);
-  const paidFiveMl = paidMovements.filter((movement) => movement.reason === StockMovementReason.DECANT && /5\s*ml/i.test(movement.notes ?? "") && !/10\s*ml/i.test(movement.notes ?? "")).reduce((sum, movement) => sum + movement.quantity, 0);
+  const paidFiveMl = paidMovements.filter((movement) => movement.reason === StockMovementReason.DECANT && /decant individual/i.test(movement.notes ?? "") && /5\s*ml/i.test(movement.notes ?? "") && !/10\s*ml/i.test(movement.notes ?? "")).reduce((sum, movement) => sum + movement.quantity, 0);
   const paidTenMl = paidMovements.filter((movement) => movement.reason === StockMovementReason.DECANT && /10\s*ml/i.test(movement.notes ?? "")).reduce((sum, movement) => sum + movement.quantity, 0);
   const decantKitGroups = new Map<string, number>();
   for (const movement of paidMovements.filter((item) => item.reason === StockMovementReason.DECANT && /kit de decants/i.test(item.notes ?? ""))) {
@@ -173,8 +171,6 @@ export async function getStatisticsData(range: { from: string; to: string }) {
   const paidDecantKits = [...decantKitGroups.values()].reduce((sum, quantity) => sum + quantity, 0);
 
   const dayMap = new Map(daily.map((row) => [row.dateKey, row]));
-  const orderDays = new Map<string, number>();
-  for (const order of orders) orderDays.set(getAzoresDateKey(order.createdAt), (orderDays.get(getAzoresDateKey(order.createdAt)) ?? 0) + 1);
   const saleDays = new Map<string, Set<string>>();
   const revenueDays = new Map<string, number>();
   for (const movement of paidMovements) {
@@ -189,7 +185,6 @@ export async function getStatisticsData(range: { from: string; to: string }) {
     views: firstProductDaily?.dateKey ?? BEHAVIOR_TRACKING_START,
     cart: firstProductDaily?.dateKey ?? BEHAVIOR_TRACKING_START,
     whatsapp: firstDaily?.dateKey && firstDaily.dateKey > BEHAVIOR_TRACKING_START ? firstDaily.dateKey : BEHAVIOR_TRACKING_START,
-    orders: firstOrder ? getAzoresDateKey(firstOrder.createdAt) : null,
     sales: firstSale ? getAzoresDateKey(firstSale.createdAt) : null,
     revenue: firstSale ? getAzoresDateKey(firstSale.createdAt) : null,
   } satisfies Record<StatisticsMetric, string | null>;
@@ -211,7 +206,6 @@ export async function getStatisticsData(range: { from: string; to: string }) {
     views: dateKey <= getAzoresDateKey() && dateKey >= starts.views ? dayMap.get(dateKey)?.productViews ?? 0 : null,
     cart: dateKey <= getAzoresDateKey() && dateKey >= starts.cart ? dayMap.get(dateKey)?.addToCartEvents ?? 0 : null,
     whatsapp: dateKey <= getAzoresDateKey() && dateKey >= starts.whatsapp ? dayMap.get(dateKey)?.checkoutWhatsapp ?? 0 : null,
-    orders: dateKey <= getAzoresDateKey() && starts.orders && dateKey >= starts.orders ? orderDays.get(dateKey) ?? 0 : null,
     sales: dateKey <= getAzoresDateKey() && starts.sales && dateKey >= starts.sales ? saleDays.get(dateKey)?.size ?? 0 : null,
     revenue: dateKey <= getAzoresDateKey() && starts.revenue && dateKey >= starts.revenue ? revenueDays.get(dateKey) ?? 0 : null,
   }));
@@ -230,7 +224,6 @@ export async function getStatisticsData(range: { from: string; to: string }) {
 
   return {
     totals,
-    orders: { count: orders.length, potentialValue: orders.reduce((sum, order) => sum + order.totalInCents, 0), cancelled: orders.filter((order) => order.status.toLocaleLowerCase("pt-PT") === "cancelado").length },
     sales: { paidCount: paidGroupIds.size, paidValue, pendingValue, paidUnits, ticketAverage: paidGroupIds.size ? Math.round(paidValue / paidGroupIds.size) : 0, bottles: paidBottles, fiveMl: paidFiveMl, tenMl: paidTenMl, decantKits: paidDecantKits },
     rankings: {
       viewed: allRankings.viewed.slice(0, 5),

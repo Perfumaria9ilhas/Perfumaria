@@ -11,8 +11,7 @@ import { trackInternalEvent } from "@/lib/internal-analytics";
 import { getProductAudienceLabel } from "@/lib/product-audience";
 import {
   buildCartLineId,
-  FIVE_ML_PRICE_IN_CENTS,
-  TEN_ML_PRICE_IN_CENTS,
+  getDecantPriceInCents,
   getProductBottleSizeLabel,
   getProductSizeLabel,
   type ProductSizeValue,
@@ -136,12 +135,11 @@ export function FeaturedProductsSlider({
   }
 
   function getDisplayPrice(product: CatalogProduct, size: ProductSizeValue) {
-    if (size === "5ml") return FIVE_ML_PRICE_IN_CENTS;
-    if (size === "10ml") return TEN_ML_PRICE_IN_CENTS;
-
-    return product.salePriceInCents && product.salePriceInCents < product.priceInCents
+    const bottlePrice = product.salePriceInCents && product.salePriceInCents < product.priceInCents
       ? product.salePriceInCents
       : product.priceInCents;
+    if (size === "5ml" || size === "10ml") return getDecantPriceInCents(bottlePrice, size);
+    return bottlePrice;
   }
 
   function handleAddToCart(product: CatalogProduct, size = getSelectedSize(product)) {
@@ -221,7 +219,7 @@ export function FeaturedProductsSlider({
                         : "border-[color:var(--line)] bg-[color:var(--sand-soft)] text-[color:var(--ink)]"
                     }`}
                   >
-                    10 ml · {formatPrice(TEN_ML_PRICE_IN_CENTS)}
+                    10 ml · {formatPrice(getDisplayPrice(selectedProduct, "10ml"))}
                   </button>
                 ) : null}
 
@@ -235,7 +233,7 @@ export function FeaturedProductsSlider({
                         : "border-[color:var(--line)] bg-[color:var(--sand-soft)] text-[color:var(--ink)]"
                     }`}
                   >
-                    5 ml · {formatPrice(FIVE_ML_PRICE_IN_CENTS)}
+                    5 ml · {formatPrice(getDisplayPrice(selectedProduct, "5ml"))}
                   </button>
                 ) : null}
               </div>

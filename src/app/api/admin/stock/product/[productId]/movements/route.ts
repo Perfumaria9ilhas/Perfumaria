@@ -22,7 +22,6 @@ const movementSchema = z
     customerName: z.string().optional().default(""),
     reason: z.nativeEnum(StockMovementReason).nullable().optional(),
     notes: z.string().optional().default(""),
-    confirmOverride: z.boolean().optional().default(false),
   })
   .superRefine((value, ctx) => {
     if (value.type === StockMovementType.ADJUSTMENT) {
@@ -129,10 +128,8 @@ export async function POST(
       }
 
       if (parsed.data.type === StockMovementType.SALE) {
-        if (quantity > previousStock && !parsed.data.confirmOverride) {
-          throw new Error("A saída excede o stock disponível.");
-        }
-        resultingStock = Math.max(0, previousStock - quantity);
+        if (quantity > previousStock) throw new Error(`Stock insuficiente. Disponível: ${previousStock}.`);
+        resultingStock = previousStock - quantity;
       }
 
       if (parsed.data.type === StockMovementType.ADJUSTMENT) {

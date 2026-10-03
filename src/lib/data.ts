@@ -120,15 +120,14 @@ export async function getHomeData() {
 export async function getAdminDashboardData() {
   noStore();
   const { start, end } = getAzoresDayBounds();
-  const [brands, categories, products, activeProducts, customers, orders, newOrders, metrics, todaySales, pendingSales, pendingDeliveries, recentOrders, recentMovements, wishesCount] = await Promise.all([
+  const [brands, categories, products, activeProducts, customers, metrics, todaySales, pendingSales, pendingDeliveries, recentMovements, wishesCount] = await Promise.all([
     prisma.brand.count(), prisma.category.count(), prisma.product.count(),
     prisma.product.findMany({ where: { active: true }, select: { stock: true, lowStockAlert: true } }),
-    prisma.customerAccount.count(), prisma.siteOrder.count(), prisma.siteOrder.count({ where: { status: "novo" } }),
+    prisma.customerAccount.count(),
     prisma.storeMetric.findUnique({ where: { id: "main" }, select: { totalSatisfiedCustomers: true } }),
     prisma.stockMovement.findMany({ where: { type: StockMovementType.SALE, createdAt: { gte: start, lt: end } }, select: { id: true, saleGroupId: true, saleStatus: true, quantity: true, saleUnitPriceInCents: true } }),
     prisma.stockMovement.findMany({ where: { type: StockMovementType.SALE, saleStatus: StockSaleStatus.PENDING }, select: { id: true, saleGroupId: true, quantity: true, saleUnitPriceInCents: true } }),
     prisma.stockMovement.findMany({ where: { type: StockMovementType.SALE, deliveryStatus: StockDeliveryStatus.PENDING }, select: { id: true, saleGroupId: true } }),
-    prisma.siteOrder.findMany({ orderBy: { createdAt: "desc" }, take: 5, select: { id: true, reference: true, createdAt: true, totalInCents: true, status: true, customerName: true, _count: { select: { items: true } } } }),
     prisma.stockMovement.findMany({ where: { type: StockMovementType.SALE }, orderBy: { createdAt: "desc" }, take: 250, select: { id: true, saleGroupId: true, customerName: true, saleStatus: true, deliveryStatus: true, quantity: true, saleUnitPriceInCents: true, createdAt: true, product: { select: { name: true } } } }),
     prisma.outOfStockWish.count(),
   ]);
@@ -163,10 +162,10 @@ export async function getAdminDashboardData() {
   });
 
   return {
-    today: { paidSales: paidTodayGroups.length, paidValue: paidTodayValue, pendingValue, newOrders },
+    today: { paidSales: paidTodayGroups.length, paidValue: paidTodayValue, pendingValue },
     attention: { pendingPayments: pendingPaymentGroups, pendingDeliveries: pendingDeliveryGroups, lowStock, outOfStock },
-    recentOrders, recentSales,
-    summary: { brands, categories, products, customers, orders, wishes: wishesCount, satisfiedCustomers: metrics?.totalSatisfiedCustomers ?? orders },
+    recentSales,
+    summary: { brands, categories, products, customers, wishes: wishesCount, satisfiedCustomers: metrics?.totalSatisfiedCustomers ?? 0 },
   };
 }
 

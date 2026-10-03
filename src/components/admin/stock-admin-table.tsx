@@ -17,7 +17,7 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
-import { Fragment, useDeferredValue, useId, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useId, useMemo, useRef, useState } from "react";
 import { formatPrice } from "@/lib/format";
 import {
   type AdminStockMovementRow,
@@ -80,12 +80,6 @@ type StockSaleRow = {
   items: { id: string; productId: string; name: string; quantity: number; unitPriceInCents: number; status: StockSaleStatus; deliveryStatus: StockDeliveryStatus; sizeMl: 5 | 10 | null; notes: string | null }[];
 };
 
-type StockCustomerSalesGroup = {
-  key: string;
-  customerName: string;
-  sales: StockSaleRow[];
-};
-
 export function StockAdminTable({
   rows: initialRows,
   brands,
@@ -130,9 +124,14 @@ export function StockAdminTable({
   const [sales, setSales] = useState<StockSaleRow[]>([]);
   const [salesLoading, setSalesLoading] = useState(false);
   const [salesStatusFilter, setSalesStatusFilter] = useState<"ALL" | StockSaleStatus>("ALL");
+  const [salesDeliveryFilter, setSalesDeliveryFilter] = useState<"ALL" | StockDeliveryStatus>("ALL");
+  const [salesKindFilter, setSalesKindFilter] = useState<"ALL" | "BOTTLE" | "DECANT_5" | "DECANT_10" | "KIT">("ALL");
+  const [salesQuery, setSalesQuery] = useState("");
+  const [salesPendingOnly, setSalesPendingOnly] = useState(false);
+  const [salesFrom, setSalesFrom] = useState("");
+  const [salesTo, setSalesTo] = useState("");
   const [salesPage, setSalesPage] = useState(1);
   const [expandedSaleId, setExpandedSaleId] = useState<string | null>(null);
-  const [expandedCustomerKey, setExpandedCustomerKey] = useState<string | null>(null);
   const [savingSaleId, setSavingSaleId] = useState<string | null>(null);
   const [deletingSaleId, setDeletingSaleId] = useState<string | null>(null);
   const [importHasErrors, setImportHasErrors] = useState(false);
@@ -925,38 +924,44 @@ export function StockAdminTable({
     }
   }
 
-  const customerSalesGroups = useMemo(() => {
-    const groups = new Map<string, StockCustomerSalesGroup>();
-    for (const sale of sales.filter((entry) => salesStatusFilter === "ALL" || entry.status === salesStatusFilter)) {
-      const key = normalizeStockSearch(sale.customerName);
-      const group = groups.get(key) ?? { key, customerName: sale.customerName, sales: [] };
-      group.sales.push(sale);
-      groups.set(key, group);
-    }
-    return [...groups.values()].sort((left, right) =>
-      left.customerName.localeCompare(right.customerName, "pt-PT", { sensitivity: "base" }),
-    );
-  }, [sales, salesStatusFilter]);
+  const filteredSales = useMemo(() => {
+    const query = normalizeStockSearch(salesQuery);
+    return sales.filter((sale) => {
+      if (salesPendingOnly && sale.status !== StockSaleStatus.PENDING && sale.deliveryStatus !== StockDeliveryStatus.PENDING) return false;
+      if (salesStatusFilter !== "ALL" && sale.status !== salesStatusFilter) return false;
+      if (salesDeliveryFilter !== "ALL" && sale.deliveryStatus !== salesDeliveryFilter) return false;
+      const date = sale.createdAt.slice(0, 10);
+      if (salesFrom && date < salesFrom || salesTo && date > salesTo) return false;
+      if (query && !normalizeStockSearch(`${sale.customerName} ${sale.items.map((item) => item.name).join(" ")}`).includes(query)) return false;
+      if (salesKindFilter === "BOTTLE" && !sale.items.some((item) => !item.notes?.includes("Decant"))) return false;
+      if (salesKindFilter === "DECANT_5" && !sale.items.some((item) => item.notes?.includes("Decant individual") && item.sizeMl !== 10)) return false;
+      if (salesKindFilter === "DECANT_10" && !sale.items.some((item) => item.notes?.includes("Decant individual") && item.sizeMl === 10)) return false;
+      if (salesKindFilter === "KIT" && !sale.items.some((item) => item.notes?.includes("Kit de decants"))) return false;
+      return true;
+    }).sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime());
+  }, [sales, salesDeliveryFilter, salesFrom, salesKindFilter, salesPendingOnly, salesQuery, salesStatusFilter, salesTo]);
   const soldItemTotals = useMemo(() => {
     let perfumes = 0;
-    let kitDecants = 0;
+    let kits = 0;
     let fiveMlDecants = 0;
     let tenMlDecants = 0;
     for (const sale of sales) {
+      let saleKitQuantity = 0;
       for (const item of sale.items) {
         if (item.status === StockSaleStatus.OFFERED) continue;
-        if (item.notes?.includes("Kit de decants")) kitDecants += item.quantity;
+        if (item.notes?.includes("Kit de decants")) saleKitQuantity = Math.max(saleKitQuantity, item.quantity);
         else if (item.notes?.includes("Decant individual")) {
           if (item.sizeMl === 10) tenMlDecants += item.quantity;
           else fiveMlDecants += item.quantity;
         }
         else perfumes += item.quantity;
       }
+      kits += saleKitQuantity;
     }
-    return { perfumes, kits: Math.floor(kitDecants / 5), fiveMlDecants, tenMlDecants };
+    return { perfumes, kits, fiveMlDecants, tenMlDecants };
   }, [sales]);
-  const salesTotalPages = Math.max(1, Math.ceil(customerSalesGroups.length / 25));
-  const pagedCustomerGroups = customerSalesGroups.slice((salesPage - 1) * 25, salesPage * 25);
+  const salesTotalPages = Math.max(1, Math.ceil(filteredSales.length / 25));
+  const pagedSales = filteredSales.slice((salesPage - 1) * 25, salesPage * 25);
 
   async function submitMovement(event: React.FormEvent<HTMLFormElement>, row: AdminStockRow) {
     event.preventDefault();
@@ -2018,7 +2023,7 @@ export function StockAdminTable({
                     {decantLineIds.map((id, index) => (
                       <SaleLine key={id} label={`Decant ${index + 1}`} onRemove={decantLineIds.length > 1 ? () => setDecantLineIds((current) => current.filter((lineId) => lineId !== id)) : undefined}>
                         <SearchableProductSelect name={`combinedDecant${id}`} products={rows.filter((row) => row.active && (row.availableInFiveMl || row.availableInTenMl))} placeholder="Pesquisar perfume..." />
-                        <select name={`combinedDecantSize${id}`} defaultValue="5" className="h-12 rounded-2xl border border-[color:var(--line)] bg-white px-3"><option value="5">5 ml · 3,50 €</option><option value="10">10 ml · 6,50 €</option></select>
+                        <select name={`combinedDecantSize${id}`} defaultValue="5" className="h-12 rounded-2xl border border-[color:var(--line)] bg-white px-3"><option value="5">5 ml · 3,50 € / 4,50 €</option><option value="10">10 ml · 6,50 € / 7,50 €</option></select>
                         <input name={`combinedDecantQuantity${id}`} aria-label="Quantidade" type="number" min="1" defaultValue="1" className="h-12 w-24 rounded-2xl border border-[color:var(--line)] px-3" />
                       </SaleLine>
                     ))}
@@ -2034,46 +2039,40 @@ export function StockAdminTable({
 
       {activeView === "SALES" ? (
         <section className="rounded-[1.8rem] border border-[color:var(--line)] bg-white p-5 shadow-sm sm:p-7">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="font-serif text-3xl text-[color:var(--ink)]">Estado das vendas</h2>
-            <select value={salesStatusFilter} onChange={(event) => { setSalesStatusFilter(event.target.value as "ALL" | StockSaleStatus); setSalesPage(1); }} className="h-11 rounded-2xl border border-[color:var(--line)] bg-white px-4">
-              <option value="ALL">Todos os estados</option><option value={StockSaleStatus.PENDING}>Por pagar</option><option value={StockSaleStatus.PAID}>Pago</option><option value={StockSaleStatus.OFFERED}>Oferecido</option>
-            </select>
-          </div>
+          <h2 className="font-serif text-3xl text-[color:var(--ink)]">Estado das vendas</h2>
           {salesLoading ? <p className="mt-6 text-slate-500">A carregar vendas...</p> : (
-            <div className="mt-6 overflow-hidden rounded-2xl border border-[color:var(--line)]">
+            <div className="mt-5 space-y-4">
+              <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                <button type="button" onClick={() => { setSalesStatusFilter(StockSaleStatus.PENDING); setSalesPage(1); }} className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--sand-soft)] p-3 text-left"><span className="text-xs text-slate-500">Por receber</span><strong className="mt-1 block font-serif text-xl">{formatPrice(getItemStatusTotal(sales, StockSaleStatus.PENDING))}</strong></button>
+                <button type="button" onClick={() => { setSalesStatusFilter(StockSaleStatus.PAID); setSalesPage(1); }} className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--sand-soft)] p-3 text-left"><span className="text-xs text-slate-500">Valor pago</span><strong className="mt-1 block font-serif text-xl">{formatPrice(getItemStatusTotal(sales, StockSaleStatus.PAID))}</strong></button>
+                <button type="button" onClick={() => { setSalesStatusFilter(StockSaleStatus.PAID); setSalesPage(1); }} className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--sand-soft)] p-3 text-left"><span className="text-xs text-slate-500">Vendas pagas</span><strong className="mt-1 block font-serif text-xl">{sales.filter((sale) => sale.status === StockSaleStatus.PAID).length}</strong></button>
+                <button type="button" onClick={() => { setSalesDeliveryFilter(StockDeliveryStatus.PENDING); setSalesPage(1); }} className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--sand-soft)] p-3 text-left"><span className="text-xs text-slate-500">Por entregar</span><strong className="mt-1 block font-serif text-xl">{sales.filter((sale) => sale.deliveryStatus === StockDeliveryStatus.PENDING).length}</strong></button>
+                <button type="button" onClick={() => { setSalesKindFilter("BOTTLE"); setSalesPage(1); }} className="rounded-2xl border border-[color:var(--line)] bg-white p-3 text-left"><span className="text-xs text-slate-500">Frascos vendidos</span><strong className="mt-1 block font-serif text-xl">{soldItemTotals.perfumes}</strong></button>
+                <button type="button" onClick={() => { setSalesKindFilter("DECANT_5"); setSalesPage(1); }} className="rounded-2xl border border-[color:var(--line)] bg-white p-3 text-left"><span className="text-xs text-slate-500">Decants 5 ml individuais</span><strong className="mt-1 block font-serif text-xl">{soldItemTotals.fiveMlDecants}</strong></button>
+                <button type="button" onClick={() => { setSalesKindFilter("DECANT_10"); setSalesPage(1); }} className="rounded-2xl border border-[color:var(--line)] bg-white p-3 text-left"><span className="text-xs text-slate-500">Decants 10 ml</span><strong className="mt-1 block font-serif text-xl">{soldItemTotals.tenMlDecants}</strong></button>
+                <button type="button" onClick={() => { setSalesKindFilter("KIT"); setSalesPage(1); }} className="rounded-2xl border border-[color:var(--line)] bg-white p-3 text-left"><span className="text-xs text-slate-500">Kits vendidos</span><strong className="mt-1 block font-serif text-xl">{soldItemTotals.kits}</strong></button>
+              </div>
+              <div className="grid gap-2 rounded-2xl border border-[color:var(--line)] bg-white p-3 md:grid-cols-2 xl:grid-cols-6">
+                <input value={salesQuery} onChange={(event) => { setSalesQuery(event.target.value); setSalesPage(1); }} placeholder="Pesquisar cliente ou produto" className="h-11 rounded-xl border border-[color:var(--line)] px-3 xl:col-span-2" />
+                <select value={salesStatusFilter} onChange={(event) => { setSalesStatusFilter(event.target.value as "ALL" | StockSaleStatus); setSalesPage(1); }} className="h-11 rounded-xl border border-[color:var(--line)] bg-white px-3"><option value="ALL">Todos os pagamentos</option><option value={StockSaleStatus.PENDING}>Por pagar</option><option value={StockSaleStatus.PAID}>Pago</option><option value={StockSaleStatus.OFFERED}>Oferecido</option></select>
+                <select value={salesDeliveryFilter} onChange={(event) => { setSalesDeliveryFilter(event.target.value as "ALL" | StockDeliveryStatus); setSalesPage(1); }} className="h-11 rounded-xl border border-[color:var(--line)] bg-white px-3"><option value="ALL">Todas as entregas</option><option value={StockDeliveryStatus.PENDING}>Por entregar</option><option value={StockDeliveryStatus.DELIVERED}>Entregue</option></select>
+                <select value={salesKindFilter} onChange={(event) => { setSalesKindFilter(event.target.value as typeof salesKindFilter); setSalesPage(1); }} className="h-11 rounded-xl border border-[color:var(--line)] bg-white px-3"><option value="ALL">Todos os formatos</option><option value="BOTTLE">Frascos</option><option value="DECANT_5">Decants 5 ml</option><option value="DECANT_10">Decants 10 ml</option><option value="KIT">Kits</option></select>
+                <label className="flex h-11 items-center gap-2 rounded-xl border border-[color:var(--line)] px-3 text-sm"><input type="checkbox" checked={salesPendingOnly} onChange={(event) => { setSalesPendingOnly(event.target.checked); setSalesPage(1); }} /> Apenas pendentes</label>
+                <label className="text-xs text-slate-500">Desde<input type="date" value={salesFrom} onChange={(event) => { setSalesFrom(event.target.value); setSalesPage(1); }} className="mt-1 h-10 w-full rounded-xl border border-[color:var(--line)] px-2" /></label>
+                <label className="text-xs text-slate-500">Até<input type="date" value={salesTo} onChange={(event) => { setSalesTo(event.target.value); setSalesPage(1); }} className="mt-1 h-10 w-full rounded-xl border border-[color:var(--line)] px-2" /></label>
+                <button type="button" onClick={() => { setSalesQuery(""); setSalesStatusFilter("ALL"); setSalesDeliveryFilter("ALL"); setSalesKindFilter("ALL"); setSalesPendingOnly(false); setSalesFrom(""); setSalesTo(""); setSalesPage(1); }} className="h-10 self-end rounded-xl border border-[color:var(--line)] px-3 text-sm">Limpar filtros</button>
+              </div>
+              <div className="overflow-hidden rounded-2xl border border-[color:var(--line)]">
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
-                  <thead className="bg-[color:var(--sand-soft)] text-left text-xs uppercase tracking-[0.14em] text-slate-500"><tr><th className="px-4 py-3" colSpan={6}>Cliente</th></tr></thead>
+                  <thead className="bg-[color:var(--sand-soft)] text-left text-xs uppercase tracking-[0.14em] text-slate-500"><tr><th className="px-4 py-3">Cliente</th><th className="px-4 py-3">Data</th><th className="px-4 py-3">Artigos</th><th className="px-4 py-3">Pagamento</th><th className="px-4 py-3">Entrega</th><th className="px-4 py-3 text-right">Total</th></tr></thead>
                   <tbody>
-                    {pagedCustomerGroups.map((group) => {
-                      const expanded = expandedCustomerKey === group.key;
-                      const hasPendingSale = group.sales.some((sale) => sale.status === StockSaleStatus.PENDING);
-                      return <Fragment key={group.key}>
-                        <tr onClick={() => { setExpandedCustomerKey((current) => current === group.key ? null : group.key); setExpandedSaleId(group.sales.length === 1 ? group.sales[0].id : null); }} className={`cursor-pointer border-t border-[color:var(--line)] hover:bg-[color:var(--sand-soft)] ${hasPendingSale ? "bg-amber-50" : "bg-white"}`}>
-                          <td colSpan={6} className={`px-4 py-4 font-medium text-[color:var(--ink)] ${hasPendingSale ? "border-l-4 border-l-amber-500" : ""}`} title={hasPendingSale ? "Este cliente tem uma ou mais vendas por pagar" : undefined}>{group.customerName}</td>
-                        </tr>
-                        {expanded && group.sales.length === 1 ? (
-                          <SaleTableRows sale={group.sales[0]} expanded showSummary={false} onToggle={() => undefined} onStatusChange={(status) => updateSaleStatus(group.sales[0].id, status)} onDeliveryStatusChange={(status) => updateDeliveryStatus(group.sales[0].id, status)} onSave={(event) => saveSaleEdits(event, group.sales[0])} onDelete={() => deleteSale(group.sales[0])} saving={savingSaleId === group.sales[0].id} deleting={deletingSaleId === group.sales[0].id} products={rows.filter((row) => row.active)} />
-                        ) : null}
-                        {expanded && group.sales.length > 1 ? group.sales.map((sale) => (
-                          <SaleTableRows key={sale.id} sale={sale} expanded={expandedSaleId === sale.id} onToggle={() => setExpandedSaleId((current) => current === sale.id ? null : sale.id)} onStatusChange={(status) => updateSaleStatus(sale.id, status)} onDeliveryStatusChange={(status) => updateDeliveryStatus(sale.id, status)} onSave={(event) => saveSaleEdits(event, sale)} onDelete={() => deleteSale(sale)} saving={savingSaleId === sale.id} deleting={deletingSaleId === sale.id} products={rows.filter((row) => row.active)} />
-                        )) : null}
-                      </Fragment>;
-                    })}
+                    {pagedSales.map((sale) => <SaleTableRows key={sale.id} sale={sale} expanded={expandedSaleId === sale.id} onToggle={() => setExpandedSaleId((current) => current === sale.id ? null : sale.id)} onStatusChange={(status) => updateSaleStatus(sale.id, status)} onDeliveryStatusChange={(status) => updateDeliveryStatus(sale.id, status)} onSave={(event) => saveSaleEdits(event, sale)} onDelete={() => deleteSale(sale)} saving={savingSaleId === sale.id} deleting={deletingSaleId === sale.id} products={rows.filter((row) => row.active)} />)}
                   </tbody>
                 </table>
               </div>
-              {!pagedCustomerGroups.length ? <p className="p-5 text-slate-500">Nenhuma venda encontrada.</p> : null}
-              <div className="flex items-center justify-between border-t border-[color:var(--line)] px-4 py-3 text-sm"><span>Página {salesPage} de {salesTotalPages} · máximo de 25 clientes</span><div className="flex gap-2"><button type="button" disabled={salesPage === 1} onClick={() => setSalesPage((page) => Math.max(1, page - 1))} className="rounded-full border px-3 py-2 disabled:opacity-40">Anterior</button><button type="button" disabled={salesPage === salesTotalPages} onClick={() => setSalesPage((page) => Math.min(salesTotalPages, page + 1))} className="rounded-full border px-3 py-2 disabled:opacity-40">Seguinte</button></div></div>
-              <div className="grid gap-3 border-t border-[color:var(--line)] bg-white p-4 sm:grid-cols-3">
-                <SaleStatusTotal label="Por pagar" value={getItemStatusTotal(sales, StockSaleStatus.PENDING)} />
-                <SaleStatusTotal label="Pago" value={getItemStatusTotal(sales, StockSaleStatus.PAID)} />
-                <SaleStatusTotal label="Oferecido" value={0} />
-                <SaleCountTotal label="Perfumes vendidos" value={soldItemTotals.perfumes} />
-                <SaleCountTotal label="Kits vendidos" value={soldItemTotals.kits} />
-                <SaleCountTotal label="Decants de 5 ml" value={soldItemTotals.fiveMlDecants} />
-                <SaleCountTotal label="Decants de 10 ml" value={soldItemTotals.tenMlDecants} />
+              {!pagedSales.length ? <p className="p-5 text-slate-500">Nenhuma venda encontrada.</p> : null}
+              <div className="flex items-center justify-between border-t border-[color:var(--line)] px-4 py-3 text-sm"><span>Página {salesPage} de {salesTotalPages} · {filteredSales.length} venda(s)</span><div className="flex gap-2"><button type="button" disabled={salesPage === 1} onClick={() => setSalesPage((page) => Math.max(1, page - 1))} className="rounded-full border px-3 py-2 disabled:opacity-40">Anterior</button><button type="button" disabled={salesPage === salesTotalPages} onClick={() => setSalesPage((page) => Math.min(salesTotalPages, page + 1))} className="rounded-full border px-3 py-2 disabled:opacity-40">Seguinte</button></div></div>
               </div>
             </div>
           )}
@@ -2111,7 +2110,7 @@ export function StockAdminTable({
                   <SaleLine key={id} label={`Decant ${index + 1}`} onRemove={decantLineIds.length > 1 ? () => setDecantLineIds((current) => current.filter((lineId) => lineId !== id)) : undefined}>
                     <SearchableProductSelect name={`decantProduct${id}`} products={rows.filter((row) => row.active && (row.availableInFiveMl || row.availableInTenMl))} placeholder="Pesquisar perfume..." />
                     <select name={`decantSize${id}`} required defaultValue="5" className="h-12 rounded-2xl border border-[color:var(--line)] bg-white px-3">
-                      <option value="5">5 ml · 3,50 €</option><option value="10">10 ml · 6,50 €</option>
+                      <option value="5">5 ml · 3,50 € / 4,50 €</option><option value="10">10 ml · 6,50 € / 7,50 €</option>
                     </select>
                     <input name={`decantQuantity${id}`} aria-label="Quantidade" type="number" min="1" defaultValue="1" required className="h-12 w-24 rounded-2xl border border-[color:var(--line)] px-3" />
                   </SaleLine>
@@ -2120,7 +2119,7 @@ export function StockAdminTable({
               </div>
             )}
             <div className="flex items-center justify-between border-t border-[color:var(--line)] pt-4">
-              <strong>{decantMode === "KIT" ? "Total: 16,50 €" : "5 ml: 3,50 € · 10 ml: 6,50 €"}</strong>
+              <strong>{decantMode === "KIT" ? "Total: 16,50 €" : "Preço calculado pelo valor atual de cada frasco"}</strong>
               <button disabled={savingDecantSale} className="rounded-full bg-[color:var(--atlantic)] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">{savingDecantSale ? "A registar..." : "Registar venda"}</button>
             </div>
           </form>
@@ -2449,7 +2448,7 @@ function SaleTableRows({
                     <p className="mb-3 text-sm font-medium text-[color:var(--ink)]">{`${item.notes?.includes("Kit de decants") ? "Perfume do kit · 5 ml" : item.notes?.includes("Decant individual") ? `Decant ${index + 1} · ${item.sizeMl ?? 5} ml` : `Perfume ${index + 1}`} · ${item.quantity} unidade${item.quantity === 1 ? "" : "s"}`}</p>
                     <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
                       <Field label="Produto"><SearchableProductSelect name={`saleItem${item.id}`} products={products} placeholder="Pesquisar produto..." initialProductId={item.productId} /></Field>
-                      {item.notes?.includes("Decant individual") ? <Field label="Tamanho"><select name={`saleItemSize${item.id}`} defaultValue={item.sizeMl ?? 5} className="h-12 rounded-2xl border border-[color:var(--line)] bg-white px-4"><option value="5">5 ml · 3,50 €</option><option value="10">10 ml · 6,50 €</option></select></Field> : null}
+                      {item.notes?.includes("Decant individual") ? <Field label="Tamanho"><select name={`saleItemSize${item.id}`} defaultValue={item.sizeMl ?? 5} className="h-12 rounded-2xl border border-[color:var(--line)] bg-white px-4"><option value="5">5 ml · 3,50 € / 4,50 €</option><option value="10">10 ml · 6,50 € / 7,50 €</option></select></Field> : null}
                       {!item.notes?.includes("Kit de decants") || item.id === firstKitItemId ? <>
                         <Field label="Pagamento"><select name={item.notes?.includes("Kit de decants") ? "kitStatus" : `saleItemStatus${item.id}`} defaultValue={item.status} className="h-12 rounded-2xl border border-[color:var(--line)] bg-white px-4"><option value={StockSaleStatus.PAID}>Pago</option><option value={StockSaleStatus.PENDING}>Por pagar</option><option value={StockSaleStatus.OFFERED}>Oferecido</option></select></Field>
                         <Field label="Entrega"><select name={item.notes?.includes("Kit de decants") ? "kitDelivery" : `saleItemDelivery${item.id}`} defaultValue={item.deliveryStatus} className="h-12 rounded-2xl border border-[color:var(--line)] bg-white px-4"><option value={StockDeliveryStatus.DELIVERED}>Entregue</option><option value={StockDeliveryStatus.PENDING}>Por entregar</option></select></Field>
@@ -2574,13 +2573,6 @@ function AppViewButton({ active, onClick, icon, label }: { active: boolean; onCl
   );
 }
 
-function SaleStatusTotal({ label, value }: { label: string; value: number }) {
-  return <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--sand-soft)] p-4"><p className="text-sm text-slate-600">{label}</p><p className="mt-1 font-serif text-2xl text-[color:var(--ink)]">{formatPrice(value)}</p></div>;
-}
-
-function SaleCountTotal({ label, value }: { label: string; value: number }) {
-  return <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--sand-soft)] p-4"><p className="text-xs uppercase tracking-[0.14em] text-slate-500">{label}</p><p className="mt-2 font-serif text-2xl text-[color:var(--ink)]">{value}</p></div>;
-}
 
 function getItemStatusTotal(sales: StockSaleRow[], status: StockSaleStatus) {
   return sales.reduce((salesTotal, sale) => salesTotal + sale.items.reduce(

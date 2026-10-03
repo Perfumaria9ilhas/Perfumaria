@@ -1,10 +1,7 @@
 import { randomBytes } from "node:crypto";
-import { Prisma } from "@prisma/client";
-import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentCustomer } from "@/lib/auth";
-import { getAzoresDateKey } from "@/lib/date";
 import { formatPrice } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { getDecantPriceInCents, getProductBottleSizeLabel } from "@/lib/product-sizes";
@@ -75,34 +72,8 @@ export async function POST(request: Request) {
   const customerAccount = loggedCustomer ? await prisma.customerAccount.findUnique({ where: { id: loggedCustomer.id } }) : null;
   const customerName = customerAccount ? `${customerAccount.firstName} ${customerAccount.lastName}` : undefined;
 
-  let order: { id: string; reference: string } | null = null;
-  let whatsappMessage = "";
-  for (let attempt = 0; attempt < 5 && !order; attempt += 1) {
-    const reference = buildOrderReference();
-    whatsappMessage = buildWhatsappMessage(reference, validatedItems, totalInCents, customerName);
-    try {
-      order = await prisma.$transaction(async (tx) => {
-        const created = await tx.siteOrder.create({ data: {
-          reference, totalInCents, whatsappMessage, customerAccountId: customerAccount?.id,
-          customerName: customerName ?? null, customerEmail: customerAccount?.email ?? null,
-          customerPhone: customerAccount?.phone ?? null, customerAddress: customerAccount?.address ?? null,
-          items: { create: validatedItems.map((item) => ({
-            productId: item.productId, productName: `${item.name} (${item.sizeLabel})`, brandName: item.brand,
-            unitPriceInCents: item.priceInCents, quantity: item.quantity,
-            lineTotalInCents: item.priceInCents * item.quantity,
-          })) },
-        }, select: { id: true, reference: true } });
-        const activeOrdersCount = await tx.siteOrder.count({ where: { status: { not: "cancelado" } } });
-        await tx.storeMetric.upsert({ where: { id: "main" }, update: { totalSatisfiedCustomers: { increment: 1 } }, create: { id: "main", totalSatisfiedCustomers: activeOrdersCount } });
-        await tx.dailySiteVisit.upsert({ where: { dateKey: getAzoresDateKey() }, update: {}, create: { dateKey: getAzoresDateKey(), visitCount: 0 } });
-        return created;
-      });
-    } catch (error) {
-      if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")) throw error;
-    }
-  }
-  if (!order) return NextResponse.json({ error: "Não foi possível gerar a referência. Tente novamente." }, { status: 503 });
+  const reference = buildOrderReference();
+  const whatsappMessage = buildWhatsappMessage(reference, validatedItems, totalInCents, customerName);
   const whatsappUrl = `https://wa.me/${settings.whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`;
-  revalidatePath("/");
-  return NextResponse.json({ orderId: order.id, reference: order.reference, whatsappUrl });
+  return NextResponse.json({ reference, whatsappUrl });
 }

@@ -10,7 +10,6 @@ const navLinks = [
   { href: "/admin/tipos-produto", label: "Tipos" },
   { href: "/admin/stock", label: "Stock" },
   { href: "/admin/clientes", label: "Clientes" },
-  { href: "/admin/pedidos", label: "Pedidos" },
   { href: "/admin/desejos", label: "Desejos" },
   { href: "/admin/comentarios", label: "Comentários" },
   { href: "/admin/sobre-nos", label: "Sobre Nós" },

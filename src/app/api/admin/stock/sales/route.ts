@@ -5,6 +5,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { getSalePriceInCents } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
+import { getDecantPriceInCents } from "@/lib/product-sizes";
 
 const schema = z.object({
   customerName: z.string().trim().min(2),
@@ -102,7 +103,8 @@ export async function PATCH(request: Request) {
       if (nextProductId !== movement.productId && movement.reason === StockMovementReason.SALE) {
         await tx.product.update({ where: { id: movement.productId }, data: { stock: { increment: movement.quantity } } });
         const currentReplacement = await tx.product.findUniqueOrThrow({ where: { id: nextProductId } });
-        await tx.product.update({ where: { id: nextProductId }, data: { stock: Math.max(0, currentReplacement.stock - movement.quantity) } });
+        if (movement.quantity > currentReplacement.stock) throw new Error(`Stock insuficiente para ${currentReplacement.name}. Disponível: ${currentReplacement.stock}.`);
+        await tx.product.update({ where: { id: nextProductId }, data: { stock: currentReplacement.stock - movement.quantity } });
       }
       await tx.stockMovement.update({
         where: { id: movement.id },
@@ -113,7 +115,7 @@ export async function PATCH(request: Request) {
           customerName: parsed.data.customerName ?? movement.customerName,
           productId: nextProductId,
           saleUnitPriceInCents: isIndividualDecant
-            ? (nextSizeMl === 10 ? 650 : 350)
+            ? getDecantPriceInCents(getSalePriceInCents(nextProduct), nextSizeMl === 10 ? "10ml" : "5ml")
             : nextProductId !== movement.productId && movement.reason === StockMovementReason.SALE
               ? getSalePriceInCents(nextProduct)
               : movement.saleUnitPriceInCents,
@@ -202,7 +204,8 @@ export async function POST(request: Request) {
       for (const product of products) {
         const quantity = quantities.get(product.id)!;
         if (!product.active) throw new Error(`${product.name} já não está disponível no site.`);
-        const resultingStock = Math.max(0, product.stock - quantity);
+        if (quantity > product.stock) throw new Error(`Stock insuficiente para ${product.name}. Disponível: ${product.stock}.`);
+        const resultingStock = product.stock - quantity;
         const updated = await tx.product.updateMany({
           where: { id: product.id, stock: product.stock },
           data: { stock: resultingStock },

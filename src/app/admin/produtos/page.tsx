@@ -187,8 +187,8 @@ function centsToEuroInput(value: number | null) {
 function getMlStatusText(availableInFiveMl: boolean, availableInTenMl: boolean, imageUrl: string) {
   if (availableInFiveMl || availableInTenMl) {
     const activeSizes = [
-      availableInFiveMl ? "5 ml ativo a 3,50 EUR" : null,
-      availableInTenMl ? "10 ml ativo a 6,50 EUR" : null,
+      availableInFiveMl ? "5 ml ativo segundo o preço do frasco" : null,
+      availableInTenMl ? "10 ml ativo segundo o preço do frasco" : null,
     ].filter(Boolean);
 
     return `${activeSizes.join(" · ")}.`;
@@ -402,7 +402,7 @@ export default async function AdminProductsPage({
                 Bestseller
               </label>
               <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--sand-soft)] px-4 py-3 text-sm text-slate-600 md:col-span-2">
-                Se ativares 5 ml fica sempre a 3,50 EUR e 10 ml fica sempre a 6,50 EUR.
+                Regra automática: frascos abaixo de 55 EUR usam 3,50 EUR (5 ml) e 6,50 EUR (10 ml); a partir de 55 EUR usam 4,50 EUR e 7,50 EUR.
               </div>
             </div>
             <button className="rounded-full bg-[color:var(--atlantic)] px-5 py-3 text-sm font-semibold text-white md:col-span-2">

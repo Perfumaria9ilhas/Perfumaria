@@ -6,7 +6,7 @@ import { getStatisticsData, previousStatisticsRange, resolveStatisticsRange, typ
 
 type PageProps = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 type RankingKey = "viewed" | "added" | "whatsapp" | "reservations" | "sold" | "searches" | "zeroSearches";
-type ChartMetric = "visits" | "views" | "cart" | "whatsapp" | "orders" | "sales" | "revenue";
+type ChartMetric = "visits" | "views" | "cart" | "whatsapp" | "sales" | "revenue";
 
 const periods: { value: StatisticsPeriod; label: string }[] = [
   { value: "today", label: "Hoje" }, { value: "7d", label: "7 dias" },
@@ -27,7 +27,7 @@ const rankingDetails: Record<RankingKey, { title: string; valueLabel: string; pr
 
 const chartDetails: Record<ChartMetric, { label: string; money?: boolean }> = {
   visits: { label: "Visitas" }, views: { label: "Produtos vistos" }, cart: { label: "Carrinho" },
-  whatsapp: { label: "WhatsApp" }, orders: { label: "Pedidos" }, sales: { label: "Vendas" }, revenue: { label: "Valor pago", money: true },
+  whatsapp: { label: "WhatsApp" }, sales: { label: "Vendas" }, revenue: { label: "Valor pago", money: true },
 };
 
 function stringParam(value: string | string[] | undefined) { return typeof value === "string" ? value : undefined; }
@@ -127,15 +127,14 @@ export default async function AdminStatisticsPage({ searchParams }: PageProps) {
   const [data, previous] = await Promise.all([getStatisticsData(range), getStatisticsData(previousStatisticsRange(range))]);
   const funnel: [string, number | null, string | null][] = [
     ["Visitas com consentimento", data.availability.visits ? data.totals.visits : null, null], ["Produtos vistos", data.availability.views ? data.totals.views : null, percentage(data.totals.views, data.totals.visits)],
-    ["Adições ao carrinho", data.availability.cart ? data.totals.addToCartEvents : null, percentage(data.totals.addToCartEvents, data.totals.views)], ["Checkouts WhatsApp", data.availability.whatsapp ? data.totals.checkout : null, percentage(data.totals.checkout, data.totals.addToCartEvents)],
-    ["Pedidos iniciados", data.orders.count, percentage(data.orders.count, data.totals.checkout)], ["Vendas pagas", data.sales.paidCount, percentage(data.sales.paidCount, data.orders.count)],
+    ["Adições ao carrinho", data.availability.cart ? data.totals.addToCartEvents : null, percentage(data.totals.addToCartEvents, data.totals.views)], ["Avanços para WhatsApp", data.availability.whatsapp ? data.totals.checkout : null, percentage(data.totals.checkout, data.totals.addToCartEvents)],
   ];
   const rankingAvailability = {
     viewed: data.availability.views, added: data.availability.cart, whatsapp: data.availability.whatsapp,
     reservations: data.availability.reservations, sold: Boolean(data.starts.sales && range.to >= data.starts.sales), searches: data.availability.searches, zeroSearches: data.availability.searches,
   };
 
-  return <AdminShell title="Estatísticas" description="Evolução da utilização consentida, procura, pedidos e vendas reais da loja.">
+  return <AdminShell title="Estatísticas" description="Interesse no site e vendas reais registadas no Stock.">
     <section className="space-y-3 rounded-[1.5rem] border border-[color:var(--line)] bg-white p-3 sm:p-4">
       <div className="flex max-w-full gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{periods.map((item) => <Link key={item.value} href={`/admin/estatisticas?period=${item.value}`} className={`shrink-0 rounded-full border px-3.5 py-2 text-sm ${range.period === item.value ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-white" : "border-[color:var(--line)] bg-white"}`}>{item.label}</Link>)}</div>
       <form method="get" className="grid min-w-0 gap-2 sm:grid-cols-[1fr_1fr_auto]"><input type="hidden" name="period" value="custom" /><label className="min-w-0 text-xs text-slate-500">Data inicial<input type="date" name="from" defaultValue={range.from} className="mt-1 h-11 w-full min-w-0 rounded-xl border border-[color:var(--line)] px-3 text-sm" /></label><label className="min-w-0 text-xs text-slate-500">Data final<input type="date" name="to" defaultValue={range.to} className="mt-1 h-11 w-full min-w-0 rounded-xl border border-[color:var(--line)] px-3 text-sm" /></label><button className="min-h-11 self-end rounded-xl bg-[color:var(--atlantic)] px-5 text-sm font-semibold text-white">Aplicar</button></form>
@@ -144,7 +143,6 @@ export default async function AdminStatisticsPage({ searchParams }: PageProps) {
 
     <section className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-6">
       <MetricCard label="Visitas com consentimento" value={data.availability.visits ? data.totals.visits.toLocaleString("pt-PT") : "Sem dados"} current={data.totals.visits} previous={previous.totals.visits} />
-      <MetricCard label="Pedidos iniciados" value={data.orders.count.toLocaleString("pt-PT")} current={data.orders.count} previous={previous.orders.count} />
       <MetricCard label="Vendas pagas" value={data.sales.paidCount.toLocaleString("pt-PT")} current={data.sales.paidCount} previous={previous.sales.paidCount} />
       <MetricCard label="Valor pago" value={formatPrice(data.sales.paidValue)} current={data.sales.paidValue} previous={previous.sales.paidValue} />
       <MetricCard label="Ticket médio" value={formatPrice(data.sales.ticketAverage)} current={data.sales.ticketAverage} previous={previous.sales.ticketAverage} />
@@ -157,12 +155,12 @@ export default async function AdminStatisticsPage({ searchParams }: PageProps) {
 
     <section className="mt-5 rounded-[1.5rem] border border-[color:var(--line)] bg-white p-4 sm:p-5"><h2 className="font-serif text-2xl">Funil agregado</h2><p className="mt-1 text-xs text-slate-500">As percentagens relacionam totais agregados; não acompanham pessoas individualmente.</p><div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{funnel.map(([label, value, rate]) => <div key={label} className="rounded-xl bg-[color:var(--sand-soft)] px-3 py-2.5"><div className="flex items-center justify-between"><span className="text-sm">{label}</span><strong>{value === null ? "Sem dados" : value.toLocaleString("pt-PT")}</strong></div>{rate ? <p className="mt-1 text-xs text-slate-500">{rate} da etapa anterior</p> : null}</div>)}</div></section>
 
-    <section className="mt-5 rounded-[1.5rem] border border-[color:var(--line)] bg-white p-4 sm:p-5"><h2 className="font-serif text-2xl">Vendas por formato</h2><p className="mt-1 text-xs text-slate-500">Apenas vendas pagas. Cada kit inclui cinco decants de 5 ml.</p><div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">{[["Frascos", data.sales.bottles], ["Decants de 5 ml", data.sales.fiveMl], ["Decants de 10 ml", data.sales.tenMl], ["Kits de decants", data.sales.decantKits]].map(([label, value]) => <div key={String(label)} className="rounded-xl bg-[color:var(--sand-soft)] p-3"><p className="text-xs text-slate-500">{label}</p><strong className="mt-1 block font-serif text-2xl">{Number(value).toLocaleString("pt-PT")}</strong></div>)}</div></section>
+    <section className="mt-5 rounded-[1.5rem] border border-[color:var(--line)] bg-white p-4 sm:p-5"><h2 className="font-serif text-2xl">Vendas reais por formato</h2><p className="mt-1 text-xs text-slate-500">Apenas movimentos pagos registados no Stock. Decants individuais e componentes de kits são mantidos separados.</p><div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">{[["Frascos", data.sales.bottles], ["Decants individuais de 5 ml", data.sales.fiveMl], ["Decants individuais de 10 ml", data.sales.tenMl], ["Kits de decants", data.sales.decantKits]].map(([label, value]) => <div key={String(label)} className="rounded-xl bg-[color:var(--sand-soft)] p-3"><p className="text-xs text-slate-500">{label}</p><strong className="mt-1 block font-serif text-2xl">{Number(value).toLocaleString("pt-PT")}</strong></div>)}</div></section>
 
     <section className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">{(Object.keys(rankingDetails) as RankingKey[]).map((key) => <Ranking key={key} title={rankingDetails[key].title} items={data.rankings[key]} href={statisticsHref(range, { ranking: key })} empty={rankingAvailability[key] ? "Nenhum resultado neste período." : "Sem dados neste período."} />)}</section>
     <section className="mt-5 grid gap-4 md:grid-cols-2"><Ranking title="Marcas mais vendidas" items={data.rankings.brands} empty="Nenhuma venda paga neste período." /><Ranking title="Público mais vendido" items={data.rankings.audiences} empty="Nenhuma venda paga neste período." /></section>
 
-    <section className="mt-5 rounded-[1.5rem] border border-[color:var(--line)] bg-white p-4 text-sm text-slate-600"><p><strong>Pedidos iniciados:</strong> valor potencial {formatPrice(data.orders.potentialValue)}; {data.orders.cancelled} cancelado(s). Não entram automaticamente no valor pago.</p><p className="mt-2"><strong>Vendas reais:</strong> {data.sales.paidUnits} unidade(s) pagas. Pendente aparece em “Por receber”; oferecido tem valor zero.</p><p className="mt-2"><strong>Visitas:</strong> cada browser com consentimento é contabilizado no máximo uma vez por dia. Para sessões e utilizadores, consulte também o GA4.</p><p className="mt-2"><strong>Histórico preservado:</strong> {data.migratedVisitDays} dia(s) antigos foram incorporados sem duplicação.</p></section>
+    <section className="mt-5 rounded-[1.5rem] border border-[color:var(--line)] bg-white p-4 text-sm text-slate-600"><p className="mt-2"><strong>Vendas reais:</strong> {data.sales.paidUnits} unidade(s) pagas. Pendente aparece em “Por receber”; oferecido tem valor zero.</p><p className="mt-2"><strong>Visitas:</strong> cada browser com consentimento é contabilizado no máximo uma vez por dia. Para sessões e utilizadores, consulte também o GA4.</p><p className="mt-2"><strong>Histórico preservado:</strong> {data.migratedVisitDays} dia(s) antigos foram incorporados sem duplicação.</p></section>
 
     {ranking ? <RankingModal ranking={ranking} data={data} range={range} search={stringParam(query.rankingSearch) ?? ""} page={Number(stringParam(query.rankingPage)) || 1} /> : null}
   </AdminShell>;
