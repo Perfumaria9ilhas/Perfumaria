@@ -140,7 +140,7 @@ export async function getStatisticsData(range: { from: string; to: string }) {
   const reservationProducts = aggregateProducts("reservationEvents");
   const soldProducts = new Map<string, { name: string; value: number }>();
   for (const movement of paidMovements) {
-    if (movement.reason !== StockMovementReason.SALE && movement.reason !== StockMovementReason.DECANT) continue;
+    if (movement.reason !== StockMovementReason.SALE) continue;
     const current = soldProducts.get(movement.productId) ?? { name: movement.product.name, value: 0 };
     current.value += movement.quantity;
     soldProducts.set(movement.productId, current);
@@ -156,7 +156,7 @@ export async function getStatisticsData(range: { from: string; to: string }) {
   const aggregateProductDimension = (dimension: "brand" | "audience") => {
     const values = new Map<string, number>();
     for (const movement of paidMovements) {
-      if (movement.reason !== StockMovementReason.SALE && movement.reason !== StockMovementReason.DECANT) continue;
+      if (movement.reason !== StockMovementReason.SALE) continue;
       const name = dimension === "brand" ? movement.product.brand.name : movement.product.audience === "MASCULINO" ? "Homem" : movement.product.audience === "FEMININO" ? "Mulher" : "Unissexo";
       values.set(name, (values.get(name) ?? 0) + movement.quantity);
     }
