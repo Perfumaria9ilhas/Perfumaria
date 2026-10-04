@@ -20,6 +20,7 @@ const movementSchema = z
     unitCost: z.string().optional().default(""),
     supplier: z.string().optional().default(""),
     customerName: z.string().optional().default(""),
+    saleOrigin: z.enum(["WhatsApp", "Instagram", "Facebook", "Site", "Feira", "Presencial", "Google", "Outro"]).optional().nullable(),
     reason: z.nativeEnum(StockMovementReason).nullable().optional(),
     notes: z.string().optional().default(""),
   })
@@ -164,6 +165,7 @@ export async function POST(
             parsed.data.type === StockMovementType.SALE
               ? parsed.data.customerName.trim()
               : null,
+          saleOrigin: parsed.data.type === StockMovementType.SALE ? parsed.data.saleOrigin : null,
           saleUnitPriceInCents:
             parsed.data.type === StockMovementType.SALE
               ? getSalePriceInCents(product)

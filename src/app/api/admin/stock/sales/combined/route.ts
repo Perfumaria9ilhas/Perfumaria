@@ -10,6 +10,7 @@ import { getDecantPriceInCents } from "@/lib/product-sizes";
 
 const schema = z.object({
   customerName: z.string().trim().min(2),
+  saleOrigin: z.enum(["WhatsApp", "Instagram", "Facebook", "Site", "Feira", "Presencial", "Google", "Outro"]).optional().nullable(),
   status: z.nativeEnum(StockSaleStatus),
   deliveryStatus: z.nativeEnum(StockDeliveryStatus),
   perfumeLines: z.array(z.object({ productId: z.string().min(1), quantity: z.number().int().positive() })).max(50),
@@ -42,7 +43,7 @@ export async function POST(request: Request) {
         const resultingStock = product.stock - quantity;
         const updated = await tx.product.updateMany({ where: { id: product.id, stock: product.stock }, data: { stock: resultingStock } });
         if (updated.count !== 1) throw new Error(`O stock de ${product.name} foi alterado. Tente novamente.`);
-        await tx.stockMovement.create({ data: { productId, type: StockMovementType.SALE, reason: StockMovementReason.SALE, customerName: data.customerName, saleGroupId, saleStatus: data.status, deliveryStatus: data.deliveryStatus, saleUnitPriceInCents: getSalePriceInCents(product), quantity, previousStock: product.stock, resultingStock, notes: "Venda de perfume" } });
+        await tx.stockMovement.create({ data: { productId, type: StockMovementType.SALE, reason: StockMovementReason.SALE, customerName: data.customerName, saleOrigin: data.saleOrigin, saleGroupId, saleStatus: data.status, deliveryStatus: data.deliveryStatus, saleUnitPriceInCents: getSalePriceInCents(product), quantity, previousStock: product.stock, resultingStock, notes: "Venda de perfume" } });
       }
       const decants = [
         ...data.decantLines.map((line) => ({ ...line, kit: false as const, note: `Decant individual · ${line.sizeMl} ml` })),
@@ -54,7 +55,7 @@ export async function POST(request: Request) {
         if (line.sizeMl === 5 && !product.availableInFiveMl) throw new Error(`${product.name} não está disponível em 5 ml.`);
         if (line.sizeMl === 10 && !product.availableInTenMl) throw new Error(`${product.name} não está disponível em 10 ml.`);
         const price = line.kit ? 330 : getDecantPriceInCents(getSalePriceInCents(product), line.sizeMl === 5 ? "5ml" : "10ml");
-        await tx.stockMovement.create({ data: { productId: product.id, type: StockMovementType.SALE, reason: StockMovementReason.DECANT, customerName: data.customerName, saleGroupId, saleStatus: data.status, deliveryStatus: data.deliveryStatus, saleUnitPriceInCents: price, quantity: line.quantity, previousStock: product.stock, resultingStock: product.stock, notes: line.note } });
+        await tx.stockMovement.create({ data: { productId: product.id, type: StockMovementType.SALE, reason: StockMovementReason.DECANT, customerName: data.customerName, saleOrigin: data.saleOrigin, saleGroupId, saleStatus: data.status, deliveryStatus: data.deliveryStatus, saleUnitPriceInCents: price, quantity: line.quantity, previousStock: product.stock, resultingStock: product.stock, notes: line.note } });
       }
     });
   } catch (error) {

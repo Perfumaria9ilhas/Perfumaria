@@ -18,6 +18,7 @@ const schema = z.object({
     quantity: z.number().int().positive(),
   })).min(1).max(30).optional(),
   customerName: z.string().trim().min(2),
+  saleOrigin: z.enum(["WhatsApp", "Instagram", "Facebook", "Site", "Feira", "Presencial", "Google", "Outro"]).optional().nullable(),
 }).superRefine((value, ctx) => {
   if (value.mode === "KIT" && (value.productIds.length !== 5 || new Set(value.productIds).size !== 5 || value.sizeMl !== 5)) {
     ctx.addIssue({ code: "custom", message: "O kit precisa de 5 perfumes diferentes de 5 ml." });
@@ -32,7 +33,7 @@ export async function POST(request: Request) {
   const parsed = schema.safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Dados inválidos." }, { status: 400 });
 
-  const { mode, productIds, customerName } = parsed.data;
+  const { mode, productIds, customerName, saleOrigin } = parsed.data;
   const lines = mode === "KIT"
     ? productIds.map((productId) => ({ productId, sizeMl: 5 as const, quantity: 1 }))
     : parsed.data.lines!;
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
         const unitPrice = mode === "KIT" ? 330 : getDecantPriceInCents(getSalePriceInCents(product), line.sizeMl === 5 ? "5ml" : "10ml");
         await tx.stockMovement.create({ data: {
           productId: product.id, type: StockMovementType.SALE, reason: StockMovementReason.DECANT,
-          customerName, saleUnitPriceInCents: unitPrice, quantity: line.quantity,
+          customerName, saleOrigin, saleUnitPriceInCents: unitPrice, quantity: line.quantity,
           previousStock: product.stock, resultingStock: product.stock,
           notes: mode === "KIT" ? "Kit de decants · 5 ml" : `Decant individual · ${line.sizeMl} ml`,
         } });

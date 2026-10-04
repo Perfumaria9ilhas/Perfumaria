@@ -9,6 +9,7 @@ import { getDecantPriceInCents } from "@/lib/product-sizes";
 
 const schema = z.object({
   customerName: z.string().trim().min(2),
+  saleOrigin: z.enum(["WhatsApp", "Instagram", "Facebook", "Site", "Feira", "Presencial", "Google", "Outro"]).optional().nullable(),
   lines: z.array(z.object({
     productId: z.string().min(1),
     quantity: z.number().int().positive(),
@@ -20,6 +21,7 @@ const statusSchema = z.object({
   status: z.nativeEnum(StockSaleStatus).optional(),
   deliveryStatus: z.nativeEnum(StockDeliveryStatus).optional(),
   customerName: z.string().trim().min(2).optional(),
+  saleOrigin: z.enum(["WhatsApp", "Instagram", "Facebook", "Site", "Feira", "Presencial", "Google", "Outro"]).optional().nullable(),
   items: z.array(z.object({
     movementId: z.string().min(1),
     productId: z.string().min(1),
@@ -37,7 +39,7 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
   });
   const groups = new Map<string, {
-    id: string; customerName: string; status: StockSaleStatus; deliveryStatus: StockDeliveryStatus; createdAt: string;
+    id: string; customerName: string; saleOrigin: string | null; status: StockSaleStatus; deliveryStatus: StockDeliveryStatus; createdAt: string;
     totalInCents: number; items: { id: string; productId: string; name: string; quantity: number; unitPriceInCents: number; status: StockSaleStatus; deliveryStatus: StockDeliveryStatus; sizeMl: 5 | 10 | null; notes: string | null }[];
   }>();
   for (const movement of movements) {
@@ -45,6 +47,7 @@ export async function GET() {
     const group = groups.get(id) ?? {
       id,
       customerName: movement.customerName ?? "Cliente",
+      saleOrigin: movement.saleOrigin,
       status: movement.saleStatus ?? StockSaleStatus.PAID,
       deliveryStatus: movement.deliveryStatus ?? StockDeliveryStatus.DELIVERED,
       createdAt: movement.createdAt.toISOString(),
@@ -113,6 +116,7 @@ export async function PATCH(request: Request) {
           saleStatus: itemStatuses.get(movement.id) ?? parsed.data.status,
           deliveryStatus: itemDeliveryStatuses.get(movement.id) ?? parsed.data.deliveryStatus,
           customerName: parsed.data.customerName ?? movement.customerName,
+          saleOrigin: parsed.data.saleOrigin === undefined ? movement.saleOrigin : parsed.data.saleOrigin,
           productId: nextProductId,
           saleUnitPriceInCents: isIndividualDecant
             ? getDecantPriceInCents(getSalePriceInCents(nextProduct), nextSizeMl === 10 ? "10ml" : "5ml")
@@ -216,6 +220,7 @@ export async function POST(request: Request) {
           type: StockMovementType.SALE,
           reason: StockMovementReason.SALE,
           customerName: parsed.data.customerName,
+          saleOrigin: parsed.data.saleOrigin,
           saleUnitPriceInCents: getSalePriceInCents(product),
           quantity,
           previousStock: product.stock,

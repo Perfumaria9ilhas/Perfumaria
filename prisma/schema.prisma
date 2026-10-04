@@ -330,6 +330,7 @@ model StockMovement {
   saleGroupId       String?
   saleStatus        StockSaleStatus?
   deliveryStatus    StockDeliveryStatus?
+  saleOrigin        String?
   saleUnitPriceInCents Int?
   quantity          Int
   previousStock     Int
