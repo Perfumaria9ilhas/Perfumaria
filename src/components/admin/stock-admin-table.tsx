@@ -1,23 +1,33 @@
 "use client";
 
 import { type Brand, type Category, StockDeliveryStatus, StockMovementReason, StockMovementType, StockSaleStatus } from "@prisma/client";
+import Link from "next/link";
 import {
+  BarChart3,
+  Boxes,
+  FolderOpen,
   Download,
   FileSpreadsheet,
   Filter,
   FileText,
   History,
+  MessageSquare,
+  MoreHorizontal,
   PackageX,
+  PackageSearch,
   Plus,
   ShoppingCart,
+  Store,
+  Tags,
   RotateCcw,
   Save,
   Search,
   SlidersHorizontal,
   Trash2,
   Upload,
+  Users,
 } from "lucide-react";
-import { useDeferredValue, useId, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
 import { formatPrice } from "@/lib/format";
 import {
   type AdminStockMovementRow,
@@ -46,6 +56,7 @@ type Props = {
   categories: Category[];
   customerNames: string[];
   customerSummaries: StockCustomerSummary[];
+  initialView?: "NEW_SALE" | "SALES" | "STOCK";
 };
 
 type BannerState =
@@ -93,6 +104,7 @@ export function StockAdminTable({
   categories,
   customerNames: initialCustomerNames,
   customerSummaries: initialCustomerSummaries,
+  initialView = "NEW_SALE",
 }: Props) {
   const [rows, setRows] = useState(initialRows);
   const [customerNames, setCustomerNames] = useState(initialCustomerNames);
@@ -120,7 +132,8 @@ export function StockAdminTable({
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importPreviewRows, setImportPreviewRows] = useState<StockImportPreviewRow[]>([]);
   const [showImportPanel, setShowImportPanel] = useState(false);
-  const [activeView, setActiveView] = useState<"NEW_SALE" | "SALES" | "STOCK" | "PERFUMES" | "DECANTS">("NEW_SALE");
+  const [activeView, setActiveView] = useState<"NEW_SALE" | "SALES" | "STOCK" | "PERFUMES" | "DECANTS">(initialView);
+  const [moreStockOptionsOpen, setMoreStockOptionsOpen] = useState(false);
   const [decantMode, setDecantMode] = useState<"KIT" | "INDIVIDUAL">("KIT");
   const [savingDecantSale, setSavingDecantSale] = useState(false);
   const [decantLineIds, setDecantLineIds] = useState([0]);
@@ -859,6 +872,20 @@ export function StockAdminTable({
     }
   }
 
+  useEffect(() => {
+    if (initialView !== "SALES") return;
+    const loadTimer = window.setTimeout(() => { void loadSales(); }, 0);
+    return () => window.clearTimeout(loadTimer);
+  }, [initialView]);
+
+  function selectStockView(view: "NEW_SALE" | "SALES" | "STOCK") {
+    const queryView = view === "NEW_SALE" ? "new-sale" : view === "SALES" ? "sales" : "stock";
+    window.history.replaceState(null, "", `/admin/stock?view=${queryView}`);
+    window.dispatchEvent(new Event("admin-view-change"));
+    if (view === "SALES") void loadSales();
+    else setActiveView(view);
+  }
+
   async function updateSaleStatus(saleGroupId: string, status: StockSaleStatus) {
     const key = `${saleGroupId}:payment`;
     if (updatingSaleFields.includes(key)) return;
@@ -1270,11 +1297,30 @@ export function StockAdminTable({
 
   return (
     <div className="space-y-5">
-      <nav className="grid grid-cols-1 gap-3 rounded-[1.8rem] border border-[color:var(--line)] bg-white p-3 shadow-sm sm:grid-cols-3" aria-label="Áreas de vendas e stock">
-        <AppViewButton active={activeView === "NEW_SALE"} onClick={() => setActiveView("NEW_SALE")} icon={<ShoppingCart className="h-5 w-5" />} label="Nova venda" />
-        <AppViewButton active={activeView === "SALES"} onClick={loadSales} icon={<History className="h-5 w-5" />} label="Estado das vendas" />
-        <AppViewButton active={activeView === "STOCK"} onClick={() => setActiveView("STOCK")} icon={<PackageX className="h-5 w-5" />} label="Stock" />
+      <nav className="grid grid-cols-3 gap-2 rounded-[1.8rem] border border-[color:var(--line)] bg-white p-3 shadow-sm sm:gap-3" aria-label="Áreas de vendas e stock">
+        <AppViewButton active={activeView === "NEW_SALE"} onClick={() => selectStockView("NEW_SALE")} icon={<ShoppingCart className="h-5 w-5" />} label="Nova venda" />
+        <AppViewButton active={activeView === "SALES"} onClick={() => selectStockView("SALES")} icon={<History className="h-5 w-5" />} label="Estado das vendas" />
+        <AppViewButton active={activeView === "STOCK"} onClick={() => selectStockView("STOCK")} icon={<PackageX className="h-5 w-5" />} label="Stock" />
       </nav>
+
+      <section className="rounded-[1.6rem] border border-[color:var(--line)] bg-white p-3 shadow-sm lg:hidden" aria-label="Acessos rápidos do admin">
+        <div className="grid gap-2" style={{ gridTemplateColumns: "repeat(4, minmax(0, 1fr))" }}>
+          <StockQuickLink href="/admin/produtos" label="Produtos" icon={<PackageSearch className="h-5 w-5" />} />
+          <StockQuickLink href="/admin/clientes" label="Clientes" icon={<Users className="h-5 w-5" />} />
+          <StockQuickLink href="/admin/estatisticas" label="Estatísticas" icon={<BarChart3 className="h-5 w-5" />} />
+          <StockQuickLink href="/admin/comentarios" label="Comentários" icon={<MessageSquare className="h-5 w-5" />} />
+        </div>
+        {moreStockOptionsOpen ? <div className="mt-2 grid gap-2 border-t border-[color:var(--line)] pt-2" style={{ gridTemplateColumns: "repeat(4, minmax(0, 1fr))" }}>
+          <StockQuickLink href="/admin/marcas" label="Marcas" icon={<Tags className="h-5 w-5" />} />
+          <StockQuickLink href="/admin/categorias" label="Categorias" icon={<FolderOpen className="h-5 w-5" />} />
+          <StockQuickLink href="/admin/tipos-produto" label="Tipos" icon={<Boxes className="h-5 w-5" />} />
+          <StockQuickLink href="/admin/sobre-nos" label="Sobre Nós" icon={<FileText className="h-5 w-5" />} />
+        </div> : null}
+        <div className="mt-2 grid grid-cols-2 gap-2 border-t border-[color:var(--line)] pt-2">
+          <Link href="/" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[color:var(--sand-soft)] px-3 text-sm font-semibold text-[color:var(--ink)]"><Store className="h-5 w-5" />Ver loja</Link>
+          <button type="button" onClick={() => setMoreStockOptionsOpen((open) => !open)} aria-expanded={moreStockOptionsOpen} className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold ${moreStockOptionsOpen ? "bg-[color:var(--atlantic)] text-white" : "bg-[color:var(--sand-soft)] text-[color:var(--ink)]"}`}><MoreHorizontal className="h-5 w-5" />Mais opções</button>
+        </div>
+      </section>
 
       <div className={activeView === "STOCK" ? "contents" : "hidden"}>
       <section className="rounded-[1.8rem] border border-[color:var(--line)] bg-white p-4 shadow-sm">
@@ -2698,13 +2744,17 @@ function AddLineButton({ children, onClick }: { children: React.ReactNode; onCli
   return <button type="button" onClick={onClick} className="inline-flex items-center gap-2 rounded-full border border-[color:var(--line)] bg-white px-4 py-2 text-sm font-semibold text-[color:var(--ink)]"><Plus className="h-4 w-4" />{children}</button>;
 }
 
+function StockQuickLink({ href, label, icon }: { href: string; label: string; icon: React.ReactNode }) {
+  return <Link href={href} className="flex min-w-0 flex-col items-center justify-center gap-1.5 rounded-xl border border-[color:var(--line)] bg-white px-1 py-3 text-center text-[11px] leading-tight text-[color:var(--ink)]">{icon}<span className="max-w-full break-words">{label}</span></Link>;
+}
+
 function AppViewButton({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`flex min-h-20 items-center justify-center gap-3 rounded-[1.35rem] px-4 py-4 text-base font-semibold transition ${active ? "bg-[color:var(--atlantic)] text-white shadow-sm" : "bg-[color:var(--sand-soft)] text-[color:var(--ink)] hover:bg-[color:var(--sand)]"}`}
+      className={`flex min-h-20 min-w-0 flex-col items-center justify-center gap-1.5 rounded-[1.35rem] px-1.5 py-3 text-center text-xs font-semibold leading-tight transition sm:flex-row sm:gap-3 sm:px-4 sm:py-4 sm:text-base ${active ? "bg-[color:var(--atlantic)] text-white shadow-sm" : "bg-[color:var(--sand-soft)] text-[color:var(--ink)] hover:bg-[color:var(--sand)]"}`}
     >
       {icon}
       {label}
