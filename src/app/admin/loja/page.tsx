@@ -102,7 +102,7 @@ export default async function AdminLojaPage() {
       </section>
 
       <section className="rounded-[2rem] border border-[color:var(--line)] bg-white p-6 shadow-sm">
-        <form action={saveStoreSettings} className="grid gap-4 md:grid-cols-2" encType="multipart/form-data">
+        <form action={saveStoreSettings} className="grid gap-4 md:grid-cols-2">
           <SectionCard
             title="Hero principal"
             description="Controla o bloco de boas-vindas do topo da homepage."

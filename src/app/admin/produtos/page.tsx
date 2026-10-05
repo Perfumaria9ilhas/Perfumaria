@@ -283,7 +283,6 @@ export default async function AdminProductsPage({
           <form
             action={saveProduct}
             className="mt-6 grid gap-4 md:grid-cols-2"
-            encType="multipart/form-data"
           >
             <input
               name="name"
@@ -587,7 +586,6 @@ export default async function AdminProductsPage({
                         <form
                           action={saveProduct}
                           className="grid gap-4 md:grid-cols-2"
-                          encType="multipart/form-data"
                         >
                           <input type="hidden" name="id" value={product.id} />
                           <input type="hidden" name="currentImageUrl" value={product.imageUrl} />

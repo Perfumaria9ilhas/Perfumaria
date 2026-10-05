@@ -149,6 +149,13 @@ textarea,
   font-family: var(--font-display), serif;
 }
 
+@media (min-width: 64rem) {
+  .admin-layout {
+    display: grid;
+    grid-template-columns: 17rem minmax(0, 1fr);
+  }
+}
+
 .public-site {
   --background: #f8f5ef;
   --foreground: #29231f;
