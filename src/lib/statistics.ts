@@ -1,5 +1,5 @@
 import { StockMovementReason, StockMovementType, StockSaleStatus } from "@prisma/client";
-import { getAzoresDateKey } from "@/lib/date";
+import { getAzoresDateKey, getAzoresDateStart } from "@/lib/date";
 import { prisma } from "@/lib/prisma";
 
 export type StatisticsPeriod = "today" | "7d" | "30d" | "month" | "year" | "previous-year" | "custom";
@@ -9,7 +9,7 @@ const BEHAVIOR_TRACKING_START = "2026-09-27";
 function validDateKey(value?: string) {
   if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
   const parsed = new Date(`${value}T12:00:00Z`);
-  return Number.isNaN(parsed.getTime()) ? null : value;
+  return Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value ? null : value;
 }
 
 function addDays(dateKey: string, days: number) {
@@ -32,21 +32,6 @@ function enumerateDays(from: string, to: string) {
   const values: string[] = [];
   for (let current = from; current <= to; current = addDays(current, 1)) values.push(current);
   return values;
-}
-
-function azoresMidnightUtc(dateKey: string) {
-  const [year, month, day] = dateKey.split("-").map(Number);
-  let candidate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
-  for (let index = 0; index < 2; index += 1) {
-    const parts = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Atlantic/Azores", year: "numeric", month: "2-digit", day: "2-digit",
-      hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23",
-    }).formatToParts(candidate);
-    const get = (type: Intl.DateTimeFormatPartTypes) => Number(parts.find((part) => part.type === type)?.value ?? 0);
-    const represented = Date.UTC(get("year"), get("month") - 1, get("day"), get("hour"), get("minute"), get("second"));
-    candidate = new Date(candidate.getTime() + (Date.UTC(year, month - 1, day) - represented));
-  }
-  return candidate;
 }
 
 export function resolveStatisticsRange(input: { period?: string; from?: string; to?: string }) {
@@ -77,7 +62,7 @@ export function resolveStatisticsRange(input: { period?: string; from?: string; 
 }
 
 export async function getStatisticsData(range: { from: string; to: string }) {
-  const createdAt = { gte: azoresMidnightUtc(range.from), lt: azoresMidnightUtc(addDays(range.to, 1)) };
+  const createdAt = { gte: getAzoresDateStart(range.from), lt: getAzoresDateStart(addDays(range.to, 1)) };
   const [daily, productDaily, searches, movements, firstDaily, firstProductDaily, firstSearch, firstSale, migratedVisitDays] = await Promise.all([
     prisma.analyticsDaily.findMany({ where: { dateKey: { gte: range.from, lte: range.to } }, orderBy: { dateKey: "asc" } }),
     prisma.productAnalyticsDaily.findMany({ where: { dateKey: { gte: range.from, lte: range.to } }, include: { product: { select: { name: true, audience: true, brand: { select: { name: true } } } } } }),
@@ -173,11 +158,16 @@ export async function getStatisticsData(range: { from: string; to: string }) {
   const dayMap = new Map(daily.map((row) => [row.dateKey, row]));
   const saleDays = new Map<string, Set<string>>();
   const revenueDays = new Map<string, number>();
+  const saleHours = new Map<string, Set<string>>();
   for (const movement of paidMovements) {
     const key = getAzoresDateKey(movement.createdAt);
     const groups = saleDays.get(key) ?? new Set<string>();
     groups.add(movement.saleGroupId ?? movement.id);
     saleDays.set(key, groups);
+    const hour = new Intl.DateTimeFormat("en-GB", { timeZone: "Atlantic/Azores", hour: "2-digit", hourCycle: "h23" }).format(movement.createdAt);
+    const hourGroups = saleHours.get(hour) ?? new Set<string>();
+    hourGroups.add(movement.saleGroupId ?? movement.id);
+    saleHours.set(hour, hourGroups);
     revenueDays.set(key, (revenueDays.get(key) ?? 0) + movement.quantity * (movement.saleUnitPriceInCents ?? 0));
   }
   const starts = {
@@ -238,6 +228,7 @@ export async function getStatisticsData(range: { from: string; to: string }) {
     },
     allRankings,
     series,
+    hourlySales: range.from === range.to ? Array.from({ length: 24 }, (_, hour) => ({ label: `${String(hour).padStart(2, "0")}:00`, value: saleHours.get(String(hour).padStart(2, "0"))?.size ?? 0 })) : [],
     starts,
     availability,
     migratedVisitDays,
