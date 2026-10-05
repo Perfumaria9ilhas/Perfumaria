@@ -1,51 +1,55 @@
 import Link from "next/link";
+import { AlertTriangle, ArrowRight, Box, ClipboardList, Euro, Plus, ShoppingCart } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { requireAdmin } from "@/lib/auth";
 import { getAdminDashboardData } from "@/lib/data";
 import { formatPrice } from "@/lib/format";
 
-function OperationalCard({ label, value, detail, href, attention = false }: { label: string; value: string | number; detail?: string; href?: string; attention?: boolean }) {
-  const content = <><p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--atlantic)]">{label}</p><p className="mt-2 break-words font-serif text-3xl text-[color:var(--ink)]">{value}</p>{detail ? <p className="mt-1 text-xs text-slate-500">{detail}</p> : null}</>;
-  const classes = `min-w-0 rounded-[1.5rem] border p-4 transition sm:p-5 ${attention ? "border-amber-200 bg-amber-50/60" : "border-[color:var(--line)] bg-white"} ${href ? "min-h-28 hover:border-[color:var(--gold)] hover:shadow-sm" : ""}`;
-  return href ? <Link href={href} className={classes}>{content}</Link> : <article className={classes}>{content}</article>;
+function AttentionCard({ label, value, href, icon }: { label: string; value: number; href: string; icon: React.ReactNode }) {
+  return <Link href={href} className="group flex min-h-28 min-w-0 flex-col items-center justify-center gap-1.5 rounded-[1.4rem] border border-[color:var(--line)] bg-white p-2 text-center transition hover:border-[color:var(--gold)] hover:shadow-sm sm:flex-row sm:justify-start sm:gap-3 sm:p-4 sm:text-left">
+    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-800">{icon}</span>
+    <span className="min-w-0 flex-1"><span className="block text-xs font-semibold text-[color:var(--ink)] sm:text-sm">{label}</span><strong className="mt-0.5 block font-serif text-2xl text-[color:var(--ink)] sm:text-3xl">{value}</strong></span>
+    <ArrowRight className="hidden h-4 w-4 shrink-0 text-slate-400 transition group-hover:translate-x-0.5 sm:block" />
+  </Link>;
 }
 
-function formatAdminDate(value: Date) {
-  return new Intl.DateTimeFormat("pt-PT", { dateStyle: "short", timeStyle: "short", timeZone: "Atlantic/Azores" }).format(value);
+function StatusPill({ value }: { value: string }) {
+  const positive = value === "Pago" || value === "Entregue";
+  return <span className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold ${positive ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"}`}>{value}</span>;
 }
 
 export default async function AdminPage() {
   await requireAdmin();
   const data = await getAdminDashboardData();
-  const tasks = [
-    data.attention.pendingPayments > 0 ? { label: `${data.attention.pendingPayments} pagamento${data.attention.pendingPayments === 1 ? " pendente" : "s pendentes"}`, href: "/admin/stock" } : null,
-    data.attention.pendingDeliveries > 0 ? { label: `${data.attention.pendingDeliveries} entrega${data.attention.pendingDeliveries === 1 ? " pendente" : "s pendentes"}`, href: "/admin/stock" } : null,
-    data.attention.outOfStock > 0 ? { label: `${data.attention.outOfStock} produto${data.attention.outOfStock === 1 ? " sem stock" : "s sem stock"}`, href: "/admin/stock" } : null,
-    data.attention.lowStock > 0 ? { label: `${data.attention.lowStock} produto${data.attention.lowStock === 1 ? " com stock baixo" : "s com stock baixo"}`, href: "/admin/stock" } : null,
-  ].filter((task): task is { label: string; href: string } => Boolean(task));
 
-  return <AdminShell title="Dashboard" description="Centro de operações diário da Perfumaria 9 Ilhas.">
-    <section><div className="mb-3 flex items-end justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--gold)]">Hoje</p><h2 className="mt-1 font-serif text-2xl text-[color:var(--ink)]">Movimento do dia</h2></div><p className="text-xs text-slate-500">Fuso horário dos Açores</p></div><div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-      <OperationalCard label="Vendas pagas hoje" value={data.today.paidSales} />
-      <OperationalCard label="Valor vendido hoje" value={formatPrice(data.today.paidValue)} />
-      <OperationalCard label="Por receber" value={formatPrice(data.today.pendingValue)} detail="Total pendente atual" href="/admin/stock" attention={data.today.pendingValue > 0} />
-    </div></section>
-
-    <section className="mt-7"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--gold)]">Precisa de atenção</p><div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
-      <OperationalCard label="Pagamentos pendentes" value={data.attention.pendingPayments} detail={`${formatPrice(data.today.pendingValue)} por receber`} href="/admin/stock" attention={data.attention.pendingPayments > 0} />
-      <OperationalCard label="Entregas pendentes" value={data.attention.pendingDeliveries} href="/admin/stock" attention={data.attention.pendingDeliveries > 0} />
-      <OperationalCard label="Stock baixo" value={`${data.attention.lowStock} produto${data.attention.lowStock === 1 ? "" : "s"}`} detail="Conforme o limite de cada produto" href="/admin/stock" attention={data.attention.lowStock > 0} />
-      <OperationalCard label="Sem stock" value={`${data.attention.outOfStock} produto${data.attention.outOfStock === 1 ? "" : "s"}`} detail="Produtos ativos sem stock físico" href="/admin/stock" attention={data.attention.outOfStock > 0} />
-    </div></section>
-
-    <section className="mt-7 rounded-[1.5rem] border border-[color:var(--line)] bg-white p-4 sm:p-5"><h2 className="font-serif text-2xl text-[color:var(--ink)]">A tratar</h2>{tasks.length ? <ul className="mt-4 grid gap-2 sm:grid-cols-2">{tasks.map((task) => <li key={task.label}><Link href={task.href} className="flex min-h-12 items-center justify-between gap-3 rounded-xl bg-[color:var(--sand-soft)] px-4 py-3 text-sm hover:bg-[color:var(--sand)]"><span className="min-w-0 break-words">{task.label}</span><span aria-hidden="true">→</span></Link></li>)}</ul> : <p className="mt-3 text-sm text-slate-500">Nada pendente.</p>}</section>
-
-    <section className="mt-7">
-      <article className="min-w-0 rounded-[1.5rem] border border-[color:var(--line)] bg-white p-4 sm:p-5"><div className="flex items-center justify-between gap-3"><h2 className="font-serif text-2xl text-[color:var(--ink)]">Vendas recentes</h2><Link href="/admin/stock" className="text-xs font-semibold text-[color:var(--atlantic)]">Ver vendas</Link></div>{data.recentSales.length ? <ul className="mt-4 space-y-2">{data.recentSales.map((sale) => <li key={sale.id}><Link href="/admin/stock" className="block min-w-0 rounded-xl bg-[color:var(--sand-soft)] px-3 py-3"><div className="flex min-w-0 items-start justify-between gap-3"><div className="min-w-0"><p className="break-words text-sm font-medium">{sale.summary}</p><p className="mt-1 text-xs text-slate-500">{formatAdminDate(sale.createdAt)}{sale.customerName ? ` · ${sale.customerName}` : ""}</p></div><strong className="shrink-0 whitespace-nowrap text-sm">{formatPrice(sale.valueInCents)}</strong></div><div className="mt-2 flex flex-wrap gap-2 text-xs"><span className="rounded-full bg-white px-2.5 py-1">{sale.payment}</span><span className="rounded-full bg-white px-2.5 py-1">{sale.delivery}</span></div></Link></li>)}</ul> : <p className="mt-3 text-sm text-slate-500">Ainda não existem vendas.</p>}</article>
+  return <AdminShell title="Dashboard" description="O seu centro de trabalho diário.">
+    <section className="grid gap-3 sm:grid-cols-2">
+      <Link href="/admin/stock?view=new-sale" className="flex min-h-24 items-center gap-4 rounded-[1.5rem] bg-[color:var(--gold)] px-5 py-4 text-white shadow-sm transition hover:bg-[color:var(--atlantic)]"><span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/15"><Plus className="h-7 w-7" /></span><span><strong className="block text-lg">Nova venda</strong><span className="text-sm text-white/85">Registar uma nova venda</span></span></Link>
+      <Link href="/admin/stock?view=sales&period=all" className="flex min-h-24 items-center gap-4 rounded-[1.5rem] border border-[color:var(--line)] bg-white px-5 py-4 shadow-sm transition hover:border-[color:var(--gold)]"><span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[color:var(--line)]"><ClipboardList className="h-6 w-6 text-[color:var(--atlantic)]" /></span><span><strong className="block text-lg text-[color:var(--ink)]">Estado das vendas</strong><span className="text-sm text-slate-500">Ver e gerir todas as vendas</span></span></Link>
     </section>
 
-    <section className="mt-7"><div className="flex items-end justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--gold)]">Resumo da loja</p><h2 className="mt-1 font-serif text-2xl text-[color:var(--ink)]">Informação geral</h2></div><Link href="/admin/estatisticas" className="rounded-full border border-[color:var(--line)] px-3 py-2 text-xs font-semibold text-[color:var(--atlantic)] hover:border-[color:var(--gold)]">Ver estatísticas completas</Link></div><div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">{[
-      ["Produtos", data.summary.products, "/admin/produtos"], ["Marcas", data.summary.brands, "/admin/marcas"], ["Categorias", data.summary.categories, "/admin/categorias"], ["Clientes", data.summary.customers, "/admin/clientes"], ["Desejos", data.summary.wishes, "/admin/desejos"], ["Clientes satisfeitos", data.summary.satisfiedCustomers, null],
-    ].map(([label, value, href]) => { const card = <><p className="text-[10px] uppercase tracking-[0.14em] text-[color:var(--atlantic)]">{label}</p><p className="mt-2 font-serif text-2xl text-[color:var(--ink)]">{value}</p></>; return href ? <Link key={label} href={String(href)} className="min-w-0 rounded-[1.25rem] border border-[color:var(--line)] bg-white p-3 hover:border-[color:var(--gold)]">{card}</Link> : <article key={label} className="min-w-0 rounded-[1.25rem] border border-[color:var(--line)] bg-white p-3">{card}</article>; })}</div></section>
+    <section className="mt-6"><h2 className="font-serif text-2xl text-[color:var(--ink)]">Pendentes e atenção</h2><div className="admin-attention-grid mt-3 grid grid-cols-1 gap-3">
+      <AttentionCard label="Por pagar" value={data.attention.pendingPayments} href="/admin/stock?view=sales&period=all&payment=pending" icon={<Euro className="h-5 w-5" />} />
+      <AttentionCard label="Por entregar" value={data.attention.pendingDeliveries} href="/admin/stock?view=sales&period=all&delivery=pending" icon={<Box className="h-5 w-5" />} />
+      <AttentionCard label="Stock baixo" value={data.attention.lowStock} href="/admin/stock?view=stock&status=low" icon={<AlertTriangle className="h-5 w-5" />} />
+    </div></section>
+
+    <div className="mt-6 grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(20rem,0.85fr)]">
+      <section className="min-w-0"><div className="flex items-center justify-between gap-3"><h2 className="font-serif text-2xl text-[color:var(--ink)]">Vendas recentes</h2><Link href="/admin/stock?view=sales&period=all" className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-[color:var(--atlantic)]">Ver todas <ArrowRight className="h-3.5 w-3.5" /></Link></div>
+        <div className="mt-3 overflow-hidden rounded-[1.4rem] border border-[color:var(--line)] bg-white">
+          {data.recentSales.length ? <>{data.recentSales.map((sale) => <Link key={sale.id} href="/admin/stock?view=sales&period=all" className="grid min-w-0 gap-2 border-b border-[color:var(--line)] px-4 py-3 last:border-b-0 hover:bg-[color:var(--sand-soft)] sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
+            <span className="min-w-0"><strong className="block truncate text-sm text-[color:var(--ink)]">{sale.customerName || "Cliente não indicado"}</strong><span className="mt-0.5 block truncate text-xs text-slate-500">{sale.itemCount} {sale.itemCount === 1 ? "artigo" : "artigos"} · {sale.summary}</span></span>
+            <strong className="text-sm text-[color:var(--ink)]">{formatPrice(sale.valueInCents)}</strong>
+            <span className="flex flex-wrap gap-1.5"><StatusPill value={sale.payment} /><StatusPill value={sale.delivery} /></span>
+          </Link>)}</> : <p className="p-5 text-sm text-slate-500">Ainda não existem vendas.</p>}
+        </div>
+      </section>
+
+      <section className="min-w-0"><div className="flex items-center justify-between gap-3"><h2 className="font-serif text-2xl text-[color:var(--ink)]">Stock que precisa de atenção</h2><Link href="/admin/stock?view=stock" className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-[color:var(--atlantic)]">Ver stock completo <ArrowRight className="h-3.5 w-3.5" /></Link></div>
+        <div className="mt-3 overflow-hidden rounded-[1.4rem] border border-[color:var(--line)] bg-white">
+          {data.lowStockProducts.length ? data.lowStockProducts.map((product) => <Link key={product.id} href="/admin/stock?view=stock&status=low" className="flex min-w-0 items-center gap-3 border-b border-[color:var(--line)] px-4 py-3 last:border-b-0 hover:bg-[color:var(--sand-soft)]"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[color:var(--sand-soft)]"><ShoppingCart className="h-5 w-5 text-[color:var(--gold)]" /></span><span className="min-w-0 flex-1"><strong className="block truncate text-sm">{product.name}</strong><span className="block truncate text-xs text-slate-500">{product.brand}</span></span><strong className="shrink-0 text-sm text-red-600">{product.stock}</strong><ArrowRight className="h-4 w-4 shrink-0 text-slate-400" /></Link>) : <p className="p-5 text-sm text-slate-500">Nenhum produto com stock baixo.</p>}
+        </div>
+      </section>
+    </div>
   </AdminShell>;
 }

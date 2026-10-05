@@ -84,8 +84,9 @@ export function AdminShell({ title, description, children }: { title: string; de
     <header className="border-b border-[color:var(--line)] bg-[linear-gradient(180deg,_#ffffff,_#fbf7ef)] lg:hidden">
       <div className="flex items-center gap-3 px-4 py-3">
         <button type="button" onClick={() => setMenuOpen(true)} aria-label="Abrir menu admin" aria-expanded={menuOpen} className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[color:var(--line)] bg-white text-[color:var(--ink)] shadow-sm"><Menu className="h-5 w-5" /></button>
-        <p className="min-w-0 flex-1 truncate text-[11px] uppercase tracking-[0.26em] text-[color:var(--atlantic)]">Admin · 9 Ilhas Perfumaria</p>
-        <CircleUserRound className="h-7 w-7 shrink-0 text-[color:var(--gold)]" aria-hidden="true" />
+        <p className="min-w-0 flex-1 truncate text-[10px] uppercase tracking-[0.2em] text-[color:var(--atlantic)] sm:text-[11px] sm:tracking-[0.26em]">Admin · 9 Ilhas Perfumaria</p>
+        <Link href="/" aria-label="Ver loja" title="Ver loja" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[color:var(--gold)] hover:bg-white"><Store className="h-6 w-6" /></Link>
+        <button type="button" onClick={() => setMenuOpen(true)} aria-label="Abrir menu do utilizador" title="Administrador" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[color:var(--gold)] hover:bg-white"><CircleUserRound className="h-7 w-7" /></button>
       </div>
     </header>
 
@@ -107,13 +108,13 @@ export function AdminShell({ title, description, children }: { title: string; de
       </aside>
 
       <div className="min-w-0">
-        <header className="border-b border-[color:var(--line)] bg-white/75 px-4 py-4 sm:px-5 lg:px-7 lg:py-6">
-          <p className="hidden text-xs uppercase tracking-[0.32em] text-[color:var(--atlantic)] lg:block">Admin · 9 Ilhas Perfumaria</p>
+        <header className="border-b border-[color:var(--line)] bg-white/75 px-4 py-4 sm:px-5 lg:px-7 lg:py-5">
+          <div className="flex items-start justify-between gap-4"><div className="min-w-0"><p className="hidden text-xs uppercase tracking-[0.32em] text-[color:var(--atlantic)] lg:block">Admin · 9 Ilhas Perfumaria</p>
           <h1 className="font-serif text-3xl leading-tight text-[color:var(--ink)] lg:text-4xl">{title}</h1>
-          <p className="max-w-3xl text-sm leading-snug text-slate-600">{description}</p>
+          <p className="max-w-3xl text-sm leading-snug text-slate-600">{description}</p></div>
+          <div className="hidden items-center gap-2 lg:flex"><Link href="/" aria-label="Ver loja" title="Ver loja" className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--line)] bg-white text-[color:var(--gold)] shadow-sm hover:border-[color:var(--gold)]"><Store className="h-6 w-6" /></Link><Link href="/admin" aria-label="Dashboard do administrador" title="Administrador" className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[color:var(--line)] bg-white text-[color:var(--gold)] shadow-sm hover:border-[color:var(--gold)]"><CircleUserRound className="h-7 w-7" /></Link></div></div>
         </header>
         <main className="px-3 py-4 sm:px-4 sm:py-6 lg:px-7">
-          <div className="mb-5 flex flex-col gap-3 rounded-[1.35rem] border border-[color:var(--line)] bg-white/80 px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between"><p className="text-sm text-slate-600">Alterações no admin refletem-se automaticamente no catálogo público.</p><Link href="/" className="rounded-full bg-[color:var(--sand-soft)] px-3.5 py-1.5 text-center text-sm text-[color:var(--ink)]">Ver loja</Link></div>
           {children}
         </main>
       </div>

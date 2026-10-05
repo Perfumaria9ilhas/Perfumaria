@@ -1,31 +1,20 @@
 "use client";
 
 import { type Brand, type Category, StockDeliveryStatus, StockMovementReason, StockMovementType, StockSaleStatus } from "@prisma/client";
-import Link from "next/link";
 import {
-  BarChart3,
-  Boxes,
-  FolderOpen,
   Download,
   FileSpreadsheet,
   Filter,
   FileText,
   History,
-  MessageSquare,
-  MoreHorizontal,
   PackageX,
-  PackageSearch,
   Plus,
-  ShoppingCart,
-  Store,
-  Tags,
   RotateCcw,
   Save,
   Search,
   SlidersHorizontal,
   Trash2,
   Upload,
-  Users,
 } from "lucide-react";
 import { useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
 import { formatPrice } from "@/lib/format";
@@ -57,6 +46,10 @@ type Props = {
   customerNames: string[];
   customerSummaries: StockCustomerSummary[];
   initialView?: "NEW_SALE" | "SALES" | "STOCK";
+  initialSalesStatus?: "ALL" | StockSaleStatus;
+  initialDeliveryStatus?: "ALL" | StockDeliveryStatus;
+  initialSalesPeriod?: "ALL" | "MONTH";
+  initialStockStatus?: "all" | "LOW";
 };
 
 type BannerState =
@@ -105,6 +98,10 @@ export function StockAdminTable({
   customerNames: initialCustomerNames,
   customerSummaries: initialCustomerSummaries,
   initialView = "NEW_SALE",
+  initialSalesStatus = "ALL",
+  initialDeliveryStatus = "ALL",
+  initialSalesPeriod = "MONTH",
+  initialStockStatus = "all",
 }: Props) {
   const [rows, setRows] = useState(initialRows);
   const [customerNames, setCustomerNames] = useState(initialCustomerNames);
@@ -118,7 +115,7 @@ export function StockAdminTable({
   const [selectedBrand, setSelectedBrand] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState<"all" | "OUT" | "LOW" | "STABLE">("all");
+  const [selectedStatus, setSelectedStatus] = useState<"all" | "OUT" | "LOW" | "STABLE">(initialStockStatus);
   const [missingCostOnly, setMissingCostOnly] = useState(false);
   const [outOfStockOnly, setOutOfStockOnly] = useState(false);
   const [showUnitCostColumn, setShowUnitCostColumn] = useState(false);
@@ -133,7 +130,6 @@ export function StockAdminTable({
   const [importPreviewRows, setImportPreviewRows] = useState<StockImportPreviewRow[]>([]);
   const [showImportPanel, setShowImportPanel] = useState(false);
   const [activeView, setActiveView] = useState<"NEW_SALE" | "SALES" | "STOCK" | "PERFUMES" | "DECANTS">(initialView);
-  const [moreStockOptionsOpen, setMoreStockOptionsOpen] = useState(false);
   const [decantMode, setDecantMode] = useState<"KIT" | "INDIVIDUAL">("KIT");
   const [savingDecantSale, setSavingDecantSale] = useState(false);
   const [decantLineIds, setDecantLineIds] = useState([0]);
@@ -143,14 +139,14 @@ export function StockAdminTable({
   const [savingCombinedSale, setSavingCombinedSale] = useState(false);
   const [sales, setSales] = useState<StockSaleRow[]>([]);
   const [salesLoading, setSalesLoading] = useState(false);
-  const [salesStatusFilter, setSalesStatusFilter] = useState<"ALL" | StockSaleStatus>("ALL");
-  const [salesDeliveryFilter, setSalesDeliveryFilter] = useState<"ALL" | StockDeliveryStatus>("ALL");
+  const [salesStatusFilter, setSalesStatusFilter] = useState<"ALL" | StockSaleStatus>(initialSalesStatus);
+  const [salesDeliveryFilter, setSalesDeliveryFilter] = useState<"ALL" | StockDeliveryStatus>(initialDeliveryStatus);
   const [salesKindFilter, setSalesKindFilter] = useState<"ALL" | "BOTTLE" | "DECANT_5" | "DECANT_10" | "KIT">("ALL");
   const [salesQuery, setSalesQuery] = useState("");
   const [salesPendingOnly, setSalesPendingOnly] = useState(false);
-  const [salesFrom, setSalesFrom] = useState(() => localDateKey(new Date(new Date().getFullYear(), new Date().getMonth(), 1)));
-  const [salesTo, setSalesTo] = useState(() => localDateKey(new Date()));
-  const [salesPeriod, setSalesPeriod] = useState<"ALL" | "TODAY" | "7D" | "MONTH" | "CUSTOM">("MONTH");
+  const [salesFrom, setSalesFrom] = useState(() => initialSalesPeriod === "ALL" ? "" : localDateKey(new Date(new Date().getFullYear(), new Date().getMonth(), 1)));
+  const [salesTo, setSalesTo] = useState(() => initialSalesPeriod === "ALL" ? "" : localDateKey(new Date()));
+  const [salesPeriod, setSalesPeriod] = useState<"ALL" | "TODAY" | "7D" | "MONTH" | "CUSTOM">(initialSalesPeriod);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [customerHistoryName, setCustomerHistoryName] = useState<string | null>(null);
   const [newSaleCustomerName, setNewSaleCustomerName] = useState("");
@@ -878,14 +874,6 @@ export function StockAdminTable({
     return () => window.clearTimeout(loadTimer);
   }, [initialView]);
 
-  function selectStockView(view: "NEW_SALE" | "SALES" | "STOCK") {
-    const queryView = view === "NEW_SALE" ? "new-sale" : view === "SALES" ? "sales" : "stock";
-    window.history.replaceState(null, "", `/admin/stock?view=${queryView}`);
-    window.dispatchEvent(new Event("admin-view-change"));
-    if (view === "SALES") void loadSales();
-    else setActiveView(view);
-  }
-
   async function updateSaleStatus(saleGroupId: string, status: StockSaleStatus) {
     const key = `${saleGroupId}:payment`;
     if (updatingSaleFields.includes(key)) return;
@@ -1297,31 +1285,6 @@ export function StockAdminTable({
 
   return (
     <div className="space-y-5">
-      <nav className="grid grid-cols-3 gap-2 rounded-[1.8rem] border border-[color:var(--line)] bg-white p-3 shadow-sm sm:gap-3" aria-label="Áreas de vendas e stock">
-        <AppViewButton active={activeView === "NEW_SALE"} onClick={() => selectStockView("NEW_SALE")} icon={<ShoppingCart className="h-5 w-5" />} label="Nova venda" />
-        <AppViewButton active={activeView === "SALES"} onClick={() => selectStockView("SALES")} icon={<History className="h-5 w-5" />} label="Estado das vendas" />
-        <AppViewButton active={activeView === "STOCK"} onClick={() => selectStockView("STOCK")} icon={<PackageX className="h-5 w-5" />} label="Stock" />
-      </nav>
-
-      <section className="rounded-[1.6rem] border border-[color:var(--line)] bg-white p-3 shadow-sm lg:hidden" aria-label="Acessos rápidos do admin">
-        <div className="grid gap-2" style={{ gridTemplateColumns: "repeat(4, minmax(0, 1fr))" }}>
-          <StockQuickLink href="/admin/produtos" label="Produtos" icon={<PackageSearch className="h-5 w-5" />} />
-          <StockQuickLink href="/admin/clientes" label="Clientes" icon={<Users className="h-5 w-5" />} />
-          <StockQuickLink href="/admin/estatisticas" label="Estatísticas" icon={<BarChart3 className="h-5 w-5" />} />
-          <StockQuickLink href="/admin/comentarios" label="Comentários" icon={<MessageSquare className="h-5 w-5" />} />
-        </div>
-        {moreStockOptionsOpen ? <div className="mt-2 grid gap-2 border-t border-[color:var(--line)] pt-2" style={{ gridTemplateColumns: "repeat(4, minmax(0, 1fr))" }}>
-          <StockQuickLink href="/admin/marcas" label="Marcas" icon={<Tags className="h-5 w-5" />} />
-          <StockQuickLink href="/admin/categorias" label="Categorias" icon={<FolderOpen className="h-5 w-5" />} />
-          <StockQuickLink href="/admin/tipos-produto" label="Tipos" icon={<Boxes className="h-5 w-5" />} />
-          <StockQuickLink href="/admin/sobre-nos" label="Sobre Nós" icon={<FileText className="h-5 w-5" />} />
-        </div> : null}
-        <div className="mt-2 grid grid-cols-2 gap-2 border-t border-[color:var(--line)] pt-2">
-          <Link href="/" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[color:var(--sand-soft)] px-3 text-sm font-semibold text-[color:var(--ink)]"><Store className="h-5 w-5" />Ver loja</Link>
-          <button type="button" onClick={() => setMoreStockOptionsOpen((open) => !open)} aria-expanded={moreStockOptionsOpen} className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold ${moreStockOptionsOpen ? "bg-[color:var(--atlantic)] text-white" : "bg-[color:var(--sand-soft)] text-[color:var(--ink)]"}`}><MoreHorizontal className="h-5 w-5" />Mais opções</button>
-        </div>
-      </section>
-
       <div className={activeView === "STOCK" ? "contents" : "hidden"}>
       <section className="rounded-[1.8rem] border border-[color:var(--line)] bg-white p-4 shadow-sm">
         <div className="flex flex-col gap-4">
@@ -2159,7 +2122,7 @@ export function StockAdminTable({
               <div className="rounded-2xl border border-[color:var(--line)] bg-white p-3">
                 <input value={salesQuery} onChange={(event) => { setSalesQuery(event.target.value); setSalesPage(1); }} placeholder="Pesquisar cliente ou produto" className="h-11 w-full rounded-xl border border-[color:var(--line)] px-3" />
                 <div className="mt-2 grid grid-cols-2 gap-2 md:hidden">
-                  <select aria-label="Período" value={salesPeriod} onChange={(event) => applySalesPeriod(event.target.value as typeof salesPeriod)} className="h-11 min-w-0 rounded-xl border border-[color:var(--line)] bg-white px-3"><option value="TODAY">Hoje</option><option value="7D">Últimos 7 dias</option><option value="MONTH">Este mês</option><option value="CUSTOM">Personalizado</option></select>
+                  <select aria-label="Período" value={salesPeriod} onChange={(event) => applySalesPeriod(event.target.value as typeof salesPeriod)} className="h-11 min-w-0 rounded-xl border border-[color:var(--line)] bg-white px-3"><option value="ALL">Todas</option><option value="TODAY">Hoje</option><option value="7D">Últimos 7 dias</option><option value="MONTH">Este mês</option><option value="CUSTOM">Personalizado</option></select>
                   <button type="button" onClick={() => setMobileFiltersOpen((open) => !open)} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[color:var(--line)] px-3 text-sm"><Filter className="h-4 w-4" />Filtros{activeSalesFilterCount ? ` (${activeSalesFilterCount})` : ""}</button>
                 </div>
                 <div className={`mt-3 gap-2 ${mobileFiltersOpen ? "grid" : "hidden"} md:grid md:grid-cols-2 xl:grid-cols-6`}>
@@ -2743,25 +2706,6 @@ function SaleLine({ label, children, onRemove }: { label: string; children: Reac
 function AddLineButton({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
   return <button type="button" onClick={onClick} className="inline-flex items-center gap-2 rounded-full border border-[color:var(--line)] bg-white px-4 py-2 text-sm font-semibold text-[color:var(--ink)]"><Plus className="h-4 w-4" />{children}</button>;
 }
-
-function StockQuickLink({ href, label, icon }: { href: string; label: string; icon: React.ReactNode }) {
-  return <Link href={href} className="flex min-w-0 flex-col items-center justify-center gap-1.5 rounded-xl border border-[color:var(--line)] bg-white px-1 py-3 text-center text-[11px] leading-tight text-[color:var(--ink)]">{icon}<span className="max-w-full break-words">{label}</span></Link>;
-}
-
-function AppViewButton({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={`flex min-h-20 min-w-0 flex-col items-center justify-center gap-1.5 rounded-[1.35rem] px-1.5 py-3 text-center text-xs font-semibold leading-tight transition sm:flex-row sm:gap-3 sm:px-4 sm:py-4 sm:text-base ${active ? "bg-[color:var(--atlantic)] text-white shadow-sm" : "bg-[color:var(--sand-soft)] text-[color:var(--ink)] hover:bg-[color:var(--sand)]"}`}
-    >
-      {icon}
-      {label}
-    </button>
-  );
-}
-
 
 function getItemStatusTotal(sales: StockSaleRow[], status: StockSaleStatus) {
   return sales.reduce((salesTotal, sale) => salesTotal + sale.items.reduce(

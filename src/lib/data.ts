@@ -122,7 +122,7 @@ export async function getAdminDashboardData() {
   const { start, end } = getAzoresDayBounds();
   const [brands, categories, products, activeProducts, customers, metrics, todaySales, pendingSales, pendingDeliveries, recentMovements, wishesCount] = await Promise.all([
     prisma.brand.count(), prisma.category.count(), prisma.product.count(),
-    prisma.product.findMany({ where: { active: true }, select: { stock: true, lowStockAlert: true } }),
+    prisma.product.findMany({ where: { active: true }, select: { id: true, name: true, stock: true, lowStockAlert: true, brand: { select: { name: true } } } }),
     prisma.customerAccount.count(),
     prisma.storeMetric.findUnique({ where: { id: "main" }, select: { totalSatisfiedCustomers: true } }),
     prisma.stockMovement.findMany({ where: { type: StockMovementType.SALE, createdAt: { gte: start, lt: end } }, select: { id: true, saleGroupId: true, saleStatus: true, quantity: true, saleUnitPriceInCents: true } }),
@@ -154,6 +154,7 @@ export async function getAdminDashboardData() {
     const hasPaid = items.some((item) => (item.saleStatus ?? StockSaleStatus.PAID) === StockSaleStatus.PAID);
     return {
       id, createdAt: items[0].createdAt, customerName: items[0].customerName,
+      itemCount: items.reduce((sum, item) => sum + item.quantity, 0),
       summary: items.slice(0, 3).map((item) => `${item.quantity}× ${item.product.name}`).join(", ") + (items.length > 3 ? ` +${items.length - 3}` : ""),
       valueInCents: items.filter((item) => item.saleStatus !== StockSaleStatus.OFFERED).reduce((sum, item) => sum + item.quantity * (item.saleUnitPriceInCents ?? 0), 0),
       payment: hasPending ? "Por pagar" : hasPaid ? "Pago" : "Oferecido",
@@ -165,6 +166,11 @@ export async function getAdminDashboardData() {
     today: { paidSales: paidTodayGroups.length, paidValue: paidTodayValue, pendingValue },
     attention: { pendingPayments: pendingPaymentGroups, pendingDeliveries: pendingDeliveryGroups, lowStock, outOfStock },
     recentSales,
+    lowStockProducts: activeProducts
+      .filter((product) => product.stock > 0 && product.stock <= product.lowStockAlert)
+      .sort((left, right) => left.stock - right.stock || left.name.localeCompare(right.name, "pt-PT"))
+      .slice(0, 5)
+      .map((product) => ({ id: product.id, name: product.name, brand: product.brand.name, stock: product.stock })),
     summary: { brands, categories, products, customers, wishes: wishesCount, satisfiedCustomers: metrics?.totalSatisfiedCustomers ?? 0 },
   };
 }

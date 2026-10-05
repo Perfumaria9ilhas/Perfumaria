@@ -156,6 +156,12 @@ textarea,
   }
 }
 
+@media (min-width: 22.5rem) {
+  .admin-attention-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 .public-site {
   --background: #f8f5ef;
   --foreground: #29231f;
