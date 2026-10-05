@@ -7,11 +7,12 @@ import { prisma } from "@/lib/prisma";
 import { parseEuroPriceToCentsForStock } from "@/lib/stock-utils";
 
 const quickUpdateSchema = z.object({
-  salePrice: z.string().optional().default(""),
+  salePrice: z.string().optional(),
   stock: z.number().int().min(0),
   lowStockAlert: z.number().int().min(0),
-  unitCost: z.string().optional().default(""),
+  unitCost: z.string().optional(),
   stockNotes: z.string().nullable().optional(),
+  active: z.boolean().optional(),
 });
 
 export async function PATCH(
@@ -38,8 +39,8 @@ export async function PATCH(
   let salePriceInCents = 0;
 
   try {
-    salePriceInCents = parseEuroPriceToCentsForStock(parsed.data.salePrice);
-    purchaseCostInCents = parseEuroPriceToCentsForStock(parsed.data.unitCost);
+    if (parsed.data.salePrice !== undefined) salePriceInCents = parseEuroPriceToCentsForStock(parsed.data.salePrice);
+    if (parsed.data.unitCost !== undefined) purchaseCostInCents = parseEuroPriceToCentsForStock(parsed.data.unitCost);
   } catch (error) {
     return NextResponse.json(
       {
@@ -54,6 +55,11 @@ export async function PATCH(
     select: {
       id: true,
       stock: true,
+      lowStockAlert: true,
+      active: true,
+      purchaseCostInCents: true,
+      salePriceInCents: true,
+      stockNotes: true,
     },
   });
 
@@ -61,16 +67,23 @@ export async function PATCH(
     return NextResponse.json({ error: "Produto não encontrado." }, { status: 404 });
   }
 
+  const changes = {
+    stock: parsed.data.stock,
+    lowStockAlert: parsed.data.lowStockAlert,
+    ...(parsed.data.active !== undefined ? { active: parsed.data.active } : {}),
+    ...(parsed.data.salePrice !== undefined ? { salePriceInCents } : {}),
+    ...(parsed.data.unitCost !== undefined ? { purchaseCostInCents } : {}),
+    ...(parsed.data.stockNotes !== undefined ? { stockNotes: parsed.data.stockNotes?.trim() || null } : {}),
+  };
+  // Saving unchanged values must not create a movement or alter timestamps.
+  if (Object.entries(changes).every(([key, value]) => product[key as keyof typeof product] === value)) {
+    return NextResponse.json({ success: true, unchanged: true });
+  }
+
   await prisma.$transaction(async (tx) => {
     await tx.product.update({
       where: { id: productId },
-      data: {
-        salePriceInCents,
-        stock: parsed.data.stock,
-        lowStockAlert: parsed.data.lowStockAlert,
-        purchaseCostInCents,
-        stockNotes: parsed.data.stockNotes?.trim() || null,
-      },
+      data: changes,
     });
 
     if (product.stock !== parsed.data.stock) {
@@ -91,6 +104,8 @@ export async function PATCH(
 
   revalidatePath("/admin");
   revalidatePath("/admin/stock");
+  revalidatePath("/admin/produtos");
+  revalidatePath("/catalogo");
 
   return NextResponse.json({ success: true });
 }

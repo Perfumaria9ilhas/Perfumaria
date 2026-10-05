@@ -60,7 +60,11 @@ export function AdminShell({ title, description, children }: { title: string; de
 
   const isActive = (href: string) => {
     if (href === "/admin") return currentUrl === "/admin";
-    if (href.startsWith("/admin/stock?")) return currentUrl === href;
+    if (href.startsWith("/admin/stock?")) {
+      if (pathname !== "/admin/stock") return false;
+      const view = new URLSearchParams(currentUrl.split("?")[1] ?? "").get("view") ?? "stock";
+      return new URLSearchParams(href.split("?")[1]).get("view") === view;
+    }
     return pathname === href || pathname.startsWith(`${href}/`);
   };
   const closeAndTrack = (href: string) => { setCurrentUrl(href); setMenuOpen(false); };

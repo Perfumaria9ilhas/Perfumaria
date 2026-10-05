@@ -8,7 +8,7 @@ export default async function AdminStockPage({ searchParams }: { searchParams: P
   const params = await searchParams;
   const initialView = params.view === "new-sale" ? "NEW_SALE" : params.view === "sales" ? "SALES" : "STOCK";
   const title = initialView === "NEW_SALE" ? "Nova venda" : initialView === "SALES" ? "Estado das vendas" : "Stock";
-  const description = initialView === "NEW_SALE" ? "Registar uma nova venda." : initialView === "SALES" ? "Ver, filtrar e atualizar o estado das vendas." : "Gerir produtos, quantidades e inventário.";
+  const description = initialView === "NEW_SALE" ? "Registar uma nova venda." : initialView === "SALES" ? "Ver, filtrar e atualizar o estado das vendas." : "Gere o inventário, disponibilidade e produtos.";
   const data = await getAdminStockTableData();
 
   return (

@@ -20,6 +20,7 @@ export type StockSortKey =
   | "lastUpdated";
 
 export type StockFilters = {
+  inventory?: string;
   query: string;
   brandId: string;
   categoryId: string;
@@ -45,6 +46,7 @@ export type AdminStockRow = {
   categoryName: string;
   supplierName: string | null;
   imageUrl: string;
+  sizeLabel?: string;
   active: boolean;
   availableInFiveMl: boolean;
   availableInTenMl: boolean;
@@ -205,8 +207,11 @@ export function filterStockRows(rows: AdminStockRow[], filters: StockFilters) {
   const normalizedQuery = normalizeStockSearch(filters.query);
 
   return rows.filter((row) => {
+    if (filters.inventory === "in" && row.stock <= 0) return false;
+    if (filters.inventory === "reserve" && (!row.active || row.stock > 0)) return false;
+    if (filters.inventory === "inactive" && row.active) return false;
     if (normalizedQuery) {
-      const haystack = normalizeStockSearch(`${row.name} ${row.brandName} ${row.customerNames.join(" ")}`);
+      const haystack = normalizeStockSearch(`${row.name} ${row.brandName} ${row.categoryName} ${row.catalogReference} ${row.customerNames.join(" ")}`);
       if (!haystack.includes(normalizedQuery)) {
         return false;
       }
@@ -412,6 +417,7 @@ export function parseStockFilters(searchParams: URLSearchParams): StockFilters {
 
   return {
     query: searchParams.get("query") ?? "",
+    inventory: searchParams.get("inventory") ?? "all",
     brandId: searchParams.get("brandId") ?? "",
     categoryId: searchParams.get("categoryId") ?? "",
     customerName: searchParams.get("customerName") ?? "",

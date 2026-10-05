@@ -3,40 +3,28 @@
 import { type Brand, type Category, StockDeliveryStatus, StockMovementReason, StockMovementType, StockSaleStatus } from "@prisma/client";
 import {
   Download,
-  FileSpreadsheet,
   Filter,
   FileText,
-  History,
-  PackageX,
   Plus,
-  RotateCcw,
-  Save,
   Search,
-  SlidersHorizontal,
   Trash2,
   Upload,
 } from "lucide-react";
-import { useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { InventoryWorkspace } from "./inventory-workspace";
+import { InventoryDialog } from "./inventory-dialog";
 import { formatPrice } from "@/lib/format";
 import {
   type AdminStockMovementRow,
   type AdminStockRow,
   type StockCustomerSummary,
   type StockImportPreviewRow,
-  filterStockRows,
   getMovementReasonLabel,
   getMovementTypeLabel,
   getStockStatus,
   getStockOutputs,
   getStockStatusLabel,
-  getStockStatusTone,
-  paginateStockRows,
   normalizeStockSearch,
-  parsePageSize,
-  sortStockRows,
-  toEuroInput,
-  type StockSortDirection,
-  type StockSortKey,
 } from "@/lib/stock";
 
 type Props = {
@@ -66,14 +54,6 @@ type MovementModalState =
     }
   | null;
 
-type DraftRowState = {
-  salePrice: string;
-  stock: string;
-  lowStockAlert: string;
-  unitCost: string;
-  stockNotes: string;
-};
-
 type StockSaleRow = {
   id: string;
   customerName: string;
@@ -93,8 +73,6 @@ function localDateKey(date: Date) {
 
 export function StockAdminTable({
   rows: initialRows,
-  brands,
-  categories,
   customerNames: initialCustomerNames,
   customerSummaries: initialCustomerSummaries,
   initialView = "NEW_SALE",
@@ -105,23 +83,9 @@ export function StockAdminTable({
 }: Props) {
   const [rows, setRows] = useState(initialRows);
   const [customerNames, setCustomerNames] = useState(initialCustomerNames);
-  const [customerSummaries, setCustomerSummaries] = useState(initialCustomerSummaries);
+  const [, setCustomerSummaries] = useState(initialCustomerSummaries);
   const [banner, setBanner] = useState<BannerState>(null);
-  const [sortKey, setSortKey] = useState<StockSortKey>("product");
-  const [sortDirection, setSortDirection] = useState<StockSortDirection>("asc");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState<25 | 50 | 100>(25);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedBrand, setSelectedBrand] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState<"all" | "OUT" | "LOW" | "STABLE">(initialStockStatus);
-  const [missingCostOnly, setMissingCostOnly] = useState(false);
-  const [outOfStockOnly, setOutOfStockOnly] = useState(false);
-  const [showUnitCostColumn, setShowUnitCostColumn] = useState(false);
-  const [drafts, setDrafts] = useState<Record<string, DraftRowState>>({});
-  const [savingRowIds, setSavingRowIds] = useState<string[]>([]);
-  const [isSavingAll, setIsSavingAll] = useState(false);
   const [movementModal, setMovementModal] = useState<MovementModalState>(null);
   const [historyRows, setHistoryRows] = useState<AdminStockMovementRow[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -157,362 +121,16 @@ export function StockAdminTable({
   const [updatingSaleFields, setUpdatingSaleFields] = useState<string[]>([]);
   const [importHasErrors, setImportHasErrors] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const deferredQuery = useDeferredValue(searchTerm);
 
-  const availableBrands = useMemo(
-    () =>
-      [...brands]
-        .sort((left, right) => left.name.localeCompare(right.name, "pt-PT"))
-        .filter((brand, index, currentBrands) => currentBrands.findIndex((entry) => entry.id === brand.id) === index),
-    [brands],
-  );
-  const availableCategories = useMemo(
-    () =>
-      [...categories]
-        .sort((left, right) => left.name.localeCompare(right.name, "pt-PT"))
-        .filter(
-          (category, index, currentCategories) =>
-            currentCategories.findIndex((entry) => entry.id === category.id) === index,
-        ),
-    [categories],
-  );
-  const activeFilters = useMemo(
-    () => ({
-      query: deferredQuery,
-      brandId: selectedBrand,
-      categoryId: selectedCategory,
-      customerName: selectedCustomer,
-      status: selectedStatus,
-      missingCostOnly,
-      zeroStockOnly: outOfStockOnly,
-    }),
-    [
-      deferredQuery,
-      selectedBrand,
-      selectedCategory,
-      selectedCustomer,
-      selectedStatus,
-      missingCostOnly,
-      outOfStockOnly,
-    ],
-  );
-  const filteredRows = useMemo(() => filterStockRows(rows, activeFilters), [rows, activeFilters]);
-  const sortedRows = useMemo(
-    () => sortStockRows(filteredRows, sortKey, sortDirection, selectedCustomer),
-    [filteredRows, sortKey, sortDirection, selectedCustomer],
-  );
-  const pagination = useMemo(
-    () => paginateStockRows(sortedRows, { page, pageSize }),
-    [sortedRows, page, pageSize],
-  );
-  const resultsLabel = useMemo(() => {
-    if (sortedRows.length === 0) {
-      return "Nenhum resultado encontrado";
-    }
-    if (sortedRows.length === 1) {
-      return "1 resultado";
-    }
-    return `${sortedRows.length} resultados`;
-  }, [sortedRows.length]);
-  const selectedCustomerSummary = useMemo(
-    () =>
-      selectedCustomer
-        ? customerSummaries.find((entry) => entry.customerName === selectedCustomer) ?? null
-        : null,
-    [customerSummaries, selectedCustomer],
-  );
-  const salesTotal = useMemo(() => {
-    const summaries = selectedCustomerSummary ? [selectedCustomerSummary] : customerSummaries;
-    return summaries.reduce((total, customer) => ({
-      units: total.units + customer.totalUnits,
-      value: total.value + customer.totalSpentInCents,
-    }), { units: 0, value: 0 });
-  }, [customerSummaries, selectedCustomerSummary]);
-  const rankedCustomers = useMemo(
-    () => [...customerSummaries].sort(
-      (left, right) => left.customerName.localeCompare(right.customerName, "pt-PT"),
-    ),
-    [customerSummaries],
-  );
-  const topCustomer = [...rankedCustomers].sort((left, right) => right.totalUnits - left.totalUnits)
-    .find((customer) => customer.totalUnits > 0);
-  const matchingCustomers = useMemo(() => {
-    const query = normalizeStockSearch(deferredQuery);
-    return query ? rankedCustomers.filter((customer) =>
-      normalizeStockSearch(customer.customerName).includes(query),
-    ) : [];
-  }, [deferredQuery, rankedCustomers]);
-  const pendingDraftRows = useMemo(
-    () =>
-      rows.filter((row) => {
-        const draft = drafts[row.id];
-        return draft ? rowHasPendingChanges(row, draft) : false;
-      }),
-    [rows, drafts],
-  );
-  const pendingDraftCount = pendingDraftRows.length;
-
-  async function saveQuickRow(row: AdminStockRow) {
-    const draft = drafts[row.id];
-    if (!draft || !rowHasPendingChanges(row, draft)) {
-      return;
-    }
-
-    const nextStock = parseWholeNumberInput(draft.stock);
-    const nextAlert = parseWholeNumberInput(draft.lowStockAlert);
-
-    if (nextStock === null || nextAlert === null) {
-      setBanner({
-        tone: "error",
-        message: "Stock e limite de alerta precisam de numeros validos iguais ou maiores que 0.",
-      });
-      return;
-    }
-
-    try {
-      setBanner(null);
-      await persistRowDraft(row, draft, nextStock, nextAlert);
-      setBanner({
-        tone: "success",
-        message: `Linha de ${row.name} guardada com sucesso.`,
-      });
-    } catch (error) {
-      setBanner({
-        tone: "error",
-        message: error instanceof Error ? error.message : "Nao foi possivel guardar a linha.",
-      });
-    }
-  }
-
-  async function saveAllDrafts() {
-    if (!pendingDraftRows.length) {
-      return;
-    }
-
-    setBanner(null);
-    setIsSavingAll(true);
-    let successCount = 0;
-    const failedRows: string[] = [];
-
-    for (const row of pendingDraftRows) {
-      const draft = drafts[row.id];
-      if (!draft || !rowHasPendingChanges(row, draft)) {
-        continue;
-      }
-
-      const nextStock = parseWholeNumberInput(draft.stock);
-      const nextAlert = parseWholeNumberInput(draft.lowStockAlert);
-
-      if (nextStock === null || nextAlert === null) {
-        failedRows.push(row.name);
-        continue;
-      }
-
-      try {
-        await persistRowDraft(row, draft, nextStock, nextAlert);
-        successCount += 1;
-      } catch {
-        failedRows.push(row.name);
-      }
-    }
-
-    setIsSavingAll(false);
-
-    if (failedRows.length === 0) {
-      setBanner({
-        tone: "success",
-        message: `${successCount} linha(s) guardadas com sucesso.`,
-      });
-      return;
-    }
-
-    setBanner({
-      tone: failedRows.length === pendingDraftRows.length ? "error" : "success",
-      message:
-        failedRows.length === pendingDraftRows.length
-          ? `Nao foi possivel guardar ${failedRows.length} linha(s): ${failedRows.join(", ")}.`
-          : `${successCount} linha(s) guardadas. Falharam: ${failedRows.join(", ")}.`,
-    });
-  }
-
-  function discardAllDrafts() {
-    setDrafts({});
-    setBanner({
-      tone: "success",
-      message: "Alterações pendentes limpas.",
-    });
-  }
-
-  async function persistRowDraft(
-    row: AdminStockRow,
-    draft: DraftRowState,
-    nextStock: number,
-    nextAlert: number,
-  ) {
-    setSavingRowIds((current) => (current.includes(row.id) ? current : [...current, row.id]));
-
-    try {
-      const response = await fetch(`/api/admin/stock/product/${row.id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          salePrice: draft.salePrice,
-          stock: nextStock,
-          lowStockAlert: nextAlert,
-          unitCost: draft.unitCost,
-          stockNotes: draft.stockNotes,
-        }),
-      });
-
-      const payload = await response.json();
-      if (!response.ok) {
-        throw new Error(payload.error ?? "Nao foi possivel guardar a linha.");
-      }
-
-      const nextSalePrice = parseEuroInputToCents(draft.salePrice);
-      const nextUnitCost = parseEuroInputToCents(draft.unitCost);
-      const now = new Date().toISOString();
-
-      setRows((currentRows) =>
-        currentRows.map((currentRow) =>
-          currentRow.id === row.id
-            ? {
-                ...currentRow,
-                salePriceInCents: nextSalePrice,
-                stock: nextStock,
-                lowStockAlert: nextAlert,
-                unitCostInCents: nextUnitCost,
-                investedValueInCents: nextStock * nextUnitCost,
-                potentialSalesValueInCents: nextStock * nextSalePrice,
-                potentialProfitInCents:
-                  nextUnitCost > 0
-                    ? nextStock * (nextSalePrice - nextUnitCost)
-                    : null,
-                stockNotes: draft.stockNotes.trim() || null,
-                status: getStockStatus(nextStock, nextAlert),
-                lastUpdatedAt: now,
-                updatedAt: now,
-              }
-            : currentRow,
-        ),
-      );
-
-      setDrafts((currentDrafts) => {
-        const nextDrafts = { ...currentDrafts };
-        delete nextDrafts[row.id];
-        return nextDrafts;
-      });
-    } finally {
-      setSavingRowIds((current) => current.filter((entry) => entry !== row.id));
-    }
-  }
-
-  function updateDraft(row: AdminStockRow, field: keyof DraftRowState, value: string) {
-    setDrafts((currentDrafts) => {
-      const existingDraft = currentDrafts[row.id] ?? {
-        salePrice: toEuroInput(row.salePriceInCents),
-        stock: String(row.stock),
-        lowStockAlert: String(row.lowStockAlert),
-        unitCost: toEuroInput(row.unitCostInCents),
-        stockNotes: row.stockNotes ?? "",
-      };
-
-      const nextDraft = {
-        ...existingDraft,
-        [field]: value,
-      };
-
-      return {
-        ...currentDrafts,
-        [row.id]: nextDraft,
-      };
-    });
-  }
-
-  function getDraftValue(row: AdminStockRow, field: keyof DraftRowState) {
-    const draft = drafts[row.id];
-    if (draft) {
-      return draft[field];
-    }
-
-    if (field === "stock") {
-      return String(row.stock);
-    }
-    if (field === "salePrice") {
-      return toEuroInput(row.salePriceInCents);
-    }
-    if (field === "lowStockAlert") {
-      return String(row.lowStockAlert);
-    }
-    if (field === "unitCost") {
-      return toEuroInput(row.unitCostInCents);
-    }
-
-    return row.stockNotes ?? "";
-  }
-
-  function clearFilters() {
-    setPage(1);
-    setSearchTerm("");
-    setSelectedBrand("");
-    setSelectedCategory("");
-    setSelectedCustomer("");
-    setSelectedStatus("all");
-    setMissingCostOnly(false);
-    setOutOfStockOnly(false);
-    setSortKey("product");
-    setSortDirection("asc");
-  }
-
-  function toggleSort(nextKey: StockSortKey) {
-    if (sortKey === nextKey) {
-      setSortDirection((current) => (current === "asc" ? "desc" : "asc"));
-      return;
-    }
-
-    setSortKey(nextKey);
-    setSortDirection(nextKey === "lastUpdated" ? "desc" : "asc");
-  }
-
-  function exportExcel(scope: "filtered" | "all") {
-    const params = new URLSearchParams();
-    if (scope === "filtered") {
-      if (searchTerm.trim()) {
-        params.set("query", searchTerm.trim());
-      }
-      if (selectedBrand) {
-        params.set("brandId", selectedBrand);
-      }
-      if (selectedCategory) {
-        params.set("categoryId", selectedCategory);
-      }
-      if (selectedCustomer) {
-        params.set("customerName", selectedCustomer);
-      }
-      if (selectedStatus !== "all") {
-        params.set("status", selectedStatus);
-      }
-      if (missingCostOnly) {
-        params.set("missingCostOnly", "1");
-      }
-      if (outOfStockOnly) {
-        params.set("zeroStockOnly", "1");
-      }
-    }
-    params.set("scope", scope === "all" ? "all" : "filtered");
-    window.location.href = `/api/admin/stock/export?${params.toString()}`;
-  }
+  function exportExcel() { window.location.href = "/api/admin/stock/export?scope=all"; }
 
   function exportPdf() {
-    const printableRows = sortedRows.map((row) => ({
+    const printableRows = rows.map((row) => ({
       product: row.name,
       brand: row.brandName,
       category: row.categoryName,
       supplier: row.supplierName ?? "—",
       salePrice: formatPrice(row.salePriceInCents),
-      unitCost: row.unitCostInCents > 0 ? formatPrice(row.unitCostInCents) : "—",
       stock: row.stock,
       status: getStockStatusLabel(row.status),
     }));
@@ -536,7 +154,6 @@ export function StockAdminTable({
             <td>${escapeHtml(row.category)}</td>
             <td>${escapeHtml(row.supplier)}</td>
             <td>${escapeHtml(row.salePrice)}</td>
-            <td>${escapeHtml(row.unitCost)}</td>
             <td>${row.stock}</td>
             <td>${escapeHtml(row.status)}</td>
           </tr>
@@ -586,7 +203,7 @@ export function StockAdminTable({
         </head>
         <body>
           <h1>Stock Perfumaria 9 Ilhas</h1>
-          <p>${escapeHtml(resultsLabel)} • ${today}</p>
+          <p>${rows.length} produtos • ${today}</p>
           <table>
             <thead>
               <tr>
@@ -595,7 +212,6 @@ export function StockAdminTable({
                 <th>Categoria</th>
                 <th>Fornecedor</th>
                 <th>Preço</th>
-                <th>Custo</th>
                 <th>Stock</th>
                 <th>Estado</th>
               </tr>
@@ -1243,10 +859,8 @@ export function StockAdminTable({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          salePrice: toEuroInput(row.salePriceInCents),
           stock: row.stock,
           lowStockAlert: row.lowStockAlert,
-          unitCost: toEuroInput(row.unitCostInCents),
           stockNotes,
         }),
       });
@@ -1285,518 +899,13 @@ export function StockAdminTable({
 
   return (
     <div className="space-y-5">
-      <div className={activeView === "STOCK" ? "contents" : "hidden"}>
-      <section className="rounded-[1.8rem] border border-[color:var(--line)] bg-white p-4 shadow-sm">
-        <div className="flex flex-col gap-4">
-          <div className="rounded-[1.4rem] border border-[color:var(--line)] bg-[color:var(--sand-soft)] p-3">
-            <div className="flex flex-col gap-3">
-              <div className="flex min-w-0 flex-col gap-2">
-                <label className="relative block w-full min-w-0">
-                  <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                  <input
-                    value={searchTerm}
-                    onChange={(event) => {
-                      setPage(1);
-                      setSearchTerm(event.target.value);
-                    }}
-                    aria-label="Pesquisar produto, marca ou cliente"
-                    placeholder="Pesquisar produto, marca ou cliente..."
-                    className="h-10 w-full rounded-2xl border border-[color:var(--line)] bg-white pl-11 pr-4 text-sm text-[color:var(--ink)] placeholder:text-slate-400"
-                  />
-                </label>
-                <div className="grid min-w-0 gap-2 sm:grid-cols-2 xl:grid-cols-5 [&_select]:min-w-0 [&_select]:max-w-full">
-                  <CompactSelect value={selectedBrand} onChange={(value) => { setPage(1); setSelectedBrand(value); }}>
-                    <option value="">Marca</option>
-                    {availableBrands.map((brand) => (
-                      <option key={brand.id} value={brand.id}>{brand.name}</option>
-                    ))}
-                  </CompactSelect>
-                  <CompactSelect value={selectedCategory} onChange={(value) => { setPage(1); setSelectedCategory(value); }}>
-                    <option value="">Categoria</option>
-                    {availableCategories.map((category) => (
-                      <option key={category.id} value={category.id}>{category.name}</option>
-                    ))}
-                  </CompactSelect>
-                  <CompactSelect value={selectedCustomer} onChange={(value) => { setPage(1); setSelectedCustomer(value); }}>
-                    <option value="">Cliente</option>
-                    {rankedCustomers.map((customer) => (
-                      <option key={customer.customerName} value={customer.customerName}>
-                        {customer.customerName} · {customer.totalUnits} {customer.totalUnits === 1 ? "unidade" : "unidades"}
-                      </option>
-                    ))}
-                  </CompactSelect>
-                  <CompactSelect value={selectedStatus} onChange={(value) => { setPage(1); setSelectedStatus(value as "all" | "OUT" | "LOW" | "STABLE"); }}>
-                    <option value="all">Estado</option>
-                    <option value="OUT">Esgotado</option>
-                    <option value="LOW">Stock baixo</option>
-                    <option value="STABLE">Stock estável</option>
-                  </CompactSelect>
-                  <div className="flex items-center gap-2 rounded-2xl border border-[color:var(--line)] bg-white px-3">
-                    <SlidersHorizontal className="h-4 w-4 text-slate-500" />
-                    <select
-                      value={pageSize}
-                      onChange={(event) => {
-                        setPage(1);
-                        setPageSize(parsePageSize(event.target.value));
-                      }}
-                      className="h-10 w-full bg-transparent text-sm text-[color:var(--ink)] outline-none"
-                    >
-                      <option value="25">25 linhas</option>
-                      <option value="50">50 linhas</option>
-                      <option value="100">100 linhas</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {matchingCustomers.length > 0 ? (
-                <div className="flex flex-wrap items-center gap-2 text-sm" aria-label="Clientes encontrados">
-                  <span className="text-slate-600">Selecionar cliente:</span>
-                  {matchingCustomers.slice(0, 8).map((customer) => (
-                    <button
-                      key={customer.customerName}
-                      type="button"
-                      onClick={() => {
-                        setPage(1);
-                        setSelectedCustomer(customer.customerName);
-                        setSearchTerm("");
-                      }}
-                      className="rounded-full border border-[color:var(--line)] bg-white px-3 py-2 text-[color:var(--ink)]"
-                    >
-                      {customer.customerName} · {customer.totalUnits} unidades
-                    </button>
-                  ))}
-                  {matchingCustomers.length > 8 ? <span className="text-xs text-slate-500">Escreva mais letras para encontrar os restantes clientes.</span> : null}
-                </div>
-              ) : null}
-
-              <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-                <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
-                  <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2">
-                    <Filter className="h-4 w-4" />
-                    {resultsLabel}
-                  </span>
-                  {selectedCustomerSummary ? (
-                    <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-[color:var(--ink)]">
-                      Cliente {selectedCustomerSummary.customerName}: {selectedCustomerSummary.totalUnits} {selectedCustomerSummary.totalUnits === 1 ? "unidade comprada" : "unidades compradas"} · {formatPrice(selectedCustomerSummary.totalSpentInCents)}
-                    </span>
-                  ) : null}
-                  <button
-                    type="button"
-                    disabled={!topCustomer}
-                    title={topCustomer ? `${topCustomer.customerName}: ${topCustomer.totalUnits} unidades compradas` : "Ainda não existem compras de clientes"}
-                    onClick={() => {
-                      if (!topCustomer) return;
-                      clearFilters();
-                      setSelectedCustomer(topCustomer.customerName);
-                    }}
-                    className="inline-flex items-center gap-2 rounded-full border border-[color:var(--line)] bg-white px-3 py-2 text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    Cliente que mais comprou
-                  </button>
-                  <label className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2">
-                    <input
-                      type="checkbox"
-                      checked={missingCostOnly}
-                      onChange={(event) => {
-                        setPage(1);
-                        setMissingCostOnly(event.target.checked);
-                      }}
-                      className="h-4 w-4 rounded border-slate-300"
-                    />
-                    Sem custo
-                  </label>
-                  <label className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2">
-                    <input
-                      type="checkbox"
-                      checked={outOfStockOnly}
-                      onChange={(event) => {
-                        setPage(1);
-                        setOutOfStockOnly(event.target.checked);
-                      }}
-                      className="h-4 w-4 rounded border-slate-300"
-                    />
-                    Sem stock
-                  </label>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={clearFilters}
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-[color:var(--line)] bg-white px-4 text-sm font-medium text-slate-700"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                  Limpar
-                </button>
-              </div>
-              <p className="text-xs text-slate-500">
-                Compras por cliente: total de unidades de todos os produtos nas vendas registadas, em todo o histórico. Em caso de empate, os clientes aparecem por ordem alfabética.
-              </p>
-            </div>
-          </div>
-
-          {banner ? (
-            <div
-              className={`rounded-2xl px-4 py-3 text-sm ${
-                banner.tone === "success"
-                  ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
-                  : "border border-rose-200 bg-rose-50 text-rose-700"
-              }`}
-            >
-              {banner.message}
-            </div>
-          ) : null}
-        </div>
-      </section>
-
-      <section className="overflow-hidden rounded-[1.8rem] border border-[color:var(--line)] bg-white shadow-sm">
-        {pendingDraftCount ? (
-          <div className="flex flex-col gap-3 border-b border-[color:var(--line)] bg-[color:var(--sand-soft)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-[color:var(--ink)]">
-              {pendingDraftCount} linha(s) com alteracoes por guardar.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={discardAllDrafts}
-                disabled={isSavingAll}
-                className="inline-flex h-10 items-center gap-2 rounded-2xl border border-[color:var(--line)] bg-white px-4 text-sm font-medium text-slate-700 disabled:opacity-50"
-              >
-                <RotateCcw className="h-4 w-4" />
-                Limpar alteracoes
-              </button>
-              <button
-                type="button"
-                onClick={saveAllDrafts}
-                disabled={isSavingAll}
-                className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[color:var(--atlantic)] px-4 text-sm font-semibold text-white disabled:opacity-50"
-              >
-                <Save className="h-4 w-4" />
-                {isSavingAll ? "A guardar tudo..." : "Guardar tudo"}
-              </button>
-            </div>
-          </div>
-        ) : null}
-        <div className="border-b border-[color:var(--line)] bg-[color:var(--sand-soft)] px-4 py-2 text-xs text-slate-500 md:hidden">
-          Deslize a tabela para ver mais colunas. O produto fica fixo para ser mais facil acompanhar.
-        </div>
-        <div className="border-b border-[color:var(--line)] bg-white px-3 py-2 md:hidden">
-          <div className="grid grid-cols-[minmax(0,2fr)_4.8rem_4.2rem_3.4rem_2rem_2rem] items-center gap-2 text-[10px] uppercase tracking-[0.12em] text-slate-500">
-            <span>Produto</span>
-            <span>Preço</span>
-            <button
-              type="button"
-              onClick={() => setShowUnitCostColumn((current) => !current)}
-              className={`text-left ${showUnitCostColumn ? "text-[color:var(--ink)]" : "text-slate-500"}`}
-            >
-              Custo
-            </button>
-            <span>Stock</span>
-            <span className="text-center">S</span>
-            <span className="text-center">H</span>
-          </div>
-        </div>
-        <div className="max-w-full overflow-x-auto">
-          <table className="w-full border-separate border-spacing-0 text-sm md:min-w-[1840px]">
-            <thead className="hidden md:table-header-group">
-              <tr className="bg-[color:var(--sand-soft)] text-left text-xs uppercase tracking-[0.18em] text-slate-500">
-                <TableHeader title="Produto" active={sortKey === "product"} direction={sortDirection} onClick={() => toggleSort("product")} sticky />
-                <TableHeader
-                  title="Marca"
-                  active={sortKey === "brand"}
-                  direction={sortDirection}
-                  onClick={() => toggleSort("brand")}
-                  className="hidden md:table-cell"
-                />
-                <TableHeader
-                  title="Categoria"
-                  active={sortKey === "category"}
-                  direction={sortDirection}
-                  onClick={() => toggleSort("category")}
-                  className="hidden md:table-cell"
-                />
-                <TableHeader
-                  title="Fornecedor"
-                  active={sortKey === "product"}
-                  direction={sortDirection}
-                  onClick={() => toggleSort("product")}
-                  className="hidden md:table-cell"
-                />
-                <TableHeader
-                  title="Preço de venda"
-                  active={sortKey === "salePrice"}
-                  direction={sortDirection}
-                  onClick={() => toggleSort("salePrice")}
-                  className="hidden md:table-cell"
-                />
-                <TableHeader
-                  title={showUnitCostColumn ? "Custo unitário - ocultar" : "Custo unitário - mostrar"}
-                  active={showUnitCostColumn}
-                  direction="asc"
-                  onClick={() => setShowUnitCostColumn((current) => !current)}
-                  className="hidden md:table-cell"
-                />
-                <TableHeader
-                  title="Stock atual"
-                  active={sortKey === "stock"}
-                  direction={sortDirection}
-                  onClick={() => toggleSort("stock")}
-                  className="hidden md:table-cell"
-                />
-                <TableHeader
-                  title="Limite alerta"
-                  active={sortKey === "alertLimit"}
-                  direction={sortDirection}
-                  onClick={() => toggleSort("alertLimit")}
-                  className="hidden md:table-cell"
-                />
-                <TableHeader
-                  title={selectedCustomer ? "Saídas do cliente" : "Saídas"}
-                  active={sortKey === "outputs"}
-                  direction={sortDirection}
-                  onClick={() => toggleSort("outputs")}
-                  className="hidden md:table-cell"
-                />
-                <TableHeader
-                  title="Valor investido"
-                  active={sortKey === "investedValue"}
-                  direction={sortDirection}
-                  onClick={() => toggleSort("investedValue")}
-                  className="hidden xl:table-cell"
-                />
-                <TableHeader
-                  title="Venda potencial"
-                  active={sortKey === "potentialSalesValue"}
-                  direction={sortDirection}
-                  onClick={() => toggleSort("potentialSalesValue")}
-                  className="hidden xl:table-cell"
-                />
-                <TableHeader
-                  title="Lucro potencial"
-                  active={sortKey === "potentialProfit"}
-                  direction={sortDirection}
-                  onClick={() => toggleSort("potentialProfit")}
-                  className="hidden xl:table-cell"
-                />
-                <TableHeader
-                  title="Estado"
-                  active={sortKey === "status"}
-                  direction={sortDirection}
-                  onClick={() => toggleSort("status")}
-                  className="hidden md:table-cell"
-                />
-                <TableHeader
-                  title="Ultima atualizacao"
-                  active={sortKey === "lastUpdated"}
-                  direction={sortDirection}
-                  onClick={() => toggleSort("lastUpdated")}
-                  className="hidden lg:table-cell"
-                />
-                <th className="hidden top-0 z-20 border-b border-[color:var(--line)] bg-[color:var(--sand-soft)] px-3 py-4 md:sticky md:right-0 md:table-cell md:px-4">
-                  Acoes
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {pagination.pageRows.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={15}
-                    className="border-b border-[color:var(--line)] px-4 py-10 text-center text-sm text-slate-500"
-                  >
-                    Nenhum resultado encontrado.
-                  </td>
-                </tr>
-              ) : null}
-              {pagination.pageRows.map((row) => {
-                const draft = drafts[row.id];
-                const hasDraft = draft ? rowHasPendingChanges(row, draft) : false;
-                const isSavingRow = savingRowIds.includes(row.id);
-                return (
-                  <tr key={row.id} className="border-b border-[color:var(--line)] align-top">
-                    <td className="z-10 border-b border-[color:var(--line)] bg-white px-3 py-3 md:sticky md:left-0 md:px-4 md:py-4">
-                      <div className="hidden min-w-[170px] md:block md:min-w-[220px]">
-                        <p className="text-[15px] font-semibold leading-tight text-[color:var(--ink)] md:text-base">{row.name}</p>
-                        <p className="mt-1 text-[11px] text-slate-500">Ref. {row.catalogReference} · Slot {row.brandSlotLabel}</p>
-                      </div>
-                      <div className="grid grid-cols-[minmax(0,2fr)_4.8rem_4.2rem_3.4rem_2rem_2rem] items-center gap-2 md:hidden">
-                        <div className="min-w-0">
-                          <p className="truncate text-[14px] font-semibold leading-tight text-[color:var(--ink)]">{row.name}</p>
-                          <p className="truncate text-[10px] leading-tight text-slate-500">{row.brandName}</p>
-                          <p className="truncate text-[10px] leading-tight text-slate-500">{row.categoryName}</p>
-                          <p className="truncate text-[10px] leading-tight text-slate-500">Ref. {row.catalogReference}</p>
-                        </div>
-                        <MobileInlineInput
-                          value={getDraftValue(row, "salePrice")}
-                          onChange={(value) => updateDraft(row, "salePrice", value)}
-                          inputMode="decimal"
-                          placeholder="0,00"
-                        />
-                        <MobileInlineInput
-                          value={showUnitCostColumn ? getDraftValue(row, "unitCost") : ""}
-                          onChange={(value) => updateDraft(row, "unitCost", value)}
-                          inputMode="decimal"
-                          placeholder=""
-                          disabled={!showUnitCostColumn}
-                        />
-                        <MobileInlineInput
-                          value={getDraftValue(row, "stock")}
-                          onChange={(value) => updateDraft(row, "stock", value)}
-                          inputMode="numeric"
-                          placeholder=""
-                        />
-                        <MobileIconAction
-                          label="Saída"
-                          icon={<PackageX className="h-3.5 w-3.5" />}
-                          onClick={() => setMovementModal({ kind: "SALE", row })}
-                        />
-                        <MobileIconAction
-                          label="Histórico"
-                          icon={<History className="h-3.5 w-3.5" />}
-                          onClick={() => openHistory(row)}
-                        />
-                      </div>
-                    </td>
-                    <Cell className="hidden md:table-cell">{row.brandName}</Cell>
-                    <Cell className="hidden md:table-cell">{row.categoryName}</Cell>
-                    <Cell className="hidden md:table-cell">{row.supplierName ?? "—"}</Cell>
-                    <Cell className="hidden md:table-cell">
-                      <input
-                        value={getDraftValue(row, "salePrice")}
-                        onChange={(event) => updateDraft(row, "salePrice", event.target.value)}
-                        onFocus={(event) => event.currentTarget.select()}
-                        inputMode="decimal"
-                        placeholder="0,00"
-                        className="h-10 w-28 rounded-xl border border-[color:var(--line)] px-3"
-                      />
-                    </Cell>
-                    <Cell className="hidden md:table-cell">
-                      {showUnitCostColumn ? (
-                        <input
-                          value={getDraftValue(row, "unitCost")}
-                          onChange={(event) => updateDraft(row, "unitCost", event.target.value)}
-                          onFocus={(event) => event.currentTarget.select()}
-                          inputMode="decimal"
-                          placeholder=""
-                          className="h-10 w-28 rounded-xl border border-[color:var(--line)] px-3"
-                        />
-                      ) : (
-                        <span className="text-slate-300"> </span>
-                      )}
-                    </Cell>
-                    <Cell className="hidden md:table-cell">
-                      <input
-                        value={getDraftValue(row, "stock")}
-                        onChange={(event) => updateDraft(row, "stock", event.target.value)}
-                        onFocus={(event) => event.currentTarget.select()}
-                        inputMode="numeric"
-                        placeholder=""
-                        className="h-10 w-24 rounded-xl border border-[color:var(--line)] px-3"
-                      />
-                    </Cell>
-                    <Cell className="hidden md:table-cell">
-                      <input
-                        value={getDraftValue(row, "lowStockAlert")}
-                        onChange={(event) => updateDraft(row, "lowStockAlert", event.target.value)}
-                        onFocus={(event) => event.currentTarget.select()}
-                        inputMode="numeric"
-                        placeholder=""
-                        className="h-10 w-24 rounded-xl border border-[color:var(--line)] px-3"
-                      />
-                    </Cell>
-                    <Cell className="hidden md:table-cell">{getStockOutputs(row, selectedCustomer)}</Cell>
-                    <Cell className="hidden xl:table-cell">{formatPrice(row.investedValueInCents)}</Cell>
-                    <Cell className="hidden xl:table-cell">{formatPrice(row.potentialSalesValueInCents)}</Cell>
-                    <Cell className="hidden xl:table-cell">
-                      {row.potentialProfitInCents === null ? (
-                        <span className="text-xs text-slate-500">Custo por definir</span>
-                      ) : (
-                        formatPrice(row.potentialProfitInCents)
-                      )}
-                    </Cell>
-                    <Cell className="hidden md:table-cell">
-                      <span
-                        className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${getStockStatusTone(
-                          row.status,
-                        )}`}
-                      >
-                        {getStockStatusLabel(row.status)}
-                      </span>
-                    </Cell>
-                    <Cell className="hidden lg:table-cell">{new Date(row.lastUpdatedAt).toLocaleString("pt-PT")}</Cell>
-                    <td className="hidden z-10 border-b border-[color:var(--line)] bg-white px-2 py-4 md:sticky md:right-0 md:table-cell md:px-4">
-                      <div className="flex min-w-[92px] flex-wrap gap-2 md:min-w-[220px]">
-                        {hasDraft ? (
-                          <button
-                            type="button"
-                            onClick={() => saveQuickRow(row)}
-                            disabled={isSavingRow || isSavingAll}
-                            className="inline-flex items-center gap-1 rounded-full bg-[color:var(--atlantic)] px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
-                          >
-                            <Save className="h-3.5 w-3.5" />
-                            <span className="hidden sm:inline">{isSavingRow ? "A guardar..." : "Guardar"}</span>
-                          </button>
-                        ) : null}
-                        <ActionButton
-                          label="Saída"
-                          icon={<PackageX className="h-3.5 w-3.5" />}
-                          onClick={() => setMovementModal({ kind: "SALE", row })}
-                          mobileIconOnly
-                        />
-                        <ActionButton
-                          label="Histórico"
-                          icon={<History className="h-3.5 w-3.5" />}
-                          onClick={() => openHistory(row)}
-                          mobileIconOnly
-                        />
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="flex flex-col gap-3 border-t border-[color:var(--line)] px-4 py-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
-          <p>
-            Pagina {pagination.currentPage} de {pagination.totalPages}
-          </p>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setPage((current) => Math.max(1, current - 1))}
-              disabled={pagination.currentPage === 1}
-              className="rounded-full border border-[color:var(--line)] px-4 py-2 disabled:opacity-40"
-            >
-              Anterior
-            </button>
-            <button
-              type="button"
-              onClick={() => setPage((current) => Math.min(pagination.totalPages, current + 1))}
-              disabled={pagination.currentPage === pagination.totalPages}
-              className="rounded-full border border-[color:var(--line)] px-4 py-2 disabled:opacity-40"
-            >
-              Seguinte
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <section className="rounded-[1.8rem] border border-[color:var(--line)] bg-white p-4 shadow-sm">
+      {banner ? <p role={banner.tone === "error" ? "alert" : "status"} className={`rounded-xl p-3 text-sm ${banner.tone === "error" ? "bg-rose-50 text-rose-800" : "bg-emerald-50 text-emerald-800"}`}>{banner.message}</p> : null}
+      {activeView === "STOCK" ? <InventoryWorkspace rows={rows} initialStatus={initialStockStatus} onUpdate={(next) => setRows((current) => current.map((row) => row.id === next.id ? next : row))} onHistory={openHistory} onEntry={(row) => setMovementModal({ kind: "ENTRY", row })} onNotes={(row) => setMovementModal({ kind: "NOTES", row })} tools={<>      <section className="rounded-[1.8rem] border border-[color:var(--line)] bg-white p-4 shadow-sm">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={() => exportExcel("filtered")}
-              className="inline-flex h-10 items-center gap-2 rounded-2xl border border-[color:var(--line)] bg-[color:var(--cocoa)] px-4 text-sm font-medium text-white"
-            >
-              <FileSpreadsheet className="h-4 w-4" />
-              Exportar filtrados
-            </button>
-            <button
-              type="button"
-              onClick={() => exportExcel("all")}
+              onClick={() => exportExcel()}
               className="inline-flex h-10 items-center gap-2 rounded-2xl border border-[color:var(--line)] bg-white px-4 text-sm font-medium text-[color:var(--ink)]"
             >
               <Download className="h-4 w-4" />
@@ -1851,13 +960,7 @@ export function StockAdminTable({
         </div>
       </section>
 
-      <section className="rounded-[1.8rem] border border-[color:var(--line)] bg-white p-5 shadow-sm" aria-label="Total de vendas">
-        <p className="text-sm text-slate-600">{selectedCustomer ? `Total de vendas — ${selectedCustomer}` : "Total de vendas"}</p>
-        <p className="mt-2 text-2xl font-semibold text-[color:var(--ink)]">{formatPrice(salesTotal.value)}</p>
-        <p className="mt-1 text-sm text-slate-600">{salesTotal.units} vendas registadas · preços efetivos de cada venda</p>
-        <p className="mt-1 text-xs text-slate-500">Inclui todo o histórico{selectedCustomer ? " deste cliente" : " de clientes"}, incluindo kits e decants.</p>
-      </section>
-      </div>
+</>} /> : null}
 
       {movementModal ? (
         <ModalFrame
@@ -1899,11 +1002,6 @@ export function StockAdminTable({
                     {movement.customerName ? (
                       <p className="mt-1 text-sm text-slate-500">Cliente {movement.customerName}</p>
                     ) : null}
-                    {movement.unitCostInCents !== null ? (
-                      <p className="mt-1 text-sm text-slate-500">
-                        Custo unitário {formatPrice(movement.unitCostInCents)}
-                      </p>
-                    ) : null}
                     {movement.supplier ? (
                       <p className="mt-1 text-sm text-slate-500">Fornecedor {movement.supplier}</p>
                     ) : null}
@@ -1935,9 +1033,6 @@ export function StockAdminTable({
                 <>
                   <Field label="Quantidade">
                     <input name="quantity" type="number" min="1" required className="h-12 w-full rounded-2xl border border-[color:var(--line)] px-4" />
-                  </Field>
-                  <Field label="Custo unitário (opcional)">
-                    <input name="unitCost" inputMode="decimal" className="h-12 w-full rounded-2xl border border-[color:var(--line)] px-4" placeholder="Ex: 18,50" />
                   </Field>
                   <Field label="Fornecedor (opcional)">
                     <input name="supplier" className="h-12 w-full rounded-2xl border border-[color:var(--line)] px-4" placeholder="Fornecedor ou origem da reposicao" />
@@ -2318,138 +1413,13 @@ export function StockAdminTable({
                 disabled={importHasErrors}
                 className="rounded-full bg-[color:var(--atlantic)] px-5 py-3 text-sm font-semibold text-white disabled:opacity-40"
               >
-                Confirmar importa??o
+                Confirmar importação
               </button>
             </div>
           </div>
         </ModalFrame>
       ) : null}
     </div>
-  );
-}
-
-function CompactSelect({
-  value,
-  onChange,
-  children,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <select
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      className="h-10 w-full rounded-2xl border border-[color:var(--line)] bg-white px-3 text-sm text-[color:var(--ink)] outline-none"
-    >
-      {children}
-    </select>
-  );
-}
-
-function MobileInlineInput({
-  value,
-  onChange,
-  inputMode,
-  placeholder,
-  disabled = false,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  inputMode: React.HTMLAttributes<HTMLInputElement>["inputMode"];
-  placeholder: string;
-  disabled?: boolean;
-}) {
-  return (
-    <input
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      onFocus={(event) => event.currentTarget.select()}
-      inputMode={inputMode}
-      placeholder={placeholder}
-      disabled={disabled}
-      className="h-8 min-w-0 w-full border-0 bg-transparent px-0 text-center text-[15px] font-semibold leading-tight text-[color:var(--ink)] tabular-nums outline-none ring-0 disabled:text-slate-300"
-      style={{ fontSize: "16px", WebkitTextSizeAdjust: "100%" }}
-    />
-  );
-}
-
-function MobileIconAction({
-  label,
-  icon,
-  onClick,
-}: {
-  label: string;
-  icon: React.ReactNode;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      onClick={onClick}
-      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[color:var(--line)] bg-white text-slate-700"
-    >
-      {icon}
-    </button>
-  );
-}
-
-function TableHeader({
-  title,
-  active,
-  direction,
-  onClick,
-  sticky = false,
-  className = "",
-}: {
-  title: string;
-  active: boolean;
-  direction: StockSortDirection;
-  onClick: () => void;
-  sticky?: boolean;
-  className?: string;
-}) {
-  return (
-    <th
-      className={`${sticky ? "sticky left-0 top-0 z-20" : "sticky top-0 z-10"} border-b border-[color:var(--line)] bg-[color:var(--sand-soft)] px-4 py-4 ${className}`}
-    >
-      <button type="button" onClick={onClick} className="inline-flex items-center gap-2 text-left">
-        <span>{title}</span>
-        <span className={`text-[10px] ${active ? "text-[color:var(--ink)]" : "text-slate-400"}`}>
-          {active ? (direction === "asc" ? "↑" : "↓") : "↕"}
-        </span>
-      </button>
-    </th>
-  );
-}
-
-function Cell({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <td className={`border-b border-[color:var(--line)] px-4 py-4 text-slate-700 ${className}`}>{children}</td>;
-}
-
-function ActionButton({
-  label,
-  icon,
-  onClick,
-  mobileIconOnly = false,
-}: {
-  label: string;
-  icon: React.ReactNode;
-  onClick: () => void;
-  mobileIconOnly?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={label}
-      className="inline-flex items-center gap-1 rounded-full border border-[color:var(--line)] px-3 py-2 text-xs font-medium text-slate-700"
-    >
-      {icon}
-      <span className={mobileIconOnly ? "hidden sm:inline" : ""}>{label}</span>
-    </button>
   );
 }
 
@@ -2462,23 +1432,7 @@ function ModalFrame({
   onClose: () => void;
   children: React.ReactNode;
 }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4">
-      <div className="max-h-[92vh] w-full max-w-3xl overflow-hidden rounded-[2rem] bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-[color:var(--line)] px-6 py-4">
-          <h2 className="font-serif text-2xl text-[color:var(--ink)]">{title}</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-full border border-[color:var(--line)] px-3 py-1.5 text-sm text-slate-600"
-          >
-            Fechar
-          </button>
-        </div>
-        <div className="overflow-y-auto p-6">{children}</div>
-      </div>
-    </div>
-  );
+  return <InventoryDialog title={title} onClose={onClose}>{children}</InventoryDialog>;
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -2769,34 +1723,6 @@ function escapeHtml(value: string) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
-}
-
-function parseWholeNumberInput(value: string) {
-  const normalized = value.trim();
-  if (!normalized) {
-    return null;
-  }
-
-  if (!/^\d+$/.test(normalized)) {
-    return null;
-  }
-
-  const parsed = Number(normalized);
-  if (!Number.isFinite(parsed) || parsed < 0) {
-    return null;
-  }
-
-  return parsed;
-}
-
-function rowHasPendingChanges(row: AdminStockRow, draft: DraftRowState) {
-  return (
-    parseEuroInputToCents(draft.salePrice) !== row.salePriceInCents ||
-    draft.stock !== String(row.stock) ||
-    draft.lowStockAlert !== String(row.lowStockAlert) ||
-    parseEuroInputToCents(draft.unitCost) !== row.unitCostInCents ||
-    draft.stockNotes !== (row.stockNotes ?? "")
-  );
 }
 
 function applyMovementLocally(

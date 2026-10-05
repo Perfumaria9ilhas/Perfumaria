@@ -54,10 +54,10 @@ export function HomeFeaturedProducts({
   }
 
   return (
-    <section className="rounded-[2rem] border border-[color:var(--line)] bg-white p-5 shadow-sm sm:p-6">
+    <details className="rounded-2xl border border-[color:var(--line)] bg-white p-4"><summary className="cursor-pointer text-sm font-semibold">Preferidos na página inicial · {selectedIds.size}/20 selecionados</summary><div className="mt-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="font-serif text-2xl text-[color:var(--ink)] sm:text-3xl">
+          <h2 className="font-serif text-xl text-[color:var(--ink)]">
             Preferidos na página inicial
           </h2>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
@@ -87,20 +87,21 @@ export function HomeFeaturedProducts({
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         placeholder="Pesquisar produto ou marca"
-        className="mt-5 h-12 w-full rounded-2xl border px-4 sm:max-w-md"
+        aria-label="Pesquisar preferidos"
+        className="mt-3 h-10 w-full rounded-2xl border px-4 sm:max-w-md"
       />
 
       <form action={saveHomeFeaturedProducts} className="mt-4">
         {[...selectedIds].map((productId) => (
           <input key={productId} type="hidden" name="productIds" value={productId} />
         ))}
-        <div className="grid max-h-96 gap-2 overflow-y-auto rounded-2xl border border-[color:var(--line)] p-2 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid max-h-60 gap-2 overflow-y-auto rounded-2xl border border-[color:var(--line)] p-2 sm:grid-cols-2 lg:grid-cols-3">
           {filteredProducts.map((product) => {
             const checked = selectedIds.has(product.id);
             return (
               <label
                 key={product.id}
-                className={`flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-3 text-sm transition ${
+                className={`flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2 text-sm transition ${
                   checked
                     ? "border-[color:var(--gold)] bg-amber-50/70"
                     : "border-transparent bg-[color:var(--sand-soft)]"
@@ -125,6 +126,6 @@ export function HomeFeaturedProducts({
           Guardar preferidos
         </button>
       </form>
-    </section>
+    </div></details>
   );
 }
