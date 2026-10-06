@@ -2,7 +2,11 @@ import Link from "next/link";
 import { AlertTriangle, ArrowRight, Box, ClipboardList, Euro, Plus, ShoppingCart } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { requireAdmin } from "@/lib/auth";
-import { getAdminDashboardData } from "@/lib/data";
+import { DailyPerfumeCard } from "@/components/admin/daily-perfume-card";
+import { getStoreSettings } from "@/lib/store-settings";
+import { readHomepageState } from "@/lib/homepage-config";
+import { isEligibleDailyPerfume } from "@/lib/daily-perfume";
+import { getCatalogData, getAdminDashboardData } from "@/lib/data";
 import { formatPrice } from "@/lib/format";
 
 function AttentionCard({ label, value, href, icon }: { label: string; value: number; href: string; icon: React.ReactNode }) {
@@ -20,13 +24,15 @@ function StatusPill({ value }: { value: string }) {
 
 export default async function AdminPage() {
   await requireAdmin();
-  const data = await getAdminDashboardData();
+  const [data, settings, catalog] = await Promise.all([getAdminDashboardData(), getStoreSettings(), getCatalogData()]);
 
   return <AdminShell title="Dashboard" description="O seu centro de trabalho diário.">
     <section className="grid gap-3 sm:grid-cols-2">
       <Link href="/admin/stock?view=new-sale" className="flex min-h-24 items-center gap-4 rounded-[1.5rem] bg-[color:var(--gold)] px-5 py-4 text-white shadow-sm transition hover:bg-[color:var(--atlantic)]"><span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/15"><Plus className="h-7 w-7" /></span><span><strong className="block text-lg">Nova venda</strong><span className="text-sm text-white/85">Registar uma nova venda</span></span></Link>
       <Link href="/admin/stock?view=sales&period=all" className="flex min-h-24 items-center gap-4 rounded-[1.5rem] border border-[color:var(--line)] bg-white px-5 py-4 shadow-sm transition hover:border-[color:var(--gold)]"><span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[color:var(--line)]"><ClipboardList className="h-6 w-6 text-[color:var(--atlantic)]" /></span><span><strong className="block text-lg text-[color:var(--ink)]">Estado das vendas</strong><span className="text-sm text-slate-500">Ver e gerir todas as vendas</span></span></Link>
     </section>
+
+    <DailyPerfumeCard key={settings.updatedAt?.toISOString()} products={catalog.products.filter(isEligibleDailyPerfume).map(({id,name,imageUrl,priceInCents,stock,brand})=>({id,name,imageUrl,priceInCents,stock,brand}))} selectedId={readHomepageState(settings.homepageConfig).perfumeOfDayId} version={settings.updatedAt!.toISOString()} />
 
     <section aria-label="Vendas de hoje" className="mt-4 grid grid-cols-2 gap-3">
       <article className="min-w-0 rounded-[1.4rem] border border-[color:var(--line)] bg-white p-4"><p className="text-xs text-slate-600">Vendas hoje</p><strong className="mt-1 block font-serif text-2xl">{data.today.paidSales}</strong><p className="mt-1 text-xs text-slate-500">Vendas pagas registadas hoje</p></article>

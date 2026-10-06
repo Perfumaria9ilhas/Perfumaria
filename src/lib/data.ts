@@ -4,6 +4,9 @@ import { StockDeliveryStatus, StockMovementType, StockSaleStatus } from "@prisma
 import { getAzoresDayBounds } from "@/lib/date";
 import { prisma } from "@/lib/prisma";
 import { getAdminStockTableData } from "@/lib/stock-server";
+import { getStoreSettings } from "@/lib/store-settings";
+import { readHomepageState } from "@/lib/homepage-config";
+import { applyDailyPerfume } from "@/lib/daily-perfume";
 
 const publicProductSelect = {
   id: true,
@@ -30,10 +33,11 @@ const publicProductSelect = {
 
 export const getCatalogProductBySlug = cache(async (slug: string) => {
   noStore();
-  return prisma.product.findFirst({
+  const [product, settings] = await Promise.all([prisma.product.findFirst({
     where: { slug, active: true },
     select: publicProductSelect,
-  });
+  }), getStoreSettings()]);
+  return product ? applyDailyPerfume(product, readHomepageState(settings.homepageConfig).perfumeOfDayId) : null;
 });
 
 export async function getCatalogData() {
@@ -57,10 +61,12 @@ export async function getCatalogData() {
       .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())
       .map((product, index) => [product.id, index]),
   );
+  const settings = await getStoreSettings();
+  const dailyId = readHomepageState(settings.homepageConfig).perfumeOfDayId;
   const products = catalogRows.map(({ createdAt, ...product }) => {
     void createdAt;
     return {
-      ...product,
+      ...applyDailyPerfume(product, dailyId),
       recentRank: recentRankById.get(product.id) ?? catalogRows.length,
     };
   });
@@ -74,17 +80,10 @@ export async function getHomeData() {
     prisma.product.findMany({
       where: {
         active: true,
-        OR: [
-          { homeFeatured: true },
-          { featured: true },
-          { bestseller: true },
-        ],
+        homeFeatured: true,
       },
-      include: {
-        brand: true,
-        category: true,
-        productType: true,
-      },
+      select: publicProductSelect,
+      take: 20,
       orderBy: [{ brand: { name: "asc" } }, { name: "asc" }],
     }),
     prisma.storeReview.findMany({
@@ -106,8 +105,10 @@ export async function getHomeData() {
     }),
   ]);
 
+  const settings = await getStoreSettings();
+  const dailyId = readHomepageState(settings.homepageConfig).perfumeOfDayId;
   return {
-    featuredProducts,
+    featuredProducts: featuredProducts.map((product) => applyDailyPerfume(product, dailyId)),
     reviews,
     stats: {
       satisfiedCustomersCount: metrics?.totalSatisfiedCustomers ?? fallbackOrdersCount,

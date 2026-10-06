@@ -5,6 +5,9 @@ import { getCurrentCustomer } from "@/lib/auth";
 import { formatPrice } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { getDecantPriceInCents, getProductBottleSizeLabel } from "@/lib/product-sizes";
+import { getSalePriceInCents } from "@/lib/format";
+import { applyDailyPerfume } from "@/lib/daily-perfume";
+import { readHomepageState } from "@/lib/homepage-config";
 
 const orderItemSchema = z.object({
   productId: z.string().min(1),
@@ -44,15 +47,18 @@ export async function POST(request: Request) {
   const productIds = [...new Set(parsed.data.items.map((item) => item.productId))];
   const products = await prisma.product.findMany({
     where: { id: { in: productIds } },
-    select: { id: true, name: true, sizeLabel: true, priceInCents: true, salePriceInCents: true, stock: true, active: true, availableInFiveMl: true, availableInTenMl: true, brand: { select: { name: true } } },
+    select: { id: true, name: true, sizeLabel: true, priceInCents: true, salePriceInCents: true, stock: true, active: true, availableInFiveMl: true, availableInTenMl: true, brand: { select: { name: true } }, category: {select:{slug:true}}, productType: {select:{slug:true}} },
   });
   const productMap = new Map(products.map((product) => [product.id, product]));
+  const settings = await prisma.storeSettings.findUnique({ where: { id: "main" }, select: { whatsappNumber: true, homepageConfig: true } });
+  const dailyId = readHomepageState(settings?.homepageConfig).perfumeOfDayId;
   const validatedItems: ValidatedOrderItem[] = [];
 
   for (const item of parsed.data.items) {
     const product = productMap.get(item.productId);
     if (!product?.active || product.stock <= 0) return NextResponse.json({ error: "Um dos produtos não está disponível." }, { status: 400 });
-    const bottlePrice = product.salePriceInCents && product.salePriceInCents < product.priceInCents ? product.salePriceInCents : product.priceInCents;
+    const bottlePrice = getSalePriceInCents(applyDailyPerfume(product, dailyId));
+    const decantPrice = getSalePriceInCents(product);
     if (item.variant === "5ml" && !product.availableInFiveMl) return NextResponse.json({ error: "A opção de 5 ml não está disponível para este produto." }, { status: 400 });
     if (item.variant === "10ml" && !product.availableInTenMl) return NextResponse.json({ error: "A opção de 10 ml não está disponível para este produto." }, { status: 400 });
     validatedItems.push({
@@ -60,13 +66,12 @@ export async function POST(request: Request) {
       name: product.name,
       brand: product.brand.name,
       sizeLabel: item.variant === "bottle" ? getProductBottleSizeLabel(product) : item.variant === "5ml" ? "5 ml" : "10 ml",
-      priceInCents: item.variant === "bottle" ? bottlePrice : getDecantPriceInCents(bottlePrice, item.variant),
+      priceInCents: item.variant === "bottle" ? bottlePrice : getDecantPriceInCents(decantPrice, item.variant),
       quantity: item.quantity,
     });
   }
 
   const totalInCents = validatedItems.reduce((sum, item) => sum + item.priceInCents * item.quantity, 0);
-  const settings = await prisma.storeSettings.findUnique({ where: { id: "main" }, select: { whatsappNumber: true } });
   if (!settings?.whatsappNumber) return NextResponse.json({ error: "WhatsApp não configurado." }, { status: 400 });
   const loggedCustomer = await getCurrentCustomer();
   const customerAccount = loggedCustomer ? await prisma.customerAccount.findUnique({ where: { id: loggedCustomer.id } }) : null;

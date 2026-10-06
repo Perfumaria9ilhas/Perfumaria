@@ -76,7 +76,7 @@ function getBottlePrice(product: CatalogProduct) {
 }
 
 function getDisplayPrice(product: CatalogProduct, size: ProductSizeValue) {
-  if (size === "5ml" || size === "10ml") return getDecantPriceInCents(getBottlePrice(product), size);
+  if (size === "5ml" || size === "10ml") return getDecantPriceInCents(product.decantBottlePriceInCents ?? getBottlePrice(product), size);
   return getBottlePrice(product);
 }
 
@@ -411,7 +411,7 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
           <div className="store-product-layout">
             <div className="store-product-photo"><ProductImage key={selectedProduct.id} src={selectedProduct.imageUrl} alt={selectedProduct.name} priority sizes="(max-width: 767px) 90vw, 520px" /></div>
             <div className="store-product-info">
-              <div className="store-product-name-row"><div><h2>{selectedProduct.name}</h2><p className="store-product-brand">{selectedProduct.brand.name}</p></div>{selectedProduct.bestseller || selectedProduct.featured ? <span className="store-badge">{selectedProduct.bestseller ? "Mais vendido" : "Em destaque"}</span> : null}</div>
+              <div className="store-product-name-row"><div><h2>{selectedProduct.name}</h2><p className="store-product-brand">{selectedProduct.brand.name}</p></div>{selectedProduct.perfumeOfDay || selectedProduct.bestseller || selectedProduct.featured ? <span className="store-badge">{selectedProduct.perfumeOfDay ? "-10% hoje" : selectedProduct.bestseller ? "Mais vendido" : "Em destaque"}</span> : null}</div>
               <div className="store-product-price"><strong>{formatPrice(getDisplayPrice(selectedProduct, selectedProductSize))}</strong>{selectedProductSize === "100ml" && getBottlePrice(selectedProduct) < selectedProduct.priceInCents ? <del>{formatPrice(selectedProduct.priceInCents)}</del> : null}</div>
               <div><p className="store-field">Tamanho</p><div className="store-variant-options"><button aria-pressed={selectedProductSize === "100ml"} onClick={() => setProductSize(selectedProduct.id, "100ml")}>{getProductBottleSizeLabel(selectedProduct)}</button></div></div>
               {selectedProduct.availableInFiveMl || selectedProduct.availableInTenMl ? <div><p className="store-field">Decants</p><div className="store-variant-options">

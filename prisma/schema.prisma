@@ -163,6 +163,7 @@ model OutOfStockWish {
 
 model StoreSettings {
   id               String   @id
+  homepageConfig   Json     @default("{}")
   storeName        String
   heroTitle        String
   heroDescription  String

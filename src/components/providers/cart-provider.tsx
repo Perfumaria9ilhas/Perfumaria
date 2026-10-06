@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   useSyncExternalStore,
   type ReactNode,
@@ -117,6 +118,26 @@ export function CartProvider({
     window.localStorage.setItem(storageKey, JSON.stringify(items));
   }, [hasHydrated, items]);
 
+  const currentItems = useRef(items);
+  useEffect(() => { currentItems.current = items; }, [items]);
+  const priceKey = items.map(i => `${i.id}:${i.productId}:${i.sizeLabel}`).join("|");
+  useEffect(() => {
+    if (!hasHydrated || !priceKey) return;
+    let cancelled = false;
+    async function refreshPrices() {
+      try {
+        const response = await fetch("/api/cart-prices", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({items:currentItems.current.map(i=>({id:i.id,productId:i.productId.split(":")[0],variant:/^5\s*ml$/i.test(i.sizeLabel)?"5ml":/^10\s*ml$/i.test(i.sizeLabel)?"10ml":"bottle"}))})});
+        if (!response.ok || cancelled) return;
+        const data = await response.json() as {items: {id:string;priceInCents?:number;originalPriceInCents?:number;stock:number}[]};
+        setItems(current => current.map(item => {const price=data.items.find(p=>p.id===item.id);return price?{...item,...price}:item;}));
+      } catch { /* Checkout still validates current prices on the server. */ }
+    }
+    void refreshPrices();
+    const timer=window.setInterval(()=>void refreshPrices(),60000);
+    window.addEventListener("focus",refreshPrices);
+    return ()=>{cancelled=true;window.clearInterval(timer);window.removeEventListener("focus",refreshPrices);};
+  }, [hasHydrated, priceKey, isOpen]);
+
   const itemCount = useMemo(
     () => items.reduce((total, item) => total + item.quantity, 0),
     [items],
@@ -137,7 +158,7 @@ export function CartProvider({
       )
       .join("\n");
 
-    const text = `Olá, quero encomendar estes produtos da 9 Ilhas Perfumaria\n\n${lines}\n\nTotal: ${formatPrice(
+    const text = `OlÃ¡, quero encomendar estes produtos da 9 Ilhas Perfumaria\n\n${lines}\n\nTotal: ${formatPrice(
       total,
     )}`;
 
@@ -153,7 +174,7 @@ export function CartProvider({
       if (existingItem) {
         return current.map((entry) =>
           entry.id === item.id
-            ? { ...entry, quantity: entry.quantity + safeQuantity }
+            ? { ...entry, ...item, quantity: entry.quantity + safeQuantity }
             : entry,
         );
       }

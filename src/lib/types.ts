@@ -11,6 +11,8 @@ import type {
 } from "@prisma/client";
 
 export type CatalogProduct = {
+  perfumeOfDay?: boolean;
+  decantBottlePriceInCents?: number;
   id: string;
   name: string;
   slug: string;

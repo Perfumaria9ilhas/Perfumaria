@@ -1,6 +1,6 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
+import { saveUploadedImage } from "@/lib/image-storage";
 import { Prisma, ProductAudience, ProductConcentration, StockMovementType } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -164,30 +164,6 @@ const storeReviewSchema = z.object({
 
 function normalizeCustomerEmail(email: string) {
   return email.trim().toLowerCase();
-}
-
-async function saveUploadedImage(file: File) {
-  const bytes = Buffer.from(await file.arrayBuffer());
-  const rawExtension =
-    file.name.split(".").pop()?.toLowerCase() ??
-    file.type.split("/").pop()?.toLowerCase() ??
-    "jpg";
-  const extension = rawExtension.replace(/[^a-z0-9]/g, "") || "jpg";
-  const fileName = `${randomUUID()}.${extension}`;
-  const contentType = file.type?.trim() || `image/${extension}`;
-
-  const storedImage = await prisma.storedImage.create({
-    data: {
-      fileName,
-      contentType,
-      data: bytes,
-    },
-    select: {
-      id: true,
-    },
-  });
-
-  return `/api/upload-image?asset=${encodeURIComponent(storedImage.id)}`;
 }
 
 function parseEuroPriceToCents(value?: null | string) {

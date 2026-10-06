@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { normalizeObjectText } from "@/lib/text";
 
 const fallbackSettings = {
+  homepageConfig: {},
   id: "main",
   storeName: "9 Ilhas Perfumaria",
   heroTitle: "Perfumes \u00c1rabes Originais",

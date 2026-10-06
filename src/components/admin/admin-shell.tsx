@@ -24,6 +24,7 @@ const navSections: AdminNavSection[] = [
     { href: "/admin/tipos-produto", label: "Tipos", icon: Boxes },
   ] },
   { label: "Site", items: [
+    { href: "/admin/loja", label: "Página inicial", icon: House },
     { href: "/admin/desejos", label: "Desejos", icon: Heart },
     { href: "/admin/comentarios", label: "Comentários", icon: MessageSquare },
     { href: "/", label: "Ver loja", icon: Store },

@@ -1,4 +1,7 @@
+import { DailyPerfume } from "@/components/home/daily-perfume";
+import { readHomepageState, resolveHomepageConfig, type HomepageSection } from "@/lib/homepage-config";
 import type { Metadata } from "next";
+import React from "react";
 import Link from "next/link";
 import { FeaturedProductsSlider } from "@/components/home/featured-products-slider";
 import { CollectionRail, CollectionPromos, StoreTrustPoints } from "@/components/home/store-collections";
@@ -21,7 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
     description:
       "Perfumes \u00e1rabes originais na Praia da Vit\u00f3ria, Ilha Terceira, com entrega local e envios para A\u00e7ores, Madeira e Portugal Continental.",
     path: "/",
-    imageUrl: settings.heroImageUrl,
+    imageUrl: readHomepageState(settings.homepageConfig).editor?.hero.imageUrl || settings.heroImageUrl,
   });
 }
 
@@ -31,77 +34,18 @@ export default async function Home() {
     getStoreSettings(),
     getCatalogData(),
   ]);
-  const collections = getStoreCollections(products);
-
-  const featuredJsonLd = buildProductListJsonLd(
-    featuredProducts.slice(0, 10),
-    settings.homeFeaturedTitle,
-    "/",
-  );
-
-  return (
-    <div className="store-home store-container">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: safeJsonLd(featuredJsonLd) }}
-      />
-
-      <HeroHome
-        title={settings.heroTitle}
-        description={settings.heroDescription}
-        primaryButtonLabel={settings.heroPrimaryButtonLabel}
-        secondaryButtonLabel={settings.heroSecondaryButtonLabel}
-        imageUrl={settings.heroImageUrl}
-        benefits={[
-          settings.heroBenefitOne,
-          settings.heroBenefitTwo,
-          settings.heroBenefitThree,
-          settings.heroBenefitFour,
-        ]}
-      />
-
-      <CollectionRail collections={collections} />
-
-      <FeaturedProductsSlider
-        products={featuredProducts}
-        eyebrow=""
-        title={settings.homeFeaturedTitle}
-        description={settings.homeFeaturedDescription}
-        buttonLabel={settings.homeFeaturedButtonLabel}
-      />
-
-      <CollectionPromos collections={collections} />
-      <StoreTrustPoints />
-
-      <section className="border-y border-[rgba(170,128,83,0.16)] px-1 py-7 lg:px-2">
-        <div className="grid gap-4 lg:grid-cols-[1.4fr_0.6fr] lg:items-center">
-          <div className="space-y-2">
-            <h2 className="text-[1.35rem] leading-tight text-[color:var(--ink)] sm:text-[1.65rem]">
-              {"Perfumes \u00e1rabes originais na Ilha Terceira"}
-            </h2>
-            <p className="max-w-3xl text-sm leading-6 text-slate-600">
-              {
-                "A Perfumaria 9 Ilhas, na Praia da Vit\u00f3ria, ajuda clientes da Ilha Terceira e de todo o arquip\u00e9lago dos A\u00e7ores a encontrar fragr\u00e2ncias \u00e1rabes originais com apoio pr\u00f3ximo por WhatsApp, entrega local e envios para Madeira e Portugal Continental."
-              }
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-3 lg:justify-end">
-            <Link
-              href="/perfumes-arabes-acores"
-              className="rounded-full border border-[color:var(--line)] bg-[color:var(--sand-soft)] px-4 py-2.5 text-sm font-semibold text-[color:var(--ink)] transition hover:border-[color:var(--gold)]"
-            >
-              Saber mais
-            </Link>
-          </div>
-        </div>
-      </section>
-      <TrustHome
-        reviews={reviews}
-        stats={stats}
-        eyebrow={settings.homeTestimonialsEyebrow}
-        title={settings.homeTestimonialsTitle}
-      />
-    </div>
-  );
+  const config=resolveHomepageConfig(settings,getStoreCollections(products));
+  const daily=products.find(p=>p.id===readHomepageState(settings.homepageConfig).perfumeOfDayId&&"perfumeOfDay" in p&&p.perfumeOfDay);
+  const sections:Record<HomepageSection,React.ReactNode>={
+    hero:<HeroHome config={config.hero}/>,
+    collections:<CollectionRail config={config.collections}/>,
+    featured:<FeaturedProductsSlider products={featuredProducts} eyebrow="" title={config.featured.title} description={config.featured.text} buttonLabel={config.featured.buttonLabel} href={config.featured.href} visibleCount={config.featured.visibleCount}/>,
+    daily:daily?<DailyPerfume product={daily} title={config.daily.title}/>:null,
+    promos:<CollectionPromos config={config.promos}/>,
+    trust:<StoreTrustPoints config={config.trust}/>,
+    seo:config.seo.title||config.seo.text||(config.seo.buttonLabel&&config.seo.href)?<section className="border-y border-[color:var(--line)] px-1 py-7"><div className="grid gap-4 lg:grid-cols-[1.4fr_0.6fr] lg:items-center"><div className="space-y-2">{config.seo.title?<h2 className="text-2xl">{config.seo.title}</h2>:null}{config.seo.text?<p className="max-w-3xl text-sm leading-6 text-slate-600">{config.seo.text}</p>:null}</div>{config.seo.buttonLabel&&config.seo.href?<Link href={config.seo.href} className="store-button justify-self-start lg:justify-self-end">{config.seo.buttonLabel}</Link>:null}</div></section>:null,
+    reviews:<TrustHome reviews={reviews} stats={stats} eyebrow={config.reviews.eyebrow} title={config.reviews.title}/>,
+  };
+  const featuredJsonLd=buildProductListJsonLd(featuredProducts.slice(0,10),config.featured.title,"/");
+  return <div className="store-home store-container"><script type="application/ld+json" dangerouslySetInnerHTML={{__html:safeJsonLd(featuredJsonLd)}}/>{(Object.keys(sections) as HomepageSection[]).filter(key=>config[key].active).sort((a,b)=>config[a].order-config[b].order).map(key=><React.Fragment key={key}>{sections[key]}</React.Fragment>)}</div>;
 }
