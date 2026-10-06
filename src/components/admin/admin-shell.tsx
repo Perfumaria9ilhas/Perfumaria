@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { BarChart3, Boxes, ChevronRight, CircleUserRound, FileText, FolderOpen, Heart, History, House, LogOut, Menu, MessageSquare, PackageSearch, ShoppingCart, Store, Tags, Users, X } from "lucide-react";
+import { BarChart3, Boxes, ChevronRight, CircleUserRound, FileText, FolderOpen, Heart, House, LogOut, Menu, MessageSquare, PackageSearch, Store, Tags, X } from "lucide-react";
 import { logoutAdmin } from "@/actions/admin";
 
 type AdminNavItem = { href: string; label: string; icon: React.ComponentType<{ className?: string }> };
@@ -14,16 +14,9 @@ const navSections: AdminNavSection[] = [
     { href: "/admin", label: "Dashboard", icon: House },
     { href: "/admin/estatisticas", label: "Estatísticas", icon: BarChart3 },
   ] },
-  { label: "Vendas", items: [
-    { href: "/admin/stock?view=new-sale", label: "Nova venda", icon: ShoppingCart },
-    { href: "/admin/stock?view=sales", label: "Estado das vendas", icon: History },
-  ] },
   { label: "Gestão", items: [
     { href: "/admin/stock?view=stock", label: "Stock", icon: Boxes },
     { href: "/admin/produtos", label: "Produtos", icon: PackageSearch },
-    { href: "/admin/clientes", label: "Clientes", icon: Users },
-    { href: "/admin/desejos", label: "Desejos", icon: Heart },
-    { href: "/admin/comentarios", label: "Comentários", icon: MessageSquare },
   ] },
   { label: "Catálogo", items: [
     { href: "/admin/marcas", label: "Marcas", icon: Tags },
@@ -31,6 +24,8 @@ const navSections: AdminNavSection[] = [
     { href: "/admin/tipos-produto", label: "Tipos", icon: Boxes },
   ] },
   { label: "Site", items: [
+    { href: "/admin/desejos", label: "Desejos", icon: Heart },
+    { href: "/admin/comentarios", label: "Comentários", icon: MessageSquare },
     { href: "/", label: "Ver loja", icon: Store },
     { href: "/admin/sobre-nos", label: "Sobre Nós", icon: FileText },
   ] },

@@ -30,6 +30,7 @@ function renderStars(rating: number) {
 
 export function TrustHome({ reviews, eyebrow, title }: TrustHomeProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showAllReviews, setShowAllReviews] = useState(false);
 
   return (
     <>
@@ -108,12 +109,12 @@ export function TrustHome({ reviews, eyebrow, title }: TrustHomeProps) {
           </h2>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div id="store-reviews" className="store-reviews-grid grid gap-4 lg:grid-cols-3">
           {reviews.length ? (
-            reviews.slice(0, 3).map((review) => (
+            (showAllReviews ? reviews : reviews.slice(0, 3)).map((review, index) => (
               <article
                 key={review.id}
-                className="rounded-[1.15rem] border border-[rgba(170,128,83,0.14)] bg-white px-6 py-7 text-center shadow-[0_6px_22px_rgba(50,37,28,0.045)]"
+                className={`store-review-card ${!showAllReviews && index === 2 ? "store-review-desktop-only" : ""} rounded-[1.15rem] border border-[rgba(170,128,83,0.14)] bg-white px-6 py-7 text-center shadow-[0_6px_22px_rgba(50,37,28,0.045)]`}
               >
                 <p className="text-sm text-[color:#b98544]">{renderStars(review.rating)}</p>
                 <p className="mt-4 text-sm leading-7 text-slate-700">{review.comment}</p>
@@ -126,6 +127,8 @@ export function TrustHome({ reviews, eyebrow, title }: TrustHomeProps) {
             </div>
           )}
         </div>
+
+        {reviews.length > 2 ? <div className={`text-center ${reviews.length === 3 ? "lg:hidden" : ""}`}><button type="button" className="store-reviews-toggle" aria-expanded={showAllReviews} aria-controls="store-reviews" onClick={() => setShowAllReviews((value) => !value)}>{showAllReviews ? "Mostrar menos avaliações" : "Ver mais avaliações"}</button></div> : null}
 
         <div className="flex flex-wrap justify-center gap-3">
           <Link

@@ -34,8 +34,7 @@ export function SiteHeader({ settings, socialLinks, currentCustomer }: {
  </div></div></header>
  <PublicDialog open={menuOpen} onClose={() => setMenuOpen(false)} title="Menu da loja" hideTitle className="store-drawer store-menu-drawer">
  <div className="store-menu-heading"><BrandLogo /><button className="store-icon" aria-label="Fechar menu" onClick={() => setMenuOpen(false)}><X size={21} /></button></div>
- <nav aria-label="Menu mobile" className="store-menu-links">{[...navigationLinks, { href: "/conta", label: currentCustomer ? "A minha conta" : "Login / Conta" }].map((link) => <Link key={link.href} href={link.href} aria-current={pathname === link.href ? "page" : undefined} onClick={() => setMenuOpen(false)}>{link.label}</Link>)}</nav>
- <HeaderSearch expanded />
+ <nav aria-label="Menu mobile" className="store-menu-links">{[...navigationLinks, { href: "/conta", label: "A minha conta" }].map((link) => <Link key={link.href} href={link.href} className={link.href === "/catalogo" ? "store-menu-catalog" : undefined} aria-current={pathname === link.href ? "page" : undefined} onClick={() => setMenuOpen(false)}>{link.label}</Link>)}</nav>
  <p className="store-muted">{settings.storeName} · Ilha Terceira, Açores</p>
  <div className="store-social-links" aria-label="Redes sociais">{socialLinks.map(({ href, label }) => href ? label === "WhatsApp" ? <TrackedWhatsAppLink key={label} href={href} ariaLabel={label} contentName="WhatsApp menu" className={`store-icon rounded-full ${socialIconClass(label)}`}><SocialIcon label={label} /></TrackedWhatsAppLink> : <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label} className={`store-icon rounded-full ${socialIconClass(label)}`}><SocialIcon label={label} /></a> : null)}</div>
  </PublicDialog><CartDrawer /></>;

@@ -28,6 +28,11 @@ export default async function AdminPage() {
       <Link href="/admin/stock?view=sales&period=all" className="flex min-h-24 items-center gap-4 rounded-[1.5rem] border border-[color:var(--line)] bg-white px-5 py-4 shadow-sm transition hover:border-[color:var(--gold)]"><span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[color:var(--line)]"><ClipboardList className="h-6 w-6 text-[color:var(--atlantic)]" /></span><span><strong className="block text-lg text-[color:var(--ink)]">Estado das vendas</strong><span className="text-sm text-slate-500">Ver e gerir todas as vendas</span></span></Link>
     </section>
 
+    <section aria-label="Vendas de hoje" className="mt-4 grid grid-cols-2 gap-3">
+      <article className="min-w-0 rounded-[1.4rem] border border-[color:var(--line)] bg-white p-4"><p className="text-xs text-slate-600">Vendas hoje</p><strong className="mt-1 block font-serif text-2xl">{data.today.paidSales}</strong><p className="mt-1 text-xs text-slate-500">Vendas pagas registadas hoje</p></article>
+      <article className="min-w-0 rounded-[1.4rem] border border-[color:var(--line)] bg-white p-4"><p className="text-xs text-slate-600">Faturação hoje</p><strong className="mt-1 block break-words font-serif text-2xl">{formatPrice(data.today.paidValue)}</strong><p className="mt-1 text-xs text-slate-500">Valor das vendas pagas · hora dos Açores</p></article>
+    </section>
+
     <section className="mt-6"><h2 className="font-serif text-2xl text-[color:var(--ink)]">Pendentes e atenção</h2><div className="admin-attention-grid mt-3 grid grid-cols-1 gap-3">
       <AttentionCard label="Por pagar" value={data.attention.pendingPayments} href="/admin/stock?view=sales&period=all&payment=pending" icon={<Euro className="h-5 w-5" />} />
       <AttentionCard label="Por entregar" value={data.attention.pendingDeliveries} href="/admin/stock?view=sales&period=all&delivery=pending" icon={<Box className="h-5 w-5" />} />

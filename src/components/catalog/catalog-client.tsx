@@ -26,6 +26,7 @@ import { PublicDialog } from "@/components/store/public-dialog";
 import { ProductCard } from "@/components/store/product-card";
 import { FavoriteButton } from "@/components/providers/favorites-provider";
 import { getStoreCollections } from "@/lib/store-collections";
+import { TrackedWhatsAppLink } from "@/components/analytics/tracked-whatsapp-link";
 
 type CatalogClientProps = {
   products: CatalogProduct[];
@@ -437,12 +438,12 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
       </PublicDialog>
 
       <section className="store-catalog-toolbar" aria-label="Pesquisa e filtros">
-        <div className="store-search-row"><div className="store-search-field"><Search size={18} /><input aria-label="Pesquisar produtos" value={search} onChange={(event) => { setSearch(event.target.value); setVisibleCount(INITIAL_VISIBLE_PRODUCTS); }} placeholder="Nome, marca, inspiração…" type="search" /></div><button className="store-filter-button" onClick={openFilters} aria-haspopup="dialog" aria-expanded={mobileFiltersOpen}><SlidersHorizontal size={16} />Filtros{activeFilterCount ? ` (${activeFilterCount})` : ""}</button></div>
+        <div className="store-search-row"><div className="store-search-field"><Search size={18} /><input aria-label="Pesquisar produtos" value={search} onChange={(event) => { setSearch(event.target.value); setVisibleCount(INITIAL_VISIBLE_PRODUCTS); }} placeholder="Pesquise perfume, marca ou inspiração…" type="search" /></div><button className="store-filter-button" onClick={openFilters} aria-haspopup="dialog" aria-expanded={mobileFiltersOpen}><SlidersHorizontal size={16} />Filtros{activeFilterCount ? ` (${activeFilterCount})` : ""}</button></div>
+        <div className="store-audience-chips" role="group" aria-label="Filtrar por público">{[{value: "", label: "Todos"}, {value: "FEMININO", label: "Feminino"}, {value: "MASCULINO", label: "Masculino"}, {value: "UNISSEXO", label: "Unissexo"}].map((option) => <button key={option.value} aria-pressed={audience === option.value} onClick={() => { setSelectedAudience(option.value); setVisibleCount(INITIAL_VISIBLE_PRODUCTS); }}>{option.label}</button>)}</div>
         <div className="store-filter-chips" aria-label="Coleções"><button aria-pressed={!collectionKey} onClick={() => changeCollection("")}>Todos</button>{collections.map((collection) => <button key={collection.key} aria-pressed={collectionKey === collection.key} onClick={() => changeCollection(collection.key)}>{collection.label}</button>)}</div>
         <div className="store-desktop-filters">
           <label className="store-field">Marca<select value={selectedBrand} onChange={(event) => { setSelectedBrand(event.target.value); setVisibleCount(INITIAL_VISIBLE_PRODUCTS); }}><option value="">Todas as marcas</option>{availableBrands.map((brand) => <option key={brand.id} value={brand.id}>{brand.name}</option>)}</select></label>
           <label className="store-field">Categoria<select value={collectionKey} onChange={(event) => changeCollection(event.target.value)}><option value="">Todas as categorias</option>{collections.map((collection) => <option key={collection.key} value={collection.key}>{collection.label}</option>)}</select></label>
-          <label className="store-field">Público<select value={audience} onChange={(event) => { setSelectedAudience(event.target.value); setVisibleCount(INITIAL_VISIBLE_PRODUCTS); }}><option value="">Todos os públicos</option><option value="MASCULINO">Masculino</option><option value="FEMININO">Feminino</option><option value="UNISSEXO">Unissexo</option></select></label>
           <label className="store-field">Ordenar por<select value={sortBy} onChange={(event) => { setSortBy(event.target.value as SortOption); setVisibleCount(INITIAL_VISIBLE_PRODUCTS); }}>{sortOptions.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}</select></label>
         </div>
       </section>
@@ -469,6 +470,7 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
         })}
       </section>
       {visibleCount < filteredProducts.length ? <div className="mt-7 flex justify-center"><button className="store-button store-button-secondary" onClick={() => setVisibleCount((current) => current + INITIAL_VISIBLE_PRODUCTS)}>Ver mais</button></div> : null}
+      <aside className="store-recommendation" aria-label="Ajuda a escolher perfume"><div><strong>Não sabe qual escolher?</strong><p>Diga-nos que tipo de perfume procura e ajudamos a encontrar o ideal.</p></div><TrackedWhatsAppLink href={`https://wa.me/${whatsappNumber.replace(/\D/g, "")}?text=${encodeURIComponent("Olá! Gostava de ajuda para escolher um perfume.")}`} className="store-button store-button-secondary" contentName="Recomendação de perfume"><MessageCircle size={16} />Pedir recomendação</TrackedWhatsAppLink></aside>
     </div>
   );
 }

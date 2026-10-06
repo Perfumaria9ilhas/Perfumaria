@@ -120,16 +120,12 @@ export async function getHomeData() {
 export async function getAdminDashboardData() {
   noStore();
   const { start, end } = getAzoresDayBounds();
-  const [brands, categories, products, activeProducts, customers, metrics, todaySales, pendingSales, pendingDeliveries, recentMovements, wishesCount] = await Promise.all([
-    prisma.brand.count(), prisma.category.count(), prisma.product.count(),
+  const [activeProducts, todaySales, pendingSales, pendingDeliveries, recentMovements] = await Promise.all([
     prisma.product.findMany({ where: { active: true }, select: { id: true, name: true, stock: true, lowStockAlert: true, brand: { select: { name: true } } } }),
-    prisma.customerAccount.count(),
-    prisma.storeMetric.findUnique({ where: { id: "main" }, select: { totalSatisfiedCustomers: true } }),
     prisma.stockMovement.findMany({ where: { type: StockMovementType.SALE, createdAt: { gte: start, lt: end } }, select: { id: true, saleGroupId: true, saleStatus: true, quantity: true, saleUnitPriceInCents: true } }),
     prisma.stockMovement.findMany({ where: { type: StockMovementType.SALE, saleStatus: StockSaleStatus.PENDING }, select: { id: true, saleGroupId: true, quantity: true, saleUnitPriceInCents: true } }),
     prisma.stockMovement.findMany({ where: { type: StockMovementType.SALE, deliveryStatus: StockDeliveryStatus.PENDING }, select: { id: true, saleGroupId: true } }),
     prisma.stockMovement.findMany({ where: { type: StockMovementType.SALE }, orderBy: { createdAt: "desc" }, take: 250, select: { id: true, saleGroupId: true, customerName: true, saleStatus: true, deliveryStatus: true, quantity: true, saleUnitPriceInCents: true, createdAt: true, product: { select: { name: true } } } }),
-    prisma.outOfStockWish.count(),
   ]);
 
   const groupKey = (movement: { id: string; saleGroupId: string | null }) => movement.saleGroupId ?? movement.id;
@@ -171,7 +167,6 @@ export async function getAdminDashboardData() {
       .sort((left, right) => left.stock - right.stock || left.name.localeCompare(right.name, "pt-PT"))
       .slice(0, 5)
       .map((product) => ({ id: product.id, name: product.name, brand: product.brand.name, stock: product.stock })),
-    summary: { brands, categories, products, customers, wishes: wishesCount, satisfiedCustomers: metrics?.totalSatisfiedCustomers ?? 0 },
   };
 }
 
@@ -186,13 +181,6 @@ export async function getAdminWishesData() {
       },
     },
     orderBy: [{ attempts: "desc" }, { updatedAt: "desc" }],
-  });
-}
-
-export async function getAdminCustomersData() {
-  noStore();
-  return prisma.customerAccount.findMany({
-    orderBy: { createdAt: "desc" },
   });
 }
 

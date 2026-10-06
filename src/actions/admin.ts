@@ -865,7 +865,6 @@ export async function createCustomerAccount(formData: FormData) {
   });
 
   revalidatePath("/admin");
-  revalidatePath("/admin/clientes");
   redirect("/conta?registered=1");
 }
 

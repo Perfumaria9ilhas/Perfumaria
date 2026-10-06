@@ -14,9 +14,9 @@ export function SiteFooter({
 }) {
   return (
     <footer className="store-footer mt-16 border-t border-black/10 bg-[color:#f1e9dc] text-[color:#44382d]">
-      <div className="mx-auto max-w-[1420px] px-5 py-14 lg:px-6 lg:py-16">
-        <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr_0.9fr_1fr]">
-          <div className="space-y-5">
+      <div className="store-footer-inner mx-auto max-w-[1420px] px-5 py-14 lg:px-6 lg:py-16">
+        <div className="store-footer-grid grid gap-8 lg:grid-cols-[1.2fr_0.8fr_0.9fr_1fr]">
+          <div className="store-footer-brand space-y-5">
             <Image
               src="/logo-9-ilhas.svg"
               alt="9 Ilhas Perfumaria"
@@ -24,14 +24,14 @@ export function SiteFooter({
               height={90}
               className="h-auto w-44 brightness-[1.08]"
             />
-            <p className="max-w-md text-sm leading-7 text-[color:#655748]">
+            <p className="store-footer-tagline max-w-md text-sm leading-7 text-[color:#655748]">
               {"Perfumaria 9 Ilhas - Fragr\u00e2ncias que marcam presen\u00e7a."}
             </p>
             <p className="max-w-md text-sm leading-7 text-[color:#655748]">
               {settings.footerDescription}
             </p>
-            <div className="space-y-1 text-sm leading-7 text-[color:#655748]">
-              <p>{"Praia da Vit\u00f3ria, Ilha Terceira - A\u00e7ores, Portugal"}</p>
+            <div className="store-footer-delivery space-y-1 text-sm leading-7 text-[color:#655748]">
+              <p className="store-footer-repeated-location">{"Praia da Vit\u00f3ria, Ilha Terceira - A\u00e7ores, Portugal"}</p>
               <p>{"Entregas em m\u00e3o na Ilha Terceira."}</p>
               <p>{"Envios via CTT para A\u00e7ores, Madeira e Portugal Continental."}</p>
             </div>
@@ -41,7 +41,7 @@ export function SiteFooter({
             <h4 className="text-sm font-semibold uppercase tracking-[0.28em] text-[color:#44382d]">
               {"Navega\u00e7\u00e3o"}
             </h4>
-            <div className="space-y-2 text-sm text-[color:#655748]">
+            <div className="store-footer-navigation space-y-2 text-sm text-[color:#655748]">
               <Link className="block hover:text-[color:#44382d]" href="/">
                 {"In\u00edcio"}
               </Link>
@@ -119,7 +119,7 @@ export function SiteFooter({
           </div>
         </div>
 
-        <div className="mt-10 border-t border-[color:var(--line)] pt-5 text-xs text-[color:#655748]">
+        <div className="store-footer-copyright mt-10 border-t border-[color:var(--line)] pt-5 text-xs text-[color:#655748]">
           {"\u00a9 2026 Perfumaria 9 Ilhas. Todos os direitos reservados."}
         </div>
       </div>
