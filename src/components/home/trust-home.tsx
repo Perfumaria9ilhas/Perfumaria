@@ -1,5 +1,6 @@
 "use client";
 
+import { PublicDialog } from "@/components/store/public-dialog";
 import { useState } from "react";
 import Link from "next/link";
 import { submitStoreReview } from "@/actions/admin";
@@ -32,14 +33,9 @@ export function TrustHome({ reviews, eyebrow, title }: TrustHomeProps) {
 
   return (
     <>
-      {isModalOpen ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(43,30,18,0.55)] px-4 py-6"
-          onClick={() => setIsModalOpen(false)}
-        >
+      <PublicDialog open={isModalOpen} onClose={() => setIsModalOpen(false)} title="Deixe o seu comentário" hideTitle className="store-review-dialog">
           <div
             className="w-full max-w-xl rounded-[2rem] border border-[color:var(--line)] bg-white p-6 shadow-[0_25px_80px_rgba(43,30,18,0.28)]"
-            onClick={(event) => event.stopPropagation()}
           >
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
@@ -63,6 +59,7 @@ export function TrustHome({ reviews, eyebrow, title }: TrustHomeProps) {
               <input
                 type="text"
                 name="name"
+                aria-label="O seu nome"
                 placeholder="O seu nome"
                 className="w-full rounded-[1rem] border border-[color:var(--line)] bg-white px-4 py-3 text-sm outline-none transition focus:border-[color:var(--gold)]"
                 required
@@ -70,6 +67,7 @@ export function TrustHome({ reviews, eyebrow, title }: TrustHomeProps) {
 
               <select
                 name="rating"
+                aria-label="Avaliação"
                 defaultValue="5"
                 className="w-full rounded-[1rem] border border-[color:var(--line)] bg-white px-4 py-3 text-sm outline-none transition focus:border-[color:var(--gold)]"
               >
@@ -83,6 +81,7 @@ export function TrustHome({ reviews, eyebrow, title }: TrustHomeProps) {
 
               <textarea
                 name="comment"
+                aria-label="Comentário"
                 placeholder={"Partilhe a sua opini\u00e3o sobre a loja"}
                 rows={5}
                 className="w-full rounded-[1rem] border border-[color:var(--line)] bg-white px-4 py-3 text-sm outline-none transition focus:border-[color:var(--gold)]"
@@ -97,8 +96,7 @@ export function TrustHome({ reviews, eyebrow, title }: TrustHomeProps) {
               </button>
             </form>
           </div>
-        </div>
-      ) : null}
+      </PublicDialog>
 
       <section className="space-y-6">
         <div className="space-y-3 text-center">

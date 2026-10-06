@@ -7,6 +7,8 @@ import { useEffect, useRef, useState } from "react";
 import { formatPrice } from "@/lib/format";
 import { trackInternalSearch } from "@/lib/internal-analytics";
 
+import { PublicDialog } from "@/components/store/public-dialog";
+
 type SearchResult = {
   id: string;
   name: string;
@@ -16,7 +18,7 @@ type SearchResult = {
   priceInCents: number;
 };
 
-export function HeaderSearch() {
+export function HeaderSearch({ expanded = false }: { expanded?: boolean }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -39,6 +41,7 @@ export function HeaderSearch() {
 
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
+      try {
       const response = await fetch(`/api/catalog-search?q=${encodeURIComponent(normalized)}`, {
         signal: controller.signal,
       });
@@ -49,6 +52,7 @@ export function HeaderSearch() {
         trackedQuery.current = normalized.toLocaleLowerCase("pt-PT");
         trackInternalSearch(normalized, data.products.length);
       }
+      } catch (error) { if (!(error instanceof DOMException && error.name === "AbortError")) setResults([]); }
     }, 160);
 
     return () => {
@@ -62,28 +66,20 @@ export function HeaderSearch() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[color:var(--ink)] transition hover:bg-[color:var(--sand-soft)]"
+        className={expanded ? "store-search-trigger" : "store-icon"}
         aria-label="Pesquisar perfumes"
       >
-        <Search className="h-[1.15rem] w-[1.15rem]" />
+        <Search size={18} />{expanded ? <span>Pesquisar perfume, marca…</span> : null}
       </button>
 
-      {open ? (
-        <div
-          className="fixed inset-0 z-[70] bg-black/30 px-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-[calc(env(safe-area-inset-top)+0.5rem)] backdrop-blur-[2px] sm:p-5"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setOpen(false);
-          }}
-        >
+      <PublicDialog open={open} onClose={() => setOpen(false)} title="Pesquisar produtos" hideTitle className="store-search-dialog">
           <div
-            role="dialog"
-            aria-modal="true"
-            aria-label="Pesquisar produtos"
-            className="mx-auto mt-1 w-full max-w-2xl overflow-hidden rounded-[1.1rem] bg-white shadow-[0_28px_90px_rgba(20,16,13,0.24)] sm:mt-16"
+            className="mx-auto w-full max-w-2xl overflow-hidden rounded-[1.1rem] bg-white shadow-[0_28px_90px_rgba(20,16,13,0.24)]"
           >
             <div className="flex items-center gap-3 border-b border-[color:var(--line)] px-4">
               <Search className="h-5 w-5 shrink-0 text-[color:var(--gold)]" />
               <input
+                aria-label="Pesquisar perfumes"
                 ref={inputRef}
                 value={query}
                 onChange={(event) => {
@@ -136,8 +132,7 @@ export function HeaderSearch() {
               <p className="px-5 py-6 text-sm text-slate-500">Pesquise por nome, marca, inspiração, descrição ou público.</p>
             )}
           </div>
-        </div>
-      ) : null}
+      </PublicDialog>
     </>
   );
 }

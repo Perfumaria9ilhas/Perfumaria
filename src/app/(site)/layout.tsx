@@ -1,3 +1,5 @@
+import "./storefront.css";
+import { FavoritesProvider } from "@/components/providers/favorites-provider";
 import { CookieConsentProvider } from "@/components/consent/cookie-consent-provider";
 import { FloatingWhatsApp } from "@/components/layout/floating-whatsapp";
 import { SiteFooter } from "@/components/layout/site-footer";
@@ -18,7 +20,7 @@ export default async function SiteLayout({
 
   return (
     <CookieConsentProvider metaPixelId={process.env.META_PIXEL_ID}>
-      <div className="public-site min-h-screen min-w-0 max-w-full overflow-x-clip">
+      <FavoritesProvider><div className="public-site min-h-screen min-w-0 max-w-full overflow-x-clip">
         <SiteHeader
           settings={settings}
           socialLinks={socialLinks}
@@ -27,7 +29,7 @@ export default async function SiteLayout({
         <main className="min-w-0 max-w-full">{children}</main>
         <SiteFooter settings={settings} socialLinks={socialLinks} />
         <FloatingWhatsApp />
-      </div>
+      </div></FavoritesProvider>
     </CookieConsentProvider>
   );
 }

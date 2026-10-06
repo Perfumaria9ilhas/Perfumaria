@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { FeaturedProductsSlider } from "@/components/home/featured-products-slider";
-import { ExploreHome } from "@/components/home/explore-home";
+import { CollectionRail, CollectionPromos, StoreTrustPoints } from "@/components/home/store-collections";
+import { getStoreCollections } from "@/lib/store-collections";
 import { HeroHome } from "@/components/home/hero-home";
-import { SampleHome } from "@/components/home/sample-home";
 import { TrustHome } from "@/components/home/trust-home";
-import { WhyChooseHome } from "@/components/home/why-choose-home";
-import { getHomeData } from "@/lib/data";
+import { getCatalogData, getHomeData } from "@/lib/data";
 import {
   buildPageMetadata,
   buildProductListJsonLd,
@@ -27,10 +26,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Home() {
-  const [{ featuredProducts, reviews, stats }, settings] = await Promise.all([
+  const [{ featuredProducts, reviews, stats }, settings, { products }] = await Promise.all([
     getHomeData(),
     getStoreSettings(),
+    getCatalogData(),
   ]);
+  const collections = getStoreCollections(products);
 
   const featuredJsonLd = buildProductListJsonLd(
     featuredProducts.slice(0, 10),
@@ -39,7 +40,7 @@ export default async function Home() {
   );
 
   return (
-    <div className="mx-auto flex max-w-[1420px] flex-col gap-8 px-4 py-4 sm:gap-16 sm:py-5 lg:px-6 lg:py-8">
+    <div className="store-home store-container">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(featuredJsonLd) }}
@@ -59,6 +60,8 @@ export default async function Home() {
         ]}
       />
 
+      <CollectionRail collections={collections} />
+
       <FeaturedProductsSlider
         products={featuredProducts}
         eyebrow=""
@@ -67,7 +70,8 @@ export default async function Home() {
         buttonLabel={settings.homeFeaturedButtonLabel}
       />
 
-      <ExploreHome products={featuredProducts} />
+      <CollectionPromos collections={collections} />
+      <StoreTrustPoints />
 
       <section className="border-y border-[rgba(170,128,83,0.16)] px-1 py-7 lg:px-2">
         <div className="grid gap-4 lg:grid-cols-[1.4fr_0.6fr] lg:items-center">
@@ -92,39 +96,6 @@ export default async function Home() {
           </div>
         </div>
       </section>
-      <SampleHome
-        imageUrl={settings.decantsImageUrl}
-        eyebrow={settings.homeDecantsEyebrow}
-        title={settings.homeDecantsTitle}
-        description={settings.homeDecantsDescription}
-        buttonLabel={settings.homeDecantsButtonLabel}
-      />
-      <WhyChooseHome
-        eyebrow={settings.homeWhyChooseEyebrow}
-        title={settings.homeWhyChooseTitle}
-        items={[
-          {
-            title: settings.whyChooseItemOneTitle,
-            text: settings.whyChooseItemOneText,
-          },
-          {
-            title: settings.whyChooseItemTwoTitle,
-            text: settings.whyChooseItemTwoText,
-          },
-          {
-            title: settings.whyChooseItemThreeTitle,
-            text: settings.whyChooseItemThreeText,
-          },
-          {
-            title: settings.whyChooseItemFourTitle,
-            text: settings.whyChooseItemFourText,
-          },
-          {
-            title: settings.whyChooseItemFiveTitle,
-            text: settings.whyChooseItemFiveText,
-          },
-        ]}
-      />
       <TrustHome
         reviews={reviews}
         stats={stats}

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CatalogClient } from "@/components/catalog/catalog-client";
@@ -75,7 +76,7 @@ export default async function CatalogoPage({ searchParams }: CatalogPageProps) {
   );
 
   return (
-    <div className="mx-auto max-w-[1420px] px-4 py-3 sm:py-5 lg:px-6 lg:py-8">
+    <div className="store-container">
       {!selectedProduct ? (
         <script
           type="application/ld+json"
@@ -95,16 +96,10 @@ export default async function CatalogoPage({ searchParams }: CatalogPageProps) {
         </>
       ) : null}
 
-      <div className="mb-3 max-w-3xl space-y-1.5 sm:mb-10 sm:space-y-3">
-        <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-[color:var(--gold)] sm:text-[10px] sm:tracking-[0.3em]">Perfumaria 9 Ilhas</p>
-        <h1 className="font-serif text-[1.6rem] leading-[1.02] text-[color:var(--ink)] min-[390px]:text-[1.72rem] sm:text-[3rem] lg:text-[3.5rem]">
-          {"Cat\u00e1logo de Perfumes \u00c1rabes"}
-        </h1>
-        <p className="hidden max-w-2xl text-[13px] leading-5 text-slate-600 sm:block sm:text-base sm:leading-7">
-          {
-            "Descubra perfumes \u00e1rabes originais com apoio pr\u00f3ximo a partir da Praia da Vit\u00f3ria, na Ilha Terceira. A Perfumaria 9 Ilhas entrega localmente e envia para A\u00e7ores, Madeira e Portugal Continental."
-          }
-        </p>
+      <div className="store-catalog-heading">
+        <nav className="store-breadcrumb" aria-label="Localização"><Link href="/">Início</Link> › Catálogo</nav>
+        <h1>Catálogo</h1>
+        <p>Descubra toda a nossa seleção.</p>
       </div>
       <CatalogClient products={products} whatsappNumber={settings.whatsappNumber} />
     </div>

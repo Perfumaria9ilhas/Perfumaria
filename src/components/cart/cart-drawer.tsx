@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { CreditCard, Lock, MapPinned, Minus, Plus, Truck, Trash2, X } from "lucide-react";
 import { useCart } from "@/components/providers/cart-provider";
 import { formatPrice } from "@/lib/format";
 import { buildMetaContentId, trackMetaEvent } from "@/lib/meta-pixel";
 import { trackInternalEvent } from "@/lib/internal-analytics";
+
+import { PublicDialog } from "@/components/store/public-dialog";
 
 const trustPoints = [
   { icon: MapPinned, label: "Entrega Local Ilha Terceira" },
@@ -19,28 +21,12 @@ export function CartDrawer() {
   const { items, total, isOpen, closeCart, updateQuantity, removeItem, clearCart } = useCart();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (!isOpen) {
-      document.body.style.overflow = "";
-      document.documentElement.style.overflow = "";
-      return;
-    }
-
-    const previousBodyOverflow = document.body.style.overflow;
-    const previousHtmlOverflow = document.documentElement.style.overflow;
-
-    document.body.style.overflow = "hidden";
-    document.documentElement.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = previousBodyOverflow;
-      document.documentElement.style.overflow = previousHtmlOverflow;
-    };
-  }, [isOpen]);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleCheckout() {
     if (!items.length || isSubmitting) return;
 
+    setError(null);
     setIsSubmitting(true);
 
     try {
@@ -67,9 +53,10 @@ export function CartDrawer() {
       const data = (await response.json()) as {
         whatsappUrl?: string;
         reference?: string;
+        error?: string;
       };
 
-      if (!response.ok || !data.whatsappUrl) return;
+      if (!response.ok || !data.whatsappUrl) { setError(data.error ?? "Não foi possível validar o carrinho. Tente novamente."); return; }
 
       trackInternalEvent({
         event: "checkout_whatsapp",
@@ -84,27 +71,15 @@ export function CartDrawer() {
       clearCart();
       closeCart();
       window.open(data.whatsappUrl, "_blank", "noopener,noreferrer");
+    } catch {
+      setError("Não foi possível ligar à loja. Tente novamente.");
     } finally {
       setIsSubmitting(false);
     }
   }
 
   return (
-    <>
-      {isOpen ? (
-        <button
-          type="button"
-          aria-label="Fechar carrinho"
-          className="fixed inset-0 z-40 bg-slate-950/50"
-          onClick={closeCart}
-        />
-      ) : null}
-
-      <aside
-        className={`cart-drawer fixed right-0 top-0 z-50 flex h-[100dvh] w-full max-w-full min-w-0 flex-col overflow-hidden border-l border-[color:var(--line)] bg-[color:#faf8f4] shadow-2xl backdrop-blur transition-transform duration-300 sm:max-w-[30rem] ${
-          isOpen ? "translate-x-0" : "translate-x-full"
-        }`}
-      >
+    <PublicDialog open={isOpen} onClose={closeCart} title="Carrinho" hideTitle className="store-cart-dialog">
         <div className="border-b border-[color:var(--line)] bg-white px-4 pb-4 pt-[calc(env(safe-area-inset-top)+1rem)] sm:px-6 sm:py-5">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 flex-1 space-y-3">
@@ -157,8 +132,8 @@ export function CartDrawer() {
                         src={item.imageUrl}
                         alt={item.name}
                         fill
-                        unoptimized
-                        className="object-cover"
+                        sizes="78px"
+                        className="object-contain"
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center bg-white/65 p-3">
@@ -265,16 +240,16 @@ export function CartDrawer() {
             </div>
           </div>
 
+          {error ? <p role="alert" className="mb-3 text-sm text-red-700">{error}</p> : null}
           <button
             type="button"
             onClick={handleCheckout}
             disabled={!items.length || isSubmitting}
             className="h-[54px] w-full rounded-full bg-[color:var(--atlantic)] px-5 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(30,82,116,0.25)] transition hover:bg-[color:var(--atlantic-deep)] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isSubmitting ? "A guardar pedido..." : "Finalizar encomenda no WhatsApp"}
+            {isSubmitting ? "A validar carrinho..." : "Finalizar encomenda no WhatsApp"}
           </button>
         </div>
-      </aside>
-    </>
+    </PublicDialog>
   );
 }
