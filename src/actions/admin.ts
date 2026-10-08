@@ -2,6 +2,8 @@
 
 import { saveUploadedImage } from "@/lib/image-storage";
 import { Prisma, ProductAudience, ProductConcentration, StockMovementType } from "@prisma/client";
+import { after } from "next/server";
+import { notifyAdminSafely } from "@/lib/admin-push";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -479,6 +481,7 @@ export async function saveProduct(formData: FormData) {
 
   revalidatePath("/admin");
   revalidatePath("/admin/produtos");
+  after(notifyAdminSafely);
   revalidatePath("/catalogo");
   revalidatePath("/");
   redirect("/admin/produtos?saved=1");
@@ -523,6 +526,7 @@ export async function deleteProduct(formData: FormData) {
   await prisma.product.delete({ where: { id } });
   revalidatePath("/admin");
   revalidatePath("/admin/produtos");
+  after(notifyAdminSafely);
   revalidatePath("/catalogo");
   revalidatePath("/");
 }
@@ -552,6 +556,7 @@ export async function saveStockSettings(formData: FormData) {
 
   revalidatePath("/admin");
   revalidatePath("/admin/stock");
+  after(notifyAdminSafely);
   redirect("/admin/stock?saved=1");
 }
 
@@ -612,6 +617,7 @@ export async function saveStockMovement(formData: FormData) {
 
   revalidatePath("/admin");
   revalidatePath("/admin/stock");
+  after(notifyAdminSafely);
   redirect("/admin/stock?moved=1");
 }
 

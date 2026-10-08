@@ -1,9 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { BarChart3, Boxes, ChevronRight, CircleUserRound, FileText, FolderOpen, Heart, House, LogOut, Menu, MessageSquare, PackageSearch, Store, Tags, X } from "lucide-react";
+import { BarChart3, Boxes, ChevronRight, CircleUserRound, FileText, FolderOpen, Heart, House, LogOut, MessageSquare, PackageSearch, Store, Tags } from "lucide-react";
+import { AdminNotifications } from "./admin-notifications";
+import { ClipboardList, Ellipsis } from "lucide-react";
 import { logoutAdmin } from "@/actions/admin";
 
 type AdminNavItem = { href: string; label: string; icon: React.ComponentType<{ className?: string }> };
@@ -34,7 +37,6 @@ const navSections: AdminNavSection[] = [
 
 export function AdminShell({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
   const pathname = usePathname();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [currentUrl, setCurrentUrl] = useState(pathname);
 
   useEffect(() => {
@@ -45,15 +47,6 @@ export function AdminShell({ title, description, children }: { title: string; de
     return () => { window.clearTimeout(initialSync); window.removeEventListener("popstate", syncCurrentUrl); window.removeEventListener("admin-view-change", syncCurrentUrl); };
   }, [pathname]);
 
-  useEffect(() => {
-    if (!menuOpen) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") setMenuOpen(false); };
-    window.addEventListener("keydown", closeOnEscape);
-    return () => { document.body.style.overflow = previousOverflow; window.removeEventListener("keydown", closeOnEscape); };
-  }, [menuOpen]);
-
   const isActive = (href: string) => {
     if (href === "/admin") return currentUrl === "/admin";
     if (href.startsWith("/admin/stock?")) {
@@ -63,7 +56,7 @@ export function AdminShell({ title, description, children }: { title: string; de
     }
     return pathname === href || pathname.startsWith(`${href}/`);
   };
-  const closeAndTrack = (href: string) => { setCurrentUrl(href); setMenuOpen(false); };
+  const closeAndTrack = (href: string) => { setCurrentUrl(href); };
 
   const navigation = (mobile: boolean) => <>
     <nav className="flex-1 space-y-5 px-4 py-5" aria-label={mobile ? "Navegação móvel do admin" : "Navegação do admin"}>
@@ -80,26 +73,23 @@ export function AdminShell({ title, description, children }: { title: string; de
     <form action={logoutAdmin} className="sticky bottom-0 border-t border-[color:var(--line)] bg-[#fffdf9] p-4"><button className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50"><LogOut className="h-5 w-5" />Terminar sessão</button></form>
   </>;
 
-  return <div className="min-h-screen overflow-x-hidden bg-[color:var(--sand-soft)]">
-    <header className="border-b border-[color:var(--line)] bg-[linear-gradient(180deg,_#ffffff,_#fbf7ef)] lg:hidden">
-      <div className="flex items-center gap-3 px-4 py-3">
-        <button type="button" onClick={() => setMenuOpen(true)} aria-label="Abrir menu admin" aria-expanded={menuOpen} className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[color:var(--line)] bg-white text-[color:var(--ink)] shadow-sm"><Menu className="h-5 w-5" /></button>
-        <p className="min-w-0 flex-1 truncate text-[10px] uppercase tracking-[0.2em] text-[color:var(--atlantic)] sm:text-[11px] sm:tracking-[0.26em]">Admin · 9 Ilhas Perfumaria</p>
-        <Link href="/" aria-label="Ver loja" title="Ver loja" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[color:var(--gold)] hover:bg-white"><Store className="h-6 w-6" /></Link>
-        <button type="button" onClick={() => setMenuOpen(true)} aria-label="Abrir menu do utilizador" title="Administrador" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[color:var(--gold)] hover:bg-white"><CircleUserRound className="h-7 w-7" /></button>
-      </div>
+  return <div className="admin-app min-h-screen overflow-x-hidden bg-[color:var(--sand-soft)]">
+    <header className="admin-mobile-header lg:hidden">
+      <Link href="/admin" aria-label="9 Ilhas Admin"><Image src="/admin-pwa/icon-192.png" alt="" width={28} height={28} unoptimized /><span>9 ILHAS ADMIN</span></Link>
+      <AdminNotifications />
     </header>
-
-    {menuOpen ? <div className="fixed inset-0 z-[80] lg:hidden">
-      <button type="button" aria-label="Fechar menu admin" onClick={() => setMenuOpen(false)} className="absolute inset-0 bg-black/35" />
-      <aside role="dialog" aria-modal="true" aria-label="Menu admin" className="absolute inset-y-0 left-0 flex w-[min(86vw,21rem)] flex-col overflow-y-auto border-r border-[color:var(--line)] bg-[#fffdf9] shadow-2xl">
-        <div className="sticky top-0 z-10 border-b border-[color:var(--line)] bg-[#fffdf9]/95 px-5 pb-4 pt-5 backdrop-blur">
-          <div className="flex items-start justify-between gap-3"><AdminIdentity /><button type="button" onClick={() => setMenuOpen(false)} aria-label="Fechar menu admin" className="inline-flex h-10 w-10 items-center justify-center rounded-full hover:bg-[color:var(--sand-soft)]"><X className="h-5 w-5" /></button></div>
-          <div className="mt-4"><AdminUser /></div>
-        </div>
-        {navigation(true)}
-      </aside>
-    </div> : null}
+    <nav className="admin-bottom-nav lg:hidden" aria-label="Navegação principal mobile">
+      {[
+        { href: "/admin", label: "Início", icon: House },
+        { href: "/admin/stock?view=sales&period=all", label: "Vendas", icon: ClipboardList },
+        { href: "/admin/stock?view=stock", label: "Stock", icon: Boxes },
+        { href: "/admin/produtos", label: "Produtos", icon: Tags },
+        { href: "/admin/mais", label: "Mais", icon: Ellipsis },
+      ].map(({href,label,icon:Icon}) => {
+        const active = label === "Mais" ? !["/admin", "/admin/stock", "/admin/produtos"].includes(pathname) : isActive(href) || label === "Vendas" && currentUrl.includes("view=new-sale");
+        return <Link key={label} href={href} onClick={() => closeAndTrack(href)} aria-current={active ? "page" : undefined}><Icon size={22} /><span>{label}</span></Link>;
+      })}
+    </nav>
 
     <div className="admin-layout mx-auto min-h-screen max-w-[1600px]">
       <aside className="hidden min-h-screen flex-col border-r border-[color:var(--line)] bg-[#fffdf9] lg:flex">

@@ -18,16 +18,16 @@ const options: { value: InventoryFilter; label: string }[] = [
 const control = "h-10 w-full min-w-0 rounded-xl border border-[color:var(--line)] bg-white px-3 text-sm";
 const button = "inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[color:var(--line)] px-3 text-sm";
 
-export function InventoryWorkspace({ rows, onUpdate, onHistory, onEntry, onNotes, tools, initialStatus }: {
+export function InventoryWorkspace({ rows, onUpdate, onHistory, onEntry, onNotes, tools, initialStatus, initialHistory = false }: {
   rows: AdminStockRow[]; onUpdate: (row: AdminStockRow) => void; onHistory: (row: AdminStockRow) => void;
-  onEntry: (row: AdminStockRow) => void; onNotes: (row: AdminStockRow) => void; tools: ReactNode; initialStatus: "all" | "LOW";
+  onEntry: (row: AdminStockRow) => void; onNotes: (row: AdminStockRow) => void; tools: ReactNode; initialStatus: "all" | "LOW"; initialHistory?: boolean;
 }) {
   const [filters, setFilters] = useState<Filters>({ ...empty, inventory: initialStatus });
   const [draftFilters, setDraftFilters] = useState<Filters | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [quick, setQuick] = useState<AdminStockRow | null>(null);
-  const [historyPicker, setHistoryPicker] = useState(false);
+  const [historyPicker, setHistoryPicker] = useState(initialHistory);
   const [actions, setActions] = useState<AdminStockRow | null>(null);
   const [stock, setStock] = useState(0);
   const [purchaseCost, setPurchaseCost] = useState(0);
@@ -58,6 +58,7 @@ export function InventoryWorkspace({ rows, onUpdate, onHistory, onEntry, onNotes
     try {
       const response = await fetch(`/api/admin/stock/product/${quick.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ stock, lowStockAlert: alert, active, unitCost: String(purchaseCost) }) });
       const payload = await response.json(); if (!response.ok) throw new Error(payload.error ?? "Não foi possível guardar.");
+      window.dispatchEvent(new Event("admin-alerts-change"));
       const unitCostInCents = Math.round(purchaseCost * 100);
       onUpdate({ ...quick, stock, unitCostInCents, investedValueInCents: stock * unitCostInCents, potentialSalesValueInCents: stock * quick.salePriceInCents, potentialProfitInCents: unitCostInCents > 0 ? stock * (quick.salePriceInCents - unitCostInCents) : null, lowStockAlert: alert, active, status: getStockStatus(stock, alert) });
       setQuick(null); setMessage(payload.unchanged ? "Sem alterações. Os dados foram preservados." : "Stock atualizado.");

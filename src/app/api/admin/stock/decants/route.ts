@@ -1,3 +1,5 @@
+import { after } from "next/server";
+import { notifyAdminSafely } from "@/lib/admin-push";
 import { StockMovementReason, StockMovementType } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
@@ -60,5 +62,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Não foi possível registar a venda." }, { status: 400 });
   }
   revalidatePath("/admin/stock");
+  after(notifyAdminSafely);
   return NextResponse.json({ success: true });
 }

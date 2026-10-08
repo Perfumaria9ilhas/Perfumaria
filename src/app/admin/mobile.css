@@ -1,0 +1,67 @@
+/* All visual overrides are mobile-only. Desktop uses its existing layout. */
+.admin-more-list { max-width: 48rem; display: grid; gap: 10px; }
+.admin-more-list > a { display: flex; align-items: center; gap: 14px; border: 1px solid var(--line); border-radius: 16px; padding: 16px; background: white; min-height: 70px; }
+.admin-more-list > a > span { flex: 1; }
+.admin-more-list strong, .admin-more-list small { display: block; }
+.admin-more-list small { color: #64748b; font-size: 12px; margin-top: 3px; }
+.admin-more-logout { width: 100%; display: flex; justify-content: center; align-items: center; gap: 12px; min-height: 50px; background: #fff1f2; color: #b91c1c; border-radius: 14px; }
+@media (max-width: 1023px) {
+  .admin-app { --sand-soft: #f5f6f8; --gold: #b18b55; --line: #e7e8eb; --atlantic: #967341; background: #f5f6f8; }
+  .admin-mobile-header { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; background: #151515; color: white; padding: calc(10px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right)) 10px max(16px, env(safe-area-inset-left)); }
+  .admin-mobile-header > a { display: flex; align-items: center; gap: 10px; min-height: 40px; }
+  .admin-mobile-header > a > svg { color: #d5b376; }
+  .admin-mobile-header span { font: 600 12px var(--font-body),sans-serif; letter-spacing: 1.5px; }
+  .admin-bell { position: relative; width: 44px; height: 44px; display: grid; place-items: center; color: white; }
+  .admin-bell > span { position: absolute; top: 0; right: -2px; min-width: 18px; height: 18px; border-radius: 10px; background: #e64b4b; color: white; font-size: 10px; line-height: 18px; letter-spacing: 0; padding: 0 3px; }
+  .admin-bottom-nav { position: fixed; inset: auto 0 0; z-index: 60; display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); background: #fffffff5; backdrop-filter: blur(12px); border-top: 1px solid #e5e7eb; padding: 5px max(6px, env(safe-area-inset-right)) calc(5px + env(safe-area-inset-bottom, 0px)) max(6px, env(safe-area-inset-left)); }
+  .admin-bottom-nav > a { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 55px; color: #475569; font-size: 10px; white-space: nowrap; overflow-wrap: normal; }
+  .admin-bottom-nav > a[aria-current="page"] { color: #94703b; font-weight: 700; }
+  .admin-bottom-nav > a[aria-current="page"]::after { content: ""; position: absolute; bottom: 0; width: 26px; height: 2px; border-radius: 2px; background: #b18b55; }
+  .admin-app .admin-layout { min-height: calc(100dvh - 64px); }
+  .admin-app main { padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px)); padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); }
+  .admin-app h1, .admin-app h2, .admin-app h3, .admin-app .font-serif { font-family: var(--font-body),sans-serif; font-weight: 700; }
+  .admin-app h1 { font-size: 23px; }
+  .admin-app h2 { font-size: 18px; }
+  .admin-app h3 { font-size: 16px; }
+  .admin-app .admin-layout > div > header { padding: 16px 14px 10px; border: 0; background: transparent; }
+  .admin-app .admin-layout > div > header p { margin-top: 3px; font-size: 12px; }
+  .admin-app input:not([type="checkbox"]):not([type="radio"]), .admin-app select, .admin-app textarea { font-size: 16px; max-width: 100%; }
+  .admin-app button, .admin-app input, .admin-app select, .admin-app textarea { scroll-margin-bottom: calc(90px + env(safe-area-inset-bottom)); }
+  .admin-dashboard { display: flex; flex-direction: column; }
+  .admin-dashboard-actions { order: 1; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin-bottom: 14px; }
+  .admin-dashboard-actions > a { min-height: 66px; padding: 10px; gap: 8px; border-radius: 14px; }
+  .admin-dashboard-actions > a > span:first-child { width: 28px; height: 34px; border: 0; background: transparent; }
+  .admin-dashboard-actions strong { font-size: 12px; }
+  .admin-dashboard-actions > a > span:last-child > span { display: none; }
+  .admin-dashboard > .admin-today { order: 0; margin: 0 0 14px; }
+  .admin-today > article { border-radius: 14px; padding: 15px; box-shadow: 0 2px 5px #00000004; }
+  .admin-today > article strong { font-size: 24px; }
+  .admin-today > article p:last-child { font-size: 10px; line-height: 1.4; }
+  .admin-dashboard > section:not(.admin-today):not(.admin-dashboard-actions) { order: 3; }
+  .admin-dashboard > div { order: 4; }
+  .admin-dashboard > section[aria-label="Perfume do Dia"]:not(.admin-today):not(.admin-dashboard-actions) { order: 5; margin-top: 20px; }
+  .admin-dashboard > section:has(h2) { margin-top: 8px; }
+  .admin-attention-grid { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 7px; }
+  .admin-attention-grid > a { min-height: 98px; border-radius: 13px; flex-direction: column; gap: 4px; padding: 8px 4px; text-align: center; }
+  .admin-attention-grid > a:nth-child(1) { background: #fff2f3; border-color: #ffd9dd; }
+  .admin-attention-grid > a:nth-child(2) { background: #fffbef; border-color: #f6e7bc; }
+  .admin-attention-grid > a > span:first-child { display: none; }
+  .admin-attention-grid > a > svg { display: none; }
+  .admin-attention-grid strong { font-size: 23px; }
+  .admin-attention-grid > a:nth-child(1) strong { color: #be2839; }
+  .admin-attention-grid > a:nth-child(2) strong { color: #b47415; }
+  .admin-dashboard .rounded-\[1\.4rem\] { border-radius: 14px; }
+  .admin-sales-desktop { display: none; }
+  .admin-sales-mobile { display: block; }
+  .admin-sales-panel { border: 0; background: transparent; padding: 0; box-shadow: none; }
+  .admin-sales-panel > h2 { display: none; }
+  .admin-sales-panel article { background: white; border-radius: 14px; }
+  .admin-sales-panel article > div[role="button"] { padding: 12px; }
+  .admin-sales-panel article p { font-size: 12px; }
+  .admin-sales-panel article .font-serif { font-size: 16px; }
+  .admin-sales-panel article button { min-height: 36px; }
+  .admin-app [data-admin-stock] { border-radius: 14px; }
+}
+@media (max-width: 639px) {
+  [data-admin-dialog][data-state="open"] { padding-bottom: max(16px,env(safe-area-inset-bottom)); }
+}

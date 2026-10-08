@@ -10,6 +10,9 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
+import { compareMobileSales } from "@/lib/admin-sales-sort";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { InventoryWorkspace } from "./inventory-workspace";
 import { InventoryDialog } from "./inventory-dialog";
@@ -38,6 +41,7 @@ type Props = {
   initialDeliveryStatus?: "ALL" | StockDeliveryStatus;
   initialSalesPeriod?: "ALL" | "MONTH";
   initialStockStatus?: "all" | "LOW";
+  initialHistory?: boolean;
 };
 
 type BannerState =
@@ -80,6 +84,7 @@ export function StockAdminTable({
   initialDeliveryStatus = "ALL",
   initialSalesPeriod = "MONTH",
   initialStockStatus = "all",
+  initialHistory = false,
 }: Props) {
   const [rows, setRows] = useState(initialRows);
   const [customerNames, setCustomerNames] = useState(initialCustomerNames);
@@ -501,8 +506,9 @@ export function StockAdminTable({
       const response = await fetch("/api/admin/stock/sales", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ saleGroupId, status }) });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error ?? "Não foi possível alterar o pagamento.");
+      window.dispatchEvent(new Event("admin-alerts-change"));
     } catch (error) {
-      setSales((current) => current.map((sale) => sale.id === saleGroupId ? { ...sale, status: previous, items: sale.items.map((item) => ({ ...item, status: previous })) } : sale));
+        setSales((current) => current.map((sale) => sale.id === saleGroupId ? { ...sale, status: previous, items: sale.items.map((item) => ({ ...item, status: previous })) } : sale));
       setBanner({ tone: "error", message: error instanceof Error ? error.message : "Não foi possível alterar o pagamento." });
     } finally {
       setUpdatingSaleFields((current) => current.filter((entry) => entry !== key));
@@ -520,8 +526,9 @@ export function StockAdminTable({
       const response = await fetch("/api/admin/stock/sales", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ saleGroupId, deliveryStatus }) });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error ?? "Não foi possível alterar a entrega.");
+      window.dispatchEvent(new Event("admin-alerts-change"));
     } catch (error) {
-      setSales((current) => current.map((sale) => sale.id === saleGroupId ? { ...sale, deliveryStatus: previous, items: sale.items.map((item) => ({ ...item, deliveryStatus: previous })) } : sale));
+        setSales((current) => current.map((sale) => sale.id === saleGroupId ? { ...sale, deliveryStatus: previous, items: sale.items.map((item) => ({ ...item, deliveryStatus: previous })) } : sale));
       setBanner({ tone: "error", message: error instanceof Error ? error.message : "Não foi possível alterar a entrega." });
     } finally {
       setUpdatingSaleFields((current) => current.filter((entry) => entry !== key));
@@ -606,6 +613,7 @@ export function StockAdminTable({
   const activeSalesFilterCount = [salesStatusFilter !== "ALL", salesDeliveryFilter !== "ALL", salesKindFilter !== "ALL", salesPendingOnly, salesPeriod === "CUSTOM" && Boolean(salesFrom), salesPeriod === "CUSTOM" && Boolean(salesTo)].filter(Boolean).length;
   const customerHistory = useMemo(() => customerHistoryName ? sales.filter((sale) => normalizeStockSearch(sale.customerName) === normalizeStockSearch(customerHistoryName)).sort((a, b) => b.createdAt.localeCompare(a.createdAt)) : [], [customerHistoryName, sales]);
   const salesTotalPages = Math.max(1, Math.ceil(filteredSales.length / 25));
+  const mobilePagedSales = [...filteredSales].sort(compareMobileSales).slice((salesPage - 1) * 25, salesPage * 25);
   const pagedSales = filteredSales.slice((salesPage - 1) * 25, salesPage * 25);
 
   function applySalesPeriod(period: typeof salesPeriod) {
@@ -900,7 +908,7 @@ export function StockAdminTable({
   return (
     <div className="space-y-5">
       {banner ? <p role={banner.tone === "error" ? "alert" : "status"} className={`rounded-xl p-3 text-sm ${banner.tone === "error" ? "bg-rose-50 text-rose-800" : "bg-emerald-50 text-emerald-800"}`}>{banner.message}</p> : null}
-      {activeView === "STOCK" ? <InventoryWorkspace rows={rows} initialStatus={initialStockStatus} onUpdate={(next) => setRows((current) => current.map((row) => row.id === next.id ? next : row))} onHistory={openHistory} onEntry={(row) => setMovementModal({ kind: "ENTRY", row })} onNotes={(row) => setMovementModal({ kind: "NOTES", row })} tools={<>      <section className="rounded-[1.8rem] border border-[color:var(--line)] bg-white p-4 shadow-sm">
+      {activeView === "STOCK" ? <InventoryWorkspace rows={rows} initialHistory={initialHistory} initialStatus={initialStockStatus} onUpdate={(next) => setRows((current) => current.map((row) => row.id === next.id ? next : row))} onHistory={openHistory} onEntry={(row) => setMovementModal({ kind: "ENTRY", row })} onNotes={(row) => setMovementModal({ kind: "NOTES", row })} tools={<>      <section className="rounded-[1.8rem] border border-[color:var(--line)] bg-white p-4 shadow-sm">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex flex-wrap items-center gap-2">
             <button
@@ -1192,7 +1200,8 @@ export function StockAdminTable({
       ) : null}
 
       {activeView === "SALES" ? (
-        <section className="rounded-[1.8rem] border border-[color:var(--line)] bg-white p-4 shadow-sm sm:p-7">
+        <section className="admin-sales-panel rounded-[1.8rem] border border-[color:var(--line)] bg-white p-4 shadow-sm sm:p-7">
+          <div className="lg:hidden mb-3 flex justify-end"><Link href="/admin/stock?view=new-sale" className="rounded-xl bg-[color:var(--gold)] px-4 py-2 text-sm text-white">+ Nova venda</Link></div>
           <h2 className="font-serif text-3xl text-[color:var(--ink)]">Estado das vendas</h2>
           {salesLoading ? <p className="mt-6 text-slate-500">A carregar vendas...</p> : (
             <div className="mt-5 space-y-4">
@@ -1231,7 +1240,7 @@ export function StockAdminTable({
                 </div>
               </div>
 
-              <div className="hidden overflow-hidden rounded-2xl border border-[color:var(--line)] md:block">
+              <div className="admin-sales-desktop hidden overflow-hidden rounded-2xl border border-[color:var(--line)] md:block">
                 <div className="overflow-x-auto">
                   <table className="min-w-full text-sm">
                     <thead className="bg-[color:var(--sand-soft)] text-left text-xs uppercase tracking-[0.14em] text-slate-500"><tr><th className="px-4 py-3">Cliente</th><th className="px-4 py-3">Data</th><th className="px-4 py-3">Artigos</th><th className="px-4 py-3">Pagamento</th><th className="px-4 py-3">Entrega</th><th className="px-4 py-3 text-right">Total</th></tr></thead>
@@ -1242,8 +1251,8 @@ export function StockAdminTable({
                 </div>
               </div>
 
-              <div className="space-y-3 md:hidden">
-                {pagedSales.map((sale) => <MobileSaleCard key={sale.id} sale={sale} expanded={expandedSaleId === sale.id} onToggle={() => setExpandedSaleId((current) => current === sale.id ? null : sale.id)} onCustomerHistory={() => setCustomerHistoryName(sale.customerName)} onStatusChange={(status) => updateSaleStatus(sale.id, status)} onDeliveryStatusChange={(status) => updateDeliveryStatus(sale.id, status)} paymentUpdating={updatingSaleFields.includes(`${sale.id}:payment`)} deliveryUpdating={updatingSaleFields.includes(`${sale.id}:delivery`)} onSave={(event) => saveSaleEdits(event, sale)} onDelete={() => deleteSale(sale)} saving={savingSaleId === sale.id} deleting={deletingSaleId === sale.id} products={rows.filter((row) => row.active)} />)}
+              <div className="admin-sales-mobile space-y-3 md:hidden">
+                {mobilePagedSales.map((sale) => <MobileSaleCard key={sale.id} sale={sale} expanded={expandedSaleId === sale.id} onToggle={() => setExpandedSaleId((current) => current === sale.id ? null : sale.id)} onCustomerHistory={() => setCustomerHistoryName(sale.customerName)} onStatusChange={(status) => updateSaleStatus(sale.id, status)} onDeliveryStatusChange={(status) => updateDeliveryStatus(sale.id, status)} paymentUpdating={updatingSaleFields.includes(`${sale.id}:payment`)} deliveryUpdating={updatingSaleFields.includes(`${sale.id}:delivery`)} onSave={(event) => saveSaleEdits(event, sale)} onDelete={() => deleteSale(sale)} saving={savingSaleId === sale.id} deleting={deletingSaleId === sale.id} products={rows.filter((row) => row.active)} />)}
               </div>
 
               {!pagedSales.length ? <p className="rounded-2xl border border-[color:var(--line)] p-5 text-slate-500">Nenhuma venda encontrada.</p> : null}
@@ -1469,7 +1478,8 @@ function MobileSaleCard({ sale, expanded, onToggle, onCustomerHistory, onStatusC
   return <article className={`min-w-0 overflow-hidden rounded-2xl border border-[color:var(--line)] ${sale.status === StockSaleStatus.PENDING || sale.deliveryStatus === StockDeliveryStatus.PENDING ? "bg-amber-50" : "bg-white"}`}>
     <div role="button" tabIndex={0} onClick={onToggle} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onToggle(); } }} className="cursor-pointer space-y-2.5 p-4">
       <div className="flex min-w-0 items-start justify-between gap-3">
-        <div className="min-w-0"><button type="button" onClick={(event) => { event.stopPropagation(); onCustomerHistory(); }} className="max-w-full truncate text-left font-semibold text-[color:var(--ink)] underline decoration-[color:var(--line)] underline-offset-4">{sale.customerName}</button><p className="mt-1 text-xs text-slate-500">{new Date(sale.createdAt).toLocaleDateString("pt-PT")}{sale.saleOrigin ? ` · ${sale.saleOrigin}` : ""}</p></div>
+        <Image src={products.find(product => product.id === sale.items[0]?.productId)?.imageUrl || "/logo-9-ilhas.svg"} alt="" width={38} height={48} unoptimized className="h-12 w-9 shrink-0 rounded-lg bg-slate-50 object-contain" />
+        <div className="min-w-0"><button type="button" onClick={(event) => { event.stopPropagation(); onCustomerHistory(); }} className="max-w-full truncate text-left font-semibold text-[color:var(--ink)] underline decoration-[color:var(--line)] underline-offset-4">{sale.customerName}</button><p className="mt-1 text-xs text-slate-500">{new Date(sale.createdAt).toLocaleString("pt-PT", { timeZone: "Atlantic/Azores", dateStyle: "short", timeStyle: "short" })}{sale.saleOrigin ? ` · ${sale.saleOrigin}` : ""}</p></div>
         <strong className="shrink-0 font-serif text-lg">{formatPrice(sale.totalInCents)}</strong>
       </div>
       <p className="overflow-hidden text-ellipsis whitespace-nowrap text-sm text-slate-600">{formatCompactSaleSummary(sale)}</p>

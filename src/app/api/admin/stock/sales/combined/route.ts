@@ -1,3 +1,5 @@
+import { after } from "next/server";
+import { notifyAdminSafely } from "@/lib/admin-push";
 import { randomUUID } from "node:crypto";
 import { StockDeliveryStatus, StockMovementReason, StockMovementType, StockSaleStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
@@ -63,5 +65,6 @@ export async function POST(request: Request) {
   }
   revalidatePath("/admin/stock");
   revalidatePath("/catalogo");
+  after(notifyAdminSafely);
   return NextResponse.json({ success: true });
 }

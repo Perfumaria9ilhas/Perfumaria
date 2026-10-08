@@ -1,3 +1,5 @@
+import { after } from "next/server";
+import { notifyAdminSafely } from "@/lib/admin-push";
 import { StockDeliveryStatus, StockMovementReason, StockMovementType, StockSaleStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
@@ -132,6 +134,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Não foi possível guardar a venda." }, { status: 400 });
   }
   revalidatePath("/admin/stock");
+  after(notifyAdminSafely);
   return NextResponse.json({ success: true });
 }
 
@@ -188,6 +191,7 @@ export async function DELETE(request: Request) {
 
   revalidatePath("/admin/stock");
   revalidatePath("/catalogo");
+  after(notifyAdminSafely);
   return NextResponse.json({ success: true });
 }
 
@@ -234,5 +238,6 @@ export async function POST(request: Request) {
   }
   revalidatePath("/admin/stock");
   revalidatePath("/catalogo");
+  after(notifyAdminSafely);
   return NextResponse.json({ success: true });
 }

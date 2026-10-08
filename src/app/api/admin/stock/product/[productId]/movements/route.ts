@@ -1,3 +1,5 @@
+import { after } from "next/server";
+import { notifyAdminSafely } from "@/lib/admin-push";
 import { StockMovementReason, StockMovementType } from "@prisma/client";
 import { getSalePriceInCents } from "@/lib/format";
 import { revalidatePath } from "next/cache";
@@ -187,6 +189,7 @@ export async function POST(
   revalidatePath("/admin");
   revalidatePath("/admin/stock");
 
+  after(notifyAdminSafely);
   return NextResponse.json({ success: true });
 }
 
@@ -331,6 +334,7 @@ export async function DELETE(
     revalidatePath("/admin");
     revalidatePath("/admin/stock");
 
+    after(notifyAdminSafely);
     return NextResponse.json({ success: true, updatedRow });
   } catch (error) {
     return NextResponse.json(

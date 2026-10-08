@@ -1,3 +1,5 @@
+import { after } from "next/server";
+import { notifyAdminSafely } from "@/lib/admin-push";
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
@@ -27,6 +29,7 @@ export async function POST(request: Request) {
   revalidatePath("/admin");
   revalidatePath("/admin/stock");
 
+  after(notifyAdminSafely);
   return NextResponse.json({
     ...parsed,
     success: true,

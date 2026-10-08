@@ -27,14 +27,15 @@ export default async function AdminPage() {
   const [data, settings, catalog] = await Promise.all([getAdminDashboardData(), getStoreSettings(), getCatalogData()]);
 
   return <AdminShell title="Dashboard" description="O seu centro de trabalho diário.">
-    <section className="grid gap-3 sm:grid-cols-2">
+    <div className="admin-dashboard">
+    <section className="admin-dashboard-actions grid gap-3 sm:grid-cols-2">
       <Link href="/admin/stock?view=new-sale" className="flex min-h-24 items-center gap-4 rounded-[1.5rem] bg-[color:var(--gold)] px-5 py-4 text-white shadow-sm transition hover:bg-[color:var(--atlantic)]"><span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/15"><Plus className="h-7 w-7" /></span><span><strong className="block text-lg">Nova venda</strong><span className="text-sm text-white/85">Registar uma nova venda</span></span></Link>
       <Link href="/admin/stock?view=sales&period=all" className="flex min-h-24 items-center gap-4 rounded-[1.5rem] border border-[color:var(--line)] bg-white px-5 py-4 shadow-sm transition hover:border-[color:var(--gold)]"><span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[color:var(--line)]"><ClipboardList className="h-6 w-6 text-[color:var(--atlantic)]" /></span><span><strong className="block text-lg text-[color:var(--ink)]">Estado das vendas</strong><span className="text-sm text-slate-500">Ver e gerir todas as vendas</span></span></Link>
     </section>
 
     <DailyPerfumeCard key={settings.updatedAt?.toISOString()} products={catalog.products.filter(isEligibleDailyPerfume).map(({id,name,imageUrl,priceInCents,stock,brand})=>({id,name,imageUrl,priceInCents,stock,brand}))} selectedId={readHomepageState(settings.homepageConfig).perfumeOfDayId} version={settings.updatedAt!.toISOString()} />
 
-    <section aria-label="Vendas de hoje" className="mt-4 grid grid-cols-2 gap-3">
+    <section className="admin-today mt-4 grid grid-cols-2 gap-3" aria-label="Vendas de hoje">
       <article className="min-w-0 rounded-[1.4rem] border border-[color:var(--line)] bg-white p-4"><p className="text-xs text-slate-600">Vendas hoje</p><strong className="mt-1 block font-serif text-2xl">{data.today.paidSales}</strong><p className="mt-1 text-xs text-slate-500">Vendas pagas registadas hoje</p></article>
       <article className="min-w-0 rounded-[1.4rem] border border-[color:var(--line)] bg-white p-4"><p className="text-xs text-slate-600">Faturação hoje</p><strong className="mt-1 block break-words font-serif text-2xl">{formatPrice(data.today.paidValue)}</strong><p className="mt-1 text-xs text-slate-500">Valor das vendas pagas · hora dos Açores</p></article>
     </section>
@@ -61,6 +62,7 @@ export default async function AdminPage() {
           {data.lowStockProducts.length ? data.lowStockProducts.map((product) => <Link key={product.id} href="/admin/stock?view=stock&status=low" className="flex min-w-0 items-center gap-3 border-b border-[color:var(--line)] px-4 py-3 last:border-b-0 hover:bg-[color:var(--sand-soft)]"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[color:var(--sand-soft)]"><ShoppingCart className="h-5 w-5 text-[color:var(--gold)]" /></span><span className="min-w-0 flex-1"><strong className="block truncate text-sm">{product.name}</strong><span className="block truncate text-xs text-slate-500">{product.brand}</span></span><strong className="shrink-0 text-sm text-red-600">{product.stock}</strong><ArrowRight className="h-4 w-4 shrink-0 text-slate-400" /></Link>) : <p className="p-5 text-sm text-slate-500">Nenhum produto com stock baixo.</p>}
         </div>
       </section>
+    </div>
     </div>
   </AdminShell>;
 }

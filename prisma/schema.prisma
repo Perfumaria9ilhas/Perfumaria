@@ -375,3 +375,21 @@ enum StockMovementReason {
   OTHER
   MANUAL
 }
+
+// Device subscriptions belong to the authenticated JWT administrator, including
+// the existing configured-admin identity (which has no AdminUser row).
+model AdminPushSubscription {
+  id                   String   @id @default(cuid())
+  adminId              String
+  endpoint             String   @unique
+  p256dh               String
+  auth                 String
+  payments             Boolean  @default(true)
+  deliveries           Boolean  @default(true)
+  stock                Boolean  @default(true)
+  lastAlertFingerprint String?
+  lastTestAt           DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  @@index([adminId])
+}
