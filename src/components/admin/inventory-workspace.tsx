@@ -1,11 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useDeferredValue, useMemo, useState, type ReactNode } from "react";
-import { Check, Clock, Eye, History, MoreVertical, Package, Plus, Search, SlidersHorizontal } from "lucide-react";
-import { type AdminStockRow, filterStockRows, getStockStatus, getStockStatusTone, sortStockRows, type StockSortKey } from "@/lib/stock";
+import { Check, Clock, Eye, History, Package, Plus, Search, SlidersHorizontal } from "lucide-react";
+import { type AdminStockRow, filterStockRows, getStockStatus, sortStockRows, type StockSortKey } from "@/lib/stock";
 import { QuickStockEditor } from "./quick-stock-editor";
+import { InlineStockRow, type InlineStockDraft } from "./inline-stock-row";
 import { InventoryDialog } from "./inventory-dialog";
 import { formatPrice } from "@/lib/format";
 
@@ -31,6 +31,7 @@ export function InventoryWorkspace({ rows, onUpdate, onHistory, onEntry, onNotes
   const [historyPicker, setHistoryPicker] = useState(initialHistory);
   const [actions, setActions] = useState<AdminStockRow | null>(null);
   const [message, setMessage] = useState("");
+  const [inlineDrafts, setInlineDrafts] = useState<Record<string, InlineStockDraft | undefined>>({});
   const [sort, setSort] = useState<{ key: StockSortKey; direction: "asc" | "desc" }>({ key: "product", direction: "asc" });
   const query = useDeferredValue(filters.query);
   const filtered = useMemo(() => sortStockRows(filterStockRows(rows, {
@@ -58,19 +59,6 @@ export function InventoryWorkspace({ rows, onUpdate, onHistory, onEntry, onNotes
       <label className="block space-y-1 text-xs text-slate-600">Estado<select aria-label="Estado" value={values.inventory} onChange={(e) => update({ inventory: e.target.value as InventoryFilter })} className={control}>{options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select></label>
     </>;
   }
-  function header(label: string, key: StockSortKey, width: string) {
-    return <th className={width + " p-3"} aria-sort={sort.key === key ? (sort.direction === "asc" ? "ascending" : "descending") : "none"}><button type="button" onClick={() => { setSort({ key, direction: sort.key === key && sort.direction === "asc" ? "desc" : "asc" }); setPage(1); }} className="min-h-8 text-left">{label}{sort.key === key ? (sort.direction === "asc" ? " ↑" : " ↓") : ""}</button></th>;
-  }
-  function product(row: AdminStockRow) {
-    return <button type="button" onClick={() => openQuick(row)} className="flex min-w-0 items-center gap-3 text-left" aria-label={`Edição rápida: ${row.name}`}>
-      <Image src={row.imageUrl || "/logo-9-ilhas.svg"} alt="" width={48} height={56} unoptimized className="h-14 w-12 shrink-0 rounded-lg bg-[color:var(--sand-soft)] object-contain" />
-      <span className="min-w-0"><strong className="block text-sm font-medium leading-snug">{row.name}</strong><span className="text-xs text-slate-500">{row.sizeLabel || "—"} · {formatPrice(row.salePriceInCents)}<span className="lg:hidden"> · {row.brandName}</span></span></span>
-    </button>;
-  }
-  function badge(row: AdminStockRow) {
-    const status = getStockStatus(row.stock, row.lowStockAlert);
-    return <span className={`inline-flex rounded-md px-2 py-1 text-[11px] font-medium ${getStockStatusTone(status)}`}>{status === "OUT" ? "Esgotado" : status === "LOW" ? "Stock baixo" : "Em stock"}{!row.active ? " · Inativo" : ""}</span>;
-  }
   return <div className="space-y-4">
     <div className="flex justify-end"><Link href="/admin/produtos?novo=1#novo-produto" className={`${button} bg-[color:var(--atlantic)] text-white`}><Plus size={16} />Novo produto</Link></div>
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
@@ -88,8 +76,8 @@ export function InventoryWorkspace({ rows, onUpdate, onHistory, onEntry, onNotes
         </div>
       </div>
       {message ? <p role="status" className="mx-3 mb-3 rounded-xl bg-emerald-50 p-3 text-xs text-emerald-800">{message}</p> : null}
-      <div className="hidden lg:block"><table className="w-full table-fixed text-left text-sm"><thead className="border-y border-[color:var(--line)] bg-[color:var(--sand-soft)] text-xs text-slate-600"><tr>{header("Produto", "product", "w-[32%]")}{header("Marca", "brand", "w-[16%]")}{header("Categoria", "category", "w-[13%]")}{header("Stock", "stock", "w-[7%]")}{header("Estado", "status", "w-[16%]")}<th className="p-3">Ações</th></tr></thead><tbody>{visible.map((row) => <tr key={row.id} className="border-b border-[color:var(--line)]"><td className="p-3">{product(row)}</td><td className="break-words p-3 text-xs text-slate-600">{row.brandName}</td><td className="break-words p-3 text-xs text-slate-600">{row.categoryName}</td><td className="p-3 font-semibold">{row.stock}</td><td className="p-3">{badge(row)}</td><td className="p-2"><div className="flex gap-1"><button type="button" onClick={() => openQuick(row)} className={`${button} text-xs`}>Editar</button><button type="button" aria-label={`Mais opções: ${row.name}`} onClick={() => setActions(row)} className={`${button} px-2`}><MoreVertical size={16} /></button></div></td></tr>)}</tbody></table></div>
-      <div className="lg:hidden">{visible.map((row) => <div key={row.id} className="flex items-center gap-2 border-t border-[color:var(--line)] p-3"><div className="min-w-0 flex-1">{product(row)}<div className="mt-1 flex items-center gap-2 pl-[60px]"><span className="text-xs font-semibold">{row.stock} un.</span>{badge(row)}</div></div><button type="button" aria-label={`Mais opções: ${row.name}`} onClick={() => setActions(row)} className="flex h-10 w-8 shrink-0 items-center justify-center rounded-lg"><MoreVertical size={18} /></button></div>)}</div>
+      <div className="hidden flex-wrap gap-2 border-t border-[color:var(--line)] px-3 py-2 text-xs text-slate-600 lg:flex" aria-label="Ordenar produtos">Ordenar por: {([{ label: "Produto", key: "product" }, { label: "Marca", key: "brand" }, { label: "Categoria", key: "category" }, { label: "Stock", key: "stock" }, { label: "Estado", key: "status" }] as const).map(({label, key}) => <button key={key} type="button" onClick={() => { setSort({ key, direction: sort.key === key && sort.direction === "asc" ? "desc" : "asc" }); setPage(1); }} className="min-h-9 rounded-lg border px-3" aria-pressed={sort.key === key}>{label}{sort.key === key ? (sort.direction === "asc" ? " ↑" : " ↓") : ""}</button>)}</div>
+      <div>{visible.map(row => <InlineStockRow key={row.id} row={row} draft={inlineDrafts[row.id]} onDraft={draft => { setInlineDrafts(current => ({ ...current, [row.id]: draft })); if (draft) setMessage(""); }} onSave={next => { onUpdate(next); setMessage(`${next.name}: alterações guardadas.`); }} onOptions={() => setActions(row)} />)}</div>
       {!visible.length ? <p className="p-8 text-center text-sm text-slate-500">Nenhum produto encontrado. Limpe os filtros para ver todo o inventário.</p> : null}
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--line)] p-3 text-xs text-slate-600"><span>{filtered.length ? (currentPage - 1) * pageSize + 1 : 0}–{Math.min(currentPage * pageSize, filtered.length)} de {filtered.length} produtos</span><div className="flex items-center gap-2"><button type="button" aria-label="Página anterior" onClick={() => setPage(currentPage - 1)} disabled={currentPage === 1} className={`${button} disabled:opacity-40`}>‹</button><span>{currentPage}/{totalPages}</span><button type="button" aria-label="Página seguinte" onClick={() => setPage(currentPage + 1)} disabled={currentPage === totalPages} className={`${button} disabled:opacity-40`}>›</button></div><select aria-label="Produtos por página" value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }} className="h-9 rounded-lg border px-2"><option value={20}>20 por página</option><option value={50}>50 por página</option><option value={100}>100 por página</option></select></div>
     </section>

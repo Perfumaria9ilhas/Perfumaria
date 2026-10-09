@@ -49,3 +49,14 @@ console.log('PASS payment/delivery updates preserve historical decant prices and
 movements.push({...movements.find(m=>m.type==='SALE'),id:'gift-line',saleStatus:'OFFERED',quantity:1});
 response=await statuses.PATCH(request({saleGroupId:id,status:'PENDING'}));assert.equal(response.status,200);assert.equal(movements.find(m=>m.id==='gift-line').saleStatus,'OFFERED');
 console.log('PASS group payment updates preserve offered items in mixed sales.');
+
+// The inline row uses this existing endpoint: one atomic save for capacity,
+// current bottle price and quantity, without touching decants or purchase cost.
+const inlineProduct=products.find(p=>p.id==='unsold');
+const inlineCost=inlineProduct.purchaseCostInCents;
+response=await stock.PATCH(request({stock:6,lowStockAlert:3,sizeLabel:'75 ml',basePrice:'39,50',version:inlineProduct.updatedAt.toISOString()}),{params:Promise.resolve({productId:'unsold'})});
+assert.equal(response.status,200);assert.equal(inlineProduct.stock,6);assert.equal(inlineProduct.sizeLabel,'75 ml');assert.equal(inlineProduct.priceInCents,3950);assert.equal(inlineProduct.purchaseCostInCents,inlineCost);assert.equal(inlineProduct.availableInFiveMl,true);assert.equal(inlineProduct.availableInTenMl,true);
+const inlineAudit=JSON.parse(movements.at(-1).notes.split(' · ')[1]);assert.equal(inlineAudit.anterior.stock,3);assert.equal(inlineAudit.novo.stock,6);assert.equal(inlineAudit.anterior.sizeLabel,'50 ml');assert.equal(inlineAudit.novo.sizeLabel,'75 ml');
+const version=(await response.json()).version;assert.equal(version,inlineProduct.updatedAt.toISOString());
+response=await stock.PATCH(request({stock:6,lowStockAlert:3,salePrice:'32,50',version}),{params:Promise.resolve({productId:'unsold'})});assert.equal(response.status,200);assert.equal(inlineProduct.priceInCents,3950);assert.equal(inlineProduct.salePriceInCents,3250);
+console.log('PASS inline atomic capacity/price/quantity save, audit before/after, version refresh and separate promotional/base prices; decant availability and costs preserved.');
