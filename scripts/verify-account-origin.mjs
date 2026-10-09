@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';import {build} from 'esbuild';import {resolve} from 'node:path';import {mkdir} from 'node:fs/promises';import {pathToFileURL} from 'node:url';
+await mkdir('.codex-dev',{recursive:true});
+await build({entryPoints:['src/lib/account-request-origin.ts'],outfile:'.codex-dev/account-origin-check.mjs',bundle:true,platform:'node',format:'esm',packages:'external',plugins:[{name:'aliases',setup(b){b.onResolve({filter:/^@\//},a=>({path:resolve('src',a.path.slice(2)+'.ts')}));}}]});
+const {isAccountRequestOriginAllowed:allowed}=await import(pathToFileURL(resolve('.codex-dev/account-origin-check.mjs')).href);
+const request=(origin,url='http://web.railway.internal:8080/api/admin/users',headers={})=>new Request(url,{method:'POST',headers:{...headers,...(origin?{origin}:{})}});
+process.env.NODE_ENV='production';
+for(const origin of ['https://www.perfumaria9ilhas.pt','https://perfumaria9ilhas.pt'])assert(allowed(request(origin)));
+for(const origin of [undefined,'null','https://evil.invalid','https://www.perfumaria9ilhas.pt.evil.invalid','http://www.perfumaria9ilhas.pt','https://www.perfumaria9ilhas.pt:8443','https://www.perfumaria9ilhas.pt/','https://evil.invalid/?www.perfumaria9ilhas.pt','http://localhost:3000'])assert.equal(allowed(request(origin)),false);
+assert.equal(allowed(request('https://evil.invalid',undefined,{'x-forwarded-host':'evil.invalid','x-forwarded-proto':'https'})),false);
+process.env.NODE_ENV='development';assert(allowed(request('http://localhost:3000','http://localhost:3000/api/admin/users')));assert.equal(allowed(request('https://evil.invalid','http://localhost:3000/api/admin/users')),false);
+console.log('PASS production TLS proxy with internal Request.url, exact www/apex HTTPS origins, hostile/missing/malformed/forged-forwarded origins rejected, local same-origin retained.');

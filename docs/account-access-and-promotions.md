@@ -48,6 +48,7 @@ Não foram criados descontos separados, datas de expiração fictícias, altera�
 - Navegador: pesquisa e filtros, detalhes, principal sem ações de alteração, confirmação de eliminação bloqueada sem texto, cancelar/fechar sem overlay residual, Mais → Utilizadores, login cliente, promoções e abertura do produto; 320/390/768 px e desktop.
 - Regressões de vendas/stock/decants: `scripts/verify-admin-pwa-business.mjs`, sem escrita comercial real.
 - TypeScript, ESLint, build e `git diff --check`.
+- `scripts/verify-account-origin.mjs`: proxy TLS Railway com URL interna, domínios públicos HTTPS exatos, rejeição de origens externas/forjadas e origem local. A verificação inicial em produção identificou a diferença de origem atrás do proxy; foi corrigida e o pedido à identidade protegida deve ser recusado pela proteção da conta (409), sem ser bloqueado incorretamente por origem (403).
 
 Durante testes locais houve falhas transitórias na ligação ao proxy público Railway; o mesmo teste passou após repetir a ligação. Não eram erros de JavaScript/hydration. A verificação de produção deve confirmar novamente os caminhos publicados.
 

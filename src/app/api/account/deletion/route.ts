@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { getCurrentCustomer } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isAccountRequestOriginAllowed } from "@/lib/account-request-origin";
 export async function POST(request: Request) {
   const customer = await getCurrentCustomer();
   if (!customer) return NextResponse.json({ error: "Inicie sessão." }, { status: 401 });
-  if (request.headers.get("origin") !== new URL(request.url).origin) return NextResponse.json({ error: "Origem inválida." }, { status: 403 });
+  if (!isAccountRequestOriginAllowed(request)) return NextResponse.json({ error: "Origem inválida." }, { status: 403 });
   await prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT set_config('nineilhas.account_actor', ${customer.id}, true)`;
     const result = await tx.customerAccount.updateMany({ where: { id: customer.id, active: true, deletionRequestedAt: null }, data: { deletionRequestedAt: new Date() } });
