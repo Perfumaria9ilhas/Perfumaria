@@ -36,8 +36,7 @@ export default async function AdminLoginPage({
             Iniciar sessão
           </h2>
           <p className="mt-3 text-sm leading-7 text-slate-600">
-            Credenciais iniciais vindas do seed. Idealmente devem ser alteradas
-            através das variáveis de ambiente.
+            Entre com a conta principal ou com uma conta autorizada pelo administrador da loja.
           </p>
           <div className="mt-8">
             <AdminLoginForm hasError={params.error === "1"} />

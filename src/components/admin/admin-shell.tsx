@@ -8,6 +8,7 @@ import { BarChart3, Boxes, ChevronRight, CircleUserRound, FileText, FolderOpen, 
 import { AdminNotifications } from "./admin-notifications";
 import { ClipboardList, Ellipsis } from "lucide-react";
 import { logoutAdmin } from "@/actions/admin";
+import { useAdminAccess } from "./admin-access";
 
 type AdminNavItem = { href: string; label: string; icon: React.ComponentType<{ className?: string }> };
 type AdminNavSection = { label: string; items: AdminNavItem[] };
@@ -36,6 +37,8 @@ const navSections: AdminNavSection[] = [
 ];
 
 export function AdminShell({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
+  const access = useAdminAccess();
+  const sections = access?.role === "SUPERADMIN" ? [...navSections, { label: "Acessos", items: [{ href: "/admin/utilizadores", label: "Utilizadores", icon: CircleUserRound }] }] : navSections;
   const pathname = usePathname();
   const [currentUrl, setCurrentUrl] = useState(pathname);
 
@@ -60,7 +63,7 @@ export function AdminShell({ title, description, children }: { title: string; de
 
   const navigation = (mobile: boolean) => <>
     <nav className="flex-1 space-y-5 px-4 py-5" aria-label={mobile ? "Navegação móvel do admin" : "Navegação do admin"}>
-      {navSections.map((section) => <section key={section.label}>
+      {sections.map((section) => <section key={section.label}>
         <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--gold)]">{section.label}</p>
         <div className="space-y-1">{section.items.map((item) => {
           const Icon = item.icon; const active = isActive(item.href);
@@ -117,5 +120,6 @@ function AdminIdentity() {
 }
 
 function AdminUser() {
-  return <div className="flex items-center gap-3"><CircleUserRound className="h-9 w-9 text-[color:var(--gold)]" /><div><p className="text-sm font-semibold text-[color:var(--ink)]">Admin 9 Ilhas</p><p className="text-xs text-slate-500">Administrador</p></div></div>;
+  const access = useAdminAccess();
+  return <div className="flex items-center gap-3"><CircleUserRound className="h-9 w-9 text-[color:var(--gold)]" /><div><p className="text-sm font-semibold text-[color:var(--ink)]">{access?.name ?? "Admin 9 Ilhas"}</p><p className="text-xs text-slate-500">{access?.role === "SUPERADMIN" ? "Superadmin · Protegida" : "Administrador"}</p></div></div>;
 }

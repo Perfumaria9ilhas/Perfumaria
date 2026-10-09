@@ -9,6 +9,10 @@ import { CompleteRegistrationTracker } from "@/components/analytics/complete-reg
 import { getCurrentCustomer } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { buildPageMetadata } from "@/lib/seo";
+import { getCatalogData } from "@/lib/data";
+import { ProductCard } from "@/components/store/product-card";
+import { AccountDeletionRequest } from "@/components/store/account-deletion-request";
+import { accountPromotions } from "@/lib/account-promotions";
 
 export const metadata: Metadata = buildPageMetadata({
   title: "Conta de cliente",
@@ -36,6 +40,7 @@ export default async function ContaPage({
     : null;
 
   const openRegister = params.registerError === "1";
+  const promotions = customerProfile ? accountPromotions((await getCatalogData()).products) : [];
 
   return (
     <div className="mx-auto max-w-[1240px] px-4 py-4 lg:px-5 lg:py-6">
@@ -46,13 +51,13 @@ export default async function ContaPage({
             Conta de cliente
           </p>
           <h1 className="mt-3 font-serif text-5xl text-[color:var(--ink)]">
-            Entrar ou criar conta
+            {customerProfile ? "A minha conta" : "Entrar ou criar conta"}
           </h1>
-          <p className="mt-4 text-base leading-8 text-slate-600">
+          {!customerProfile && <p className="mt-4 text-base leading-8 text-slate-600">
             {
               "Pode continuar a navegar, ver pre\u00e7os, adicionar ao carrinho e enviar pedidos sem conta. Se preferir, pode criar uma conta para guardar os seus dados e associar os pedidos ao seu perfil."
             }
-          </p>
+          </p>}
         </div>
 
         {params.registered === "1" ? (
@@ -82,7 +87,7 @@ export default async function ContaPage({
         ) : null}
 
         {customerProfile ? (
-          <section className="mt-8 rounded-[2rem] border border-[color:var(--line)] bg-white p-6 shadow-sm">
+          <><section className="mt-8 rounded-[2rem] border border-[color:var(--line)] bg-white p-6 shadow-sm">
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
               <div>
                 <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--atlantic)]">
@@ -114,7 +119,9 @@ export default async function ContaPage({
                 {"Os pr\u00f3ximos pedidos ficam associados a esta conta."}
               </p>
             </div>
+            <AccountDeletionRequest requested={!!customerProfile.deletionRequestedAt} />
           </section>
+          <section className="mt-8" aria-labelledby="account-promotions"><h2 id="account-promotions" className="font-serif text-3xl text-[color:var(--ink)]">Descontos e promoções</h2><p className="mb-5 mt-2 text-sm text-slate-600">Descubra os produtos atualmente em promoção no catálogo, incluindo o Perfume do Dia.</p>{promotions.length ? <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">{promotions.map(product => <ProductCard key={product.id} product={product}><span className="mt-2 inline-block rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-900">-{new Intl.NumberFormat("pt-PT", { maximumFractionDigits: 1 }).format((1 - product.salePriceInCents! / product.priceInCents) * 100)}%</span></ProductCard>)}</div> : <p className="rounded-2xl border border-[color:var(--line)] bg-white p-5 text-sm text-slate-600">Não existem promoções ativas neste momento. Consulte o catálogo para descobrir a nossa seleção.</p>}</section></>
         ) : (
           <div className="mt-8 space-y-6">
             <section className="rounded-[2rem] border border-[color:var(--line)] bg-white p-6 shadow-sm">

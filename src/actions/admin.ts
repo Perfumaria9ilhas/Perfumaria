@@ -222,6 +222,7 @@ export async function loginAdmin(formData: FormData) {
     redirect("/admin/login?error=1");
   }
 
+  await clearCustomerSession();
   await createSession({
     sub: user.id,
     email: user.email,
@@ -233,6 +234,7 @@ export async function loginAdmin(formData: FormData) {
 
 export async function logoutAdmin() {
   await clearSession();
+  await clearCustomerSession();
   redirect("/admin/login");
 }
 
@@ -819,26 +821,15 @@ export async function createCustomerAccount(formData: FormData) {
   const normalizedEmail = normalizeCustomerEmail(parsed.data.email);
   const passwordHash = await hash(parsed.data.password, 10);
 
-  const customer = await prisma.customerAccount.upsert({
-    where: { email: normalizedEmail },
-    update: {
-      firstName: parsed.data.firstName,
-      lastName: parsed.data.lastName,
-      email: normalizedEmail,
-      phone: parsed.data.phone,
-      address: parsed.data.address,
-      passwordHash,
-    },
-    create: {
-      firstName: parsed.data.firstName,
-      lastName: parsed.data.lastName,
-      email: normalizedEmail,
-      phone: parsed.data.phone,
-      address: parsed.data.address,
-      passwordHash,
-    },
-  });
+  let customer;
+  try {
+    customer = await prisma.customerAccount.create({ data: {
+      firstName: parsed.data.firstName, lastName: parsed.data.lastName,
+      email: normalizedEmail, phone: parsed.data.phone, address: parsed.data.address, passwordHash,
+    } });
+  } catch { redirect("/conta?registerError=1"); }
 
+  await clearSession();
   await createCustomerSession({
     sub: customer.id,
     email: customer.email,
@@ -894,6 +885,7 @@ export async function loginCustomer(formData: FormData) {
 
 export async function logoutCustomer() {
   await clearCustomerSession();
+  await clearSession();
   redirect("/conta");
 }
 

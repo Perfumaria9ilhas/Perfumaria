@@ -17,6 +17,7 @@ const links = [
   { href: "/", label: "Ver loja", text: "Abrir o site público", icon: Store },
 ];
 export default async function MorePage() {
-  await requireAdmin();
-  return <AdminShell title="Mais" description="Todas as ferramentas do seu Admin."><div className="admin-more-list">{links.map(({href,label,text,icon:Icon}) => <Link key={href} href={href}><Icon size={22} /><span><strong>{label}</strong><small>{text}</small></span><ChevronRight size={18} /></Link>)}<form action={logoutAdmin}><button className="admin-more-logout"><LogOut size={22} />Terminar sessão</button></form></div></AdminShell>;
+  const admin = await requireAdmin();
+  const visibleLinks = admin.role === "SUPERADMIN" ? [{ href: "/admin/utilizadores", label: "Utilizadores", text: "Contas, acessos e pedidos de eliminação", icon: Settings }, ...links] : links;
+  return <AdminShell title="Mais" description="Todas as ferramentas do seu Admin."><div className="admin-more-list">{visibleLinks.map(({href,label,text,icon:Icon}) => <Link key={href} href={href}><Icon size={22} /><span><strong>{label}</strong><small>{text}</small></span><ChevronRight size={18} /></Link>)}<form action={logoutAdmin}><button className="admin-more-logout"><LogOut size={22} />Terminar sessão</button></form></div></AdminShell>;
 }

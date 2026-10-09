@@ -11,6 +11,9 @@ model AdminUser {
   id           String   @id @default(cuid())
   email        String   @unique
   passwordHash String
+  active       Boolean  @default(false)
+  sessionVersion Int    @default(0)
+  lastLoginAt  DateTime?
   name         String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -18,6 +21,11 @@ model AdminUser {
 
 model CustomerAccount {
   id         String   @id @default(cuid())
+  role       AccountRole @default(CUSTOMER)
+  active     Boolean @default(true)
+  sessionVersion Int @default(0)
+  lastLoginAt DateTime?
+  deletionRequestedAt DateTime?
   firstName  String
   lastName   String
   email      String   @unique
@@ -392,4 +400,29 @@ model AdminPushSubscription {
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
   @@index([adminId])
+}
+
+enum AccountRole {
+  CUSTOMER
+  ADMIN
+}
+
+// Security metadata, not a second user directory. The existing configured
+// authentication subject is pinned and cannot be changed by the application.
+model AccountSecurity {
+  id String @id
+  principalId String @unique
+  createdAt DateTime @default(now())
+}
+
+model AccountAudit {
+  id String @id @default(cuid())
+  actorId String
+  targetId String
+  targetKind String
+  action String
+  previous Json?
+  next Json?
+  createdAt DateTime @default(now())
+  @@index([targetId, createdAt])
 }
