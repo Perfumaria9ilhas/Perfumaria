@@ -37,7 +37,7 @@ for(const path of ["/admin", "/admin/stock?view=sales&period=all", "/admin/stock
  assert.equal(html('nav[aria-label="Navegação principal mobile"] a').length,5); assert.equal(html('link[rel="manifest"]').attr("href"),"/admin/manifest.webmanifest");
  console.log("PASS authenticated route and private headers",path);
 }
-const alerts=await(await fetch(base+"/api/admin/alerts",{headers:{Cookie:cookie}})).json(); assert.equal(alerts.alerts.length,3); assert.equal(alerts.total,alerts.alerts.reduce((n:number,a:{count:number})=>n+a.count,0)); assert(!JSON.stringify(alerts).includes("fingerprint"));
+const alerts=await(await fetch(base+"/api/admin/alerts",{headers:{Cookie:cookie}})).json(); assert.equal(alerts.alerts.length,4); assert.equal(new Set(alerts.alerts.map((a:{category:string})=>a.category)).size,4); assert.equal(alerts.total,alerts.alerts.reduce((n:number,a:{count:number})=>n+a.count,0)); assert(!JSON.stringify(alerts).includes("fingerprint"));
 const blocked=await fetch(base+"/api/admin/push",{method:"POST",headers:{Cookie:cookie,Origin:"https://attacker.test","Content-Type":"application/json"},body:JSON.stringify({action:"test"})}); assert.equal(blocked.status,403);
 const publicHome=load(await(await fetch(base+"/")).text()); assert(!publicHome('link[rel="manifest"]').length); assert(!publicHome('nav[aria-label="Navegação principal mobile"]').length);
 assert((await readFile("src/app/admin/mobile.css","utf8")).includes("@media (max-width: 1023px)"));

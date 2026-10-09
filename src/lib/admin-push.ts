@@ -17,7 +17,7 @@ export async function dispatchAdminAlerts() {
   const [subscriptions, alerts] = await Promise.all([prisma.adminPushSubscription.findMany(), getAdminAlerts()]);
   let sent = 0;
   for (const subscription of subscriptions) {
-    const active = alerts.filter(alert => subscription[alert.category] && alert.count > 0);
+    const active = alerts.filter(alert => (alert.category !== "out" && subscription[alert.category]) && alert.count > 0);
     const fingerprint = active.length ? createHash("sha256").update(active.map(a => `${a.category}:${a.fingerprint}`).join("|")).digest("hex") : null;
     if (fingerprint === subscription.lastAlertFingerprint) continue;
     // Compare-and-swap prevents parallel requests/events sending the same alert.

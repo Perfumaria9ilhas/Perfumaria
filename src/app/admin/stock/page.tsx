@@ -17,13 +17,13 @@ export default async function AdminStockPage({ searchParams }: { searchParams: P
       description={description}
     >
       <StockAdminTable
-        key={`${initialView}-${params.history ?? ""}`}
+        key={JSON.stringify(params)}
         initialView={initialView}
         initialHistory={params.history === "1"}
-        initialSalesStatus={params.payment === "pending" ? "PENDING" : "ALL"}
+        initialSalesStatus={params.payment === "pending" ? "PENDING" : params.payment === "paid" ? "PAID" : "ALL"}
         initialDeliveryStatus={params.delivery === "pending" ? "PENDING" : "ALL"}
-        initialSalesPeriod={params.period === "all" ? "ALL" : "MONTH"}
-        initialStockStatus={params.status === "low" ? "LOW" : "all"}
+        initialSalesPeriod={params.period === "all" ? "ALL" : params.period === "today" ? "TODAY" : "MONTH"}
+        initialStockStatus={params.status === "low" ? "LOW" : params.status === "out" ? "OUT" : "all"}
         rows={data.rows}
         brands={data.brands}
         categories={data.categories}

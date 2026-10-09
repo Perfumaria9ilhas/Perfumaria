@@ -65,3 +65,39 @@
 @media (max-width: 639px) {
   [data-admin-dialog][data-state="open"] { padding-bottom: max(16px,env(safe-area-inset-bottom)); }
 }
+
+/* Shared operational dashboard, including desktop. */
+.admin-dashboard .admin-today { order: 0; }
+.admin-dashboard .admin-today .dashboard-metric { border-radius: 14px; padding: 12px; }
+.dashboard-metric:nth-child(1) { background: #edfdf5; }
+.dashboard-metric:nth-child(2) { background: #eef5ff; }
+.dashboard-metric:nth-child(3) { background: #fff9ea; }
+.dashboard-metric:nth-child(4) { background: #f6f2ff; }
+.dashboard-sales article { background: white; border-radius: 14px; }
+.dashboard-sales article > div[role="button"] { padding: 12px; }
+.dashboard-sales article > div[role="button"] > div:first-child > div { flex: 1; }
+.dashboard-sales article button { min-height: 40px; }
+.admin-bell { position: relative; display: flex; width: 44px; height: 44px; align-items: center; justify-content: center; border-radius: 12px; }
+.admin-bell > span { position: absolute; right: 0; top: 0; background: #dc303e; color: white; border-radius: 12px; padding: 2px 4px; font-size: 10px; }
+@media (min-width: 1024px) {
+  .admin-dashboard { display: flex; flex-direction: column; }
+  .admin-dashboard-actions { order: 1; margin-top: 14px; }
+  .admin-dashboard > section:not(.admin-today):not(.admin-dashboard-actions) { order: 2; }
+  .admin-dashboard > div { order: 3; }
+  .admin-dashboard > section.daily-compact:not(.admin-today):not(.admin-dashboard-actions) { order: 4; }
+  .admin-bell { color: var(--gold); border: 1px solid var(--line); }
+}
+@media (max-width: 1023px) {
+  .admin-today .dashboard-metric strong { font-size: 21px; }
+  .dashboard-sales article > div[role="button"] { padding: 10px; }
+  .dashboard-sales article > div[role="button"] > div:first-child { gap: 8px; }
+  .dashboard-sales article > div[role="button"] > div:first-child strong { font-size: 14px; }
+  .dashboard-sales article > div[role="button"] > div:first-child button { font-size: 13px; }
+  .admin-dashboard > section.daily-compact { margin-top: 14px; }
+}
+
+@media (min-width: 1024px) {
+  .admin-app .admin-layout > div > header { background: #171717; }
+  .admin-app .admin-layout > div > header h1 { color: white; }
+  .admin-app .admin-layout > div > header p { color: #c9c4ba; }
+}

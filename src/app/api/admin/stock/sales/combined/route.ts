@@ -33,6 +33,8 @@ export async function POST(request: Request) {
   const allIds = [...new Set([...data.perfumeLines.map((line) => line.productId), ...data.decantLines.map((line) => line.productId), ...data.kitProductIds])];
   try {
     await prisma.$transaction(async (tx) => {
+      // Lock in a stable order so a capacity edit cannot race a first sale.
+      await tx.$queryRaw`SELECT "id" FROM "Product" WHERE "id" = ANY(${allIds}::text[]) ORDER BY "id" FOR UPDATE`;
       const products = await tx.product.findMany({ where: { id: { in: allIds } } });
       if (products.length !== allIds.length) throw new Error("Um dos produtos selecionados já não existe.");
       const productById = new Map(products.map((product) => [product.id, product]));
@@ -45,7 +47,7 @@ export async function POST(request: Request) {
         const resultingStock = product.stock - quantity;
         const updated = await tx.product.updateMany({ where: { id: product.id, stock: product.stock }, data: { stock: resultingStock } });
         if (updated.count !== 1) throw new Error(`O stock de ${product.name} foi alterado. Tente novamente.`);
-        await tx.stockMovement.create({ data: { productId, type: StockMovementType.SALE, reason: StockMovementReason.SALE, customerName: data.customerName, saleOrigin: data.saleOrigin, saleGroupId, saleStatus: data.status, deliveryStatus: data.deliveryStatus, saleUnitPriceInCents: getSalePriceInCents(product), quantity, previousStock: product.stock, resultingStock, notes: "Venda de perfume" } });
+        await tx.stockMovement.create({ data: { productId, type: StockMovementType.SALE, reason: StockMovementReason.SALE, customerName: data.customerName, saleOrigin: data.saleOrigin, saleGroupId, saleStatus: data.status, deliveryStatus: data.deliveryStatus, saleUnitPriceInCents: getSalePriceInCents(product), quantity, unitCostInCents: product.purchaseCostInCents > 0 ? product.purchaseCostInCents : null, previousStock: product.stock, resultingStock, notes: "Venda de perfume" } });
       }
       const decants = [
         ...data.decantLines.map((line) => ({ ...line, kit: false as const, note: `Decant individual · ${line.sizeMl} ml` })),
@@ -56,14 +58,19 @@ export async function POST(request: Request) {
         if (!product.active) throw new Error(`${product.name} já não está disponível no site.`);
         if (line.sizeMl === 5 && !product.availableInFiveMl) throw new Error(`${product.name} não está disponível em 5 ml.`);
         if (line.sizeMl === 10 && !product.availableInTenMl) throw new Error(`${product.name} não está disponível em 10 ml.`);
+        const volume = product.sizeLabel.match(/^(\d+(?:[.,]\d+)?)\s*ml$/i);
+        const bottleMl = volume ? Number(volume[1].replace(",", ".")) : 0;
+        const unitCostInCents = product.purchaseCostInCents > 0 && bottleMl > 0 ? Math.round(product.purchaseCostInCents * line.sizeMl / bottleMl) : null;
         const price = line.kit ? 330 : getDecantPriceInCents(getSalePriceInCents(product), line.sizeMl === 5 ? "5ml" : "10ml");
-        await tx.stockMovement.create({ data: { productId: product.id, type: StockMovementType.SALE, reason: StockMovementReason.DECANT, customerName: data.customerName, saleOrigin: data.saleOrigin, saleGroupId, saleStatus: data.status, deliveryStatus: data.deliveryStatus, saleUnitPriceInCents: price, quantity: line.quantity, previousStock: product.stock, resultingStock: product.stock, notes: line.note } });
+        await tx.stockMovement.create({ data: { productId: product.id, type: StockMovementType.SALE, reason: StockMovementReason.DECANT, customerName: data.customerName, saleOrigin: data.saleOrigin, saleGroupId, saleStatus: data.status, deliveryStatus: data.deliveryStatus, saleUnitPriceInCents: price, quantity: line.quantity, unitCostInCents, previousStock: product.stock, resultingStock: product.stock, notes: line.note } });
       }
     });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Não foi possível registar a venda." }, { status: 400 });
   }
   revalidatePath("/admin/stock");
+  revalidatePath("/admin");
+  revalidatePath("/admin/estatisticas");
   revalidatePath("/catalogo");
   after(notifyAdminSafely);
   return NextResponse.json({ success: true });

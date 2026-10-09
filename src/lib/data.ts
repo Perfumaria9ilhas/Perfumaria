@@ -1,7 +1,8 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { cache } from "react";
 import { StockDeliveryStatus, StockMovementType, StockSaleStatus } from "@prisma/client";
-import { getAzoresDayBounds } from "@/lib/date";
+import { summarizePaidSales } from "@/lib/admin-dashboard-sales";
+import { getAzoresDateStart, getAzoresDateKey, getAzoresDayBounds } from "@/lib/date";
 import { prisma } from "@/lib/prisma";
 import { getAdminStockTableData } from "@/lib/stock-server";
 import { getStoreSettings } from "@/lib/store-settings";
@@ -121,53 +122,22 @@ export async function getHomeData() {
 export async function getAdminDashboardData() {
   noStore();
   const { start, end } = getAzoresDayBounds();
-  const [activeProducts, todaySales, pendingSales, pendingDeliveries, recentMovements] = await Promise.all([
-    prisma.product.findMany({ where: { active: true }, select: { id: true, name: true, stock: true, lowStockAlert: true, brand: { select: { name: true } } } }),
-    prisma.stockMovement.findMany({ where: { type: StockMovementType.SALE, createdAt: { gte: start, lt: end } }, select: { id: true, saleGroupId: true, saleStatus: true, quantity: true, saleUnitPriceInCents: true } }),
-    prisma.stockMovement.findMany({ where: { type: StockMovementType.SALE, saleStatus: StockSaleStatus.PENDING }, select: { id: true, saleGroupId: true, quantity: true, saleUnitPriceInCents: true } }),
+  const monthStart = getAzoresDateStart(getAzoresDateKey(new Date()).slice(0, 7) + "-01");
+  const [activeProducts, monthSales, pendingSales, pendingDeliveries] = await Promise.all([
+    prisma.product.findMany({ where: { active: true }, select: { id: true, stock: true, lowStockAlert: true } }),
+    prisma.stockMovement.findMany({ where: { type: StockMovementType.SALE, createdAt: { gte: monthStart, lt: end } }, select: { id: true, saleGroupId: true, saleStatus: true, quantity: true, saleUnitPriceInCents: true, unitCostInCents: true, reason: true, notes: true, createdAt: true, product: { select: { purchaseCostInCents: true, sizeLabel: true } } } }),
+    prisma.stockMovement.findMany({ where: { type: StockMovementType.SALE, saleStatus: StockSaleStatus.PENDING }, select: { id: true, saleGroupId: true } }),
     prisma.stockMovement.findMany({ where: { type: StockMovementType.SALE, deliveryStatus: StockDeliveryStatus.PENDING }, select: { id: true, saleGroupId: true } }),
-    prisma.stockMovement.findMany({ where: { type: StockMovementType.SALE }, orderBy: { createdAt: "desc" }, take: 250, select: { id: true, saleGroupId: true, customerName: true, saleStatus: true, deliveryStatus: true, quantity: true, saleUnitPriceInCents: true, createdAt: true, product: { select: { name: true } } } }),
   ]);
-
-  const groupKey = (movement: { id: string; saleGroupId: string | null }) => movement.saleGroupId ?? movement.id;
-  const todayGroups = new Map<string, typeof todaySales>();
-  for (const movement of todaySales) todayGroups.set(groupKey(movement), [...(todayGroups.get(groupKey(movement)) ?? []), movement]);
-  const paidTodayGroups = [...todayGroups.values()].filter((items) => !items.some((item) => item.saleStatus === StockSaleStatus.PENDING) && items.some((item) => (item.saleStatus ?? StockSaleStatus.PAID) === StockSaleStatus.PAID));
-  const paidTodayValue = paidTodayGroups.flat().filter((item) => (item.saleStatus ?? StockSaleStatus.PAID) === StockSaleStatus.PAID).reduce((sum, item) => sum + item.quantity * (item.saleUnitPriceInCents ?? 0), 0);
-  const pendingValue = pendingSales.reduce((sum, item) => sum + item.quantity * (item.saleUnitPriceInCents ?? 0), 0);
-  const pendingPaymentGroups = new Set(pendingSales.map(groupKey)).size;
-  const pendingDeliveryGroups = new Set(pendingDeliveries.map(groupKey)).size;
-  const outOfStock = activeProducts.filter((product) => product.stock <= 0).length;
-  const lowStock = activeProducts.filter((product) => product.stock > 0 && product.stock <= product.lowStockAlert).length;
-
-  const recentGroupMap = new Map<string, typeof recentMovements>();
-  for (const movement of recentMovements) {
-    const key = groupKey(movement);
-    if (!recentGroupMap.has(key) && recentGroupMap.size >= 5) continue;
-    recentGroupMap.set(key, [...(recentGroupMap.get(key) ?? []), movement]);
-  }
-  const recentSales = [...recentGroupMap.entries()].map(([id, items]) => {
-    const hasPending = items.some((item) => item.saleStatus === StockSaleStatus.PENDING);
-    const hasPaid = items.some((item) => (item.saleStatus ?? StockSaleStatus.PAID) === StockSaleStatus.PAID);
-    return {
-      id, createdAt: items[0].createdAt, customerName: items[0].customerName,
-      itemCount: items.reduce((sum, item) => sum + item.quantity, 0),
-      summary: items.slice(0, 3).map((item) => `${item.quantity}× ${item.product.name}`).join(", ") + (items.length > 3 ? ` +${items.length - 3}` : ""),
-      valueInCents: items.filter((item) => item.saleStatus !== StockSaleStatus.OFFERED).reduce((sum, item) => sum + item.quantity * (item.saleUnitPriceInCents ?? 0), 0),
-      payment: hasPending ? "Por pagar" : hasPaid ? "Pago" : "Oferecido",
-      delivery: items.some((item) => item.deliveryStatus === StockDeliveryStatus.PENDING) ? "Por entregar" : "Entregue",
-    };
-  });
-
+  const groupCount = (items: { id: string; saleGroupId: string | null }[]) => new Set(items.map(item => item.saleGroupId ?? item.id)).size;
   return {
-    today: { paidSales: paidTodayGroups.length, paidValue: paidTodayValue, pendingValue },
-    attention: { pendingPayments: pendingPaymentGroups, pendingDeliveries: pendingDeliveryGroups, lowStock, outOfStock },
-    recentSales,
-    lowStockProducts: activeProducts
-      .filter((product) => product.stock > 0 && product.stock <= product.lowStockAlert)
-      .sort((left, right) => left.stock - right.stock || left.name.localeCompare(right.name, "pt-PT"))
-      .slice(0, 5)
-      .map((product) => ({ id: product.id, name: product.name, brand: product.brand.name, stock: product.stock })),
+    today: summarizePaidSales(monthSales.filter(item => item.createdAt >= start)),
+    month: summarizePaidSales(monthSales),
+    attention: {
+      pendingPayments: groupCount(pendingSales), pendingDeliveries: groupCount(pendingDeliveries),
+      lowStock: activeProducts.filter(p => p.stock > 0 && p.stock <= p.lowStockAlert).length,
+      outOfStock: activeProducts.filter(p => p.stock <= 0).length,
+    },
   };
 }
 

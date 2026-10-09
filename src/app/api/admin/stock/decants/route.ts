@@ -42,6 +42,7 @@ export async function POST(request: Request) {
   try {
     await prisma.$transaction(async (tx) => {
       const uniqueProductIds = [...new Set(lines.map((line) => line.productId))];
+      await tx.$queryRaw`SELECT "id" FROM "Product" WHERE "id" = ANY(${uniqueProductIds}::text[]) ORDER BY "id" FOR UPDATE`;
       const products = await tx.product.findMany({ where: { id: { in: uniqueProductIds } } });
       if (products.length !== uniqueProductIds.length) throw new Error("Um dos perfumes selecionados já não existe.");
       for (const line of lines) {

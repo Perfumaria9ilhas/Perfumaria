@@ -12,6 +12,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { getAzoresDateKey } from "@/lib/date";
+import { getDecantPriceInCents } from "@/lib/product-sizes";
 import { compareMobileSales } from "@/lib/admin-sales-sort";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { InventoryWorkspace } from "./inventory-workspace";
@@ -39,8 +42,9 @@ type Props = {
   initialView?: "NEW_SALE" | "SALES" | "STOCK";
   initialSalesStatus?: "ALL" | StockSaleStatus;
   initialDeliveryStatus?: "ALL" | StockDeliveryStatus;
-  initialSalesPeriod?: "ALL" | "MONTH";
-  initialStockStatus?: "all" | "LOW";
+  initialSalesPeriod?: "ALL" | "MONTH" | "TODAY";
+  compact?: boolean;
+  initialStockStatus?: "all" | "LOW" | "OUT";
   initialHistory?: boolean;
 };
 
@@ -66,14 +70,11 @@ type StockSaleRow = {
   deliveryStatus: StockDeliveryStatus;
   createdAt: string;
   totalInCents: number;
+  profit?: { estimatedProfit: number; missingCost: number };
   items: { id: string; productId: string; name: string; quantity: number; unitPriceInCents: number; status: StockSaleStatus; deliveryStatus: StockDeliveryStatus; sizeMl: 5 | 10 | null; notes: string | null }[];
 };
 
 const SALE_ORIGINS = ["WhatsApp", "Instagram", "Facebook", "Site", "Feira", "Presencial", "Google", "Outro"] as const;
-
-function localDateKey(date: Date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-}
 
 export function StockAdminTable({
   rows: initialRows,
@@ -85,7 +86,13 @@ export function StockAdminTable({
   initialSalesPeriod = "MONTH",
   initialStockStatus = "all",
   initialHistory = false,
+  compact = false,
 }: Props) {
+  const router = useRouter();
+  const saleLock = useRef(false);
+  const statusLocks = useRef(new Set<string>());
+  const newSaleForm = useRef<HTMLFormElement>(null);
+  const [newSaleTotal, setNewSaleTotal] = useState(0);
   const [rows, setRows] = useState(initialRows);
   const [customerNames, setCustomerNames] = useState(initialCustomerNames);
   const [, setCustomerSummaries] = useState(initialCustomerSummaries);
@@ -107,14 +114,14 @@ export function StockAdminTable({
   const [combinedDecantMode, setCombinedDecantMode] = useState<"NONE" | "KIT" | "INDIVIDUAL">("NONE");
   const [savingCombinedSale, setSavingCombinedSale] = useState(false);
   const [sales, setSales] = useState<StockSaleRow[]>([]);
-  const [salesLoading, setSalesLoading] = useState(false);
+  const [salesLoading, setSalesLoading] = useState(initialView === "SALES");
   const [salesStatusFilter, setSalesStatusFilter] = useState<"ALL" | StockSaleStatus>(initialSalesStatus);
   const [salesDeliveryFilter, setSalesDeliveryFilter] = useState<"ALL" | StockDeliveryStatus>(initialDeliveryStatus);
   const [salesKindFilter, setSalesKindFilter] = useState<"ALL" | "BOTTLE" | "DECANT_5" | "DECANT_10" | "KIT">("ALL");
   const [salesQuery, setSalesQuery] = useState("");
   const [salesPendingOnly, setSalesPendingOnly] = useState(false);
-  const [salesFrom, setSalesFrom] = useState(() => initialSalesPeriod === "ALL" ? "" : localDateKey(new Date(new Date().getFullYear(), new Date().getMonth(), 1)));
-  const [salesTo, setSalesTo] = useState(() => initialSalesPeriod === "ALL" ? "" : localDateKey(new Date()));
+  const [salesFrom, setSalesFrom] = useState(() => initialSalesPeriod === "ALL" ? "" : initialSalesPeriod === "TODAY" ? getAzoresDateKey() : getAzoresDateKey().slice(0,7) + "-01");
+  const [salesTo, setSalesTo] = useState(() => initialSalesPeriod === "ALL" ? "" : getAzoresDateKey());
   const [salesPeriod, setSalesPeriod] = useState<"ALL" | "TODAY" | "7D" | "MONTH" | "CUSTOM">(initialSalesPeriod);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [customerHistoryName, setCustomerHistoryName] = useState<string | null>(null);
@@ -428,8 +435,27 @@ export function StockAdminTable({
     }
   }
 
+  function calculateNewSaleTotal() {
+    if (!newSaleForm.current) return;
+    const values = new FormData(newSaleForm.current);
+    if (values.get("status") === StockSaleStatus.OFFERED) { setNewSaleTotal(0); return; }
+    let total = 0;
+    for (const id of perfumeLineIds) {
+      const product = rows.find(row => row.id === values.get(`combinedPerfume${id}`));
+      if (product) total += product.salePriceInCents * Number(values.get(`combinedPerfumeQuantity${id}`) || 0);
+    }
+    if (combinedDecantMode === "INDIVIDUAL") for (const id of decantLineIds) {
+      const product = rows.find(row => row.id === values.get(`combinedDecant${id}`));
+      if (product) total += getDecantPriceInCents(product.salePriceInCents, values.get(`combinedDecantSize${id}`) === "10" ? "10ml" : "5ml") * Number(values.get(`combinedDecantQuantity${id}`) || 0);
+    }
+    if (combinedDecantMode === "KIT" && [1,2,3,4,5].every(id => values.get(`combinedKit${id}`))) total += 1650 * Number(values.get("combinedKitQuantity") || 0);
+    setNewSaleTotal(total);
+  }
+
   async function submitCombinedSale(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (saleLock.current) return;
+    saleLock.current = true;
     const formData = new FormData(event.currentTarget);
     const perfumeLines = perfumeLineIds.map((id) => ({
       productId: formData.get(`combinedPerfume${id}`)?.toString() ?? "",
@@ -497,29 +523,38 @@ export function StockAdminTable({
 
   async function updateSaleStatus(saleGroupId: string, status: StockSaleStatus) {
     const key = `${saleGroupId}:payment`;
-    if (updatingSaleFields.includes(key)) return;
+    if (statusLocks.current.has(`${saleGroupId}:payment`) || statusLocks.current.has(`${saleGroupId}:delivery`)) return;
     const previous = sales.find((sale) => sale.id === saleGroupId)?.status;
     if (!previous || previous === status) return;
+    if (status === StockSaleStatus.PENDING && !window.confirm("Reverter este estado para pendente?")) return;
+    const snapshot = sales.find(sale => sale.id === saleGroupId)!;
+    statusLocks.current.add(key);
     setUpdatingSaleFields((current) => [...current, key]);
-    setSales((current) => current.map((sale) => sale.id === saleGroupId ? { ...sale, status, items: sale.items.map((item) => ({ ...item, status })) } : sale));
+    setSales((current) => current.map((sale) => sale.id === saleGroupId ? { ...sale, status, items: sale.items.map((item) => ({ ...item, status: item.status === StockSaleStatus.OFFERED && status !== StockSaleStatus.OFFERED ? StockSaleStatus.OFFERED : status })) } : sale));
     try {
       const response = await fetch("/api/admin/stock/sales", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ saleGroupId, status }) });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error ?? "Não foi possível alterar o pagamento.");
       window.dispatchEvent(new Event("admin-alerts-change"));
+      await loadSales();
+      router.refresh();
     } catch (error) {
-        setSales((current) => current.map((sale) => sale.id === saleGroupId ? { ...sale, status: previous, items: sale.items.map((item) => ({ ...item, status: previous })) } : sale));
+      setSales(current => current.map(sale => sale.id === saleGroupId ? snapshot : sale));
       setBanner({ tone: "error", message: error instanceof Error ? error.message : "Não foi possível alterar o pagamento." });
     } finally {
+      statusLocks.current.delete(key);
       setUpdatingSaleFields((current) => current.filter((entry) => entry !== key));
     }
   }
 
   async function updateDeliveryStatus(saleGroupId: string, deliveryStatus: StockDeliveryStatus) {
     const key = `${saleGroupId}:delivery`;
-    if (updatingSaleFields.includes(key)) return;
+    if (statusLocks.current.has(`${saleGroupId}:payment`) || statusLocks.current.has(`${saleGroupId}:delivery`)) return;
     const previous = sales.find((sale) => sale.id === saleGroupId)?.deliveryStatus;
     if (!previous || previous === deliveryStatus) return;
+    if (deliveryStatus === StockDeliveryStatus.PENDING && !window.confirm("Reverter este estado para pendente?")) return;
+    const snapshot = sales.find(sale => sale.id === saleGroupId)!;
+    statusLocks.current.add(key);
     setUpdatingSaleFields((current) => [...current, key]);
     setSales((current) => current.map((sale) => sale.id === saleGroupId ? { ...sale, deliveryStatus, items: sale.items.map((item) => ({ ...item, deliveryStatus })) } : sale));
     try {
@@ -527,10 +562,13 @@ export function StockAdminTable({
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error ?? "Não foi possível alterar a entrega.");
       window.dispatchEvent(new Event("admin-alerts-change"));
+      await loadSales();
+      router.refresh();
     } catch (error) {
-        setSales((current) => current.map((sale) => sale.id === saleGroupId ? { ...sale, deliveryStatus: previous, items: sale.items.map((item) => ({ ...item, deliveryStatus: previous })) } : sale));
+      setSales(current => current.map(sale => sale.id === saleGroupId ? snapshot : sale));
       setBanner({ tone: "error", message: error instanceof Error ? error.message : "Não foi possível alterar a entrega." });
     } finally {
+      statusLocks.current.delete(key);
       setUpdatingSaleFields((current) => current.filter((entry) => entry !== key));
     }
   }
@@ -559,6 +597,8 @@ export function StockAdminTable({
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error ?? "Não foi possível guardar a venda.");
       await loadSales();
+      window.dispatchEvent(new Event("admin-alerts-change"));
+      router.refresh();
       setExpandedSaleId(null);
     } catch (error) {
       setBanner({ tone: "error", message: error instanceof Error ? error.message : "Não foi possível guardar a venda." });
@@ -594,7 +634,7 @@ export function StockAdminTable({
       if (salesPendingOnly && sale.status !== StockSaleStatus.PENDING && sale.deliveryStatus !== StockDeliveryStatus.PENDING) return false;
       if (salesStatusFilter !== "ALL" && sale.status !== salesStatusFilter) return false;
       if (salesDeliveryFilter !== "ALL" && sale.deliveryStatus !== salesDeliveryFilter) return false;
-      const date = sale.createdAt.slice(0, 10);
+      const date = getAzoresDateKey(new Date(sale.createdAt));
       if (salesFrom && date < salesFrom || salesTo && date > salesTo) return false;
       if (query && !normalizeStockSearch(`${sale.customerName} ${sale.items.map((item) => item.name).join(" ")}`).includes(query)) return false;
       if (salesKindFilter === "BOTTLE" && !sale.items.some((item) => !item.notes?.includes("Decant"))) return false;
@@ -605,7 +645,7 @@ export function StockAdminTable({
     }).sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime());
   }, [sales, salesDeliveryFilter, salesFrom, salesKindFilter, salesPendingOnly, salesQuery, salesStatusFilter, salesTo]);
   const periodSales = useMemo(() => sales.filter((sale) => {
-    const date = sale.createdAt.slice(0, 10);
+    const date = getAzoresDateKey(new Date(sale.createdAt));
     return (!salesFrom || date >= salesFrom) && (!salesTo || date <= salesTo);
   }), [sales, salesFrom, salesTo]);
   const periodPaidValue = getItemStatusTotal(periodSales, StockSaleStatus.PAID);
@@ -614,7 +654,7 @@ export function StockAdminTable({
   const customerHistory = useMemo(() => customerHistoryName ? sales.filter((sale) => normalizeStockSearch(sale.customerName) === normalizeStockSearch(customerHistoryName)).sort((a, b) => b.createdAt.localeCompare(a.createdAt)) : [], [customerHistoryName, sales]);
   const salesTotalPages = Math.max(1, Math.ceil(filteredSales.length / 25));
   const mobilePagedSales = [...filteredSales].sort(compareMobileSales).slice((salesPage - 1) * 25, salesPage * 25);
-  const pagedSales = filteredSales.slice((salesPage - 1) * 25, salesPage * 25);
+  const pagedSales = [...filteredSales].sort(compareMobileSales).slice((salesPage - 1) * 25, salesPage * 25);
 
   function applySalesPeriod(period: typeof salesPeriod) {
     const today = new Date();
@@ -626,11 +666,11 @@ export function StockAdminTable({
       setSalesTo("");
       return;
     }
-    const from = new Date(today);
-    if (period === "7D") from.setDate(today.getDate() - 6);
-    if (period === "MONTH") from.setDate(1);
-    setSalesFrom(localDateKey(from));
-    setSalesTo(localDateKey(today));
+    const dateKey = getAzoresDateKey(today);
+    const from = new Date(`${dateKey}T12:00:00Z`);
+    if (period === "7D") from.setUTCDate(from.getUTCDate() - 6);
+    setSalesFrom(period === "MONTH" ? dateKey.slice(0,7) + "-01" : from.toISOString().slice(0,10));
+    setSalesTo(getAzoresDateKey(today));
   }
 
   function clearSalesFilters() {
@@ -640,8 +680,8 @@ export function StockAdminTable({
     setSalesKindFilter("ALL");
     setSalesPendingOnly(false);
     const today = new Date();
-    setSalesFrom(localDateKey(new Date(today.getFullYear(), today.getMonth(), 1)));
-    setSalesTo(localDateKey(today));
+    setSalesFrom(getAzoresDateKey(today).slice(0,7) + "-01");
+    setSalesTo(getAzoresDateKey(today));
     setSalesPeriod("MONTH");
     setSalesPage(1);
   }
@@ -905,6 +945,16 @@ export function StockAdminTable({
     }
   }
 
+  if (compact) {
+    const visibleSales = [...filteredSales].sort(compareMobileSales).slice(0,5);
+    return <div className="dashboard-sales space-y-2">
+      {banner ? <p role="alert" className="rounded-xl border p-3 text-sm text-red-700">{banner.message}</p> : null}
+      {salesLoading ? <p role="status" className="p-3 text-sm text-slate-500">A carregar vendas…</p> : null}
+      {!salesLoading && !visibleSales.length ? <p className="p-3 text-sm text-slate-500">Ainda não existem vendas.</p> : null}
+      {visibleSales.map(sale => <MobileSaleCard key={sale.id} sale={sale} expanded={expandedSaleId === sale.id} onToggle={() => setExpandedSaleId(current => current === sale.id ? null : sale.id)} onCustomerHistory={() => setExpandedSaleId(current => current === sale.id ? null : sale.id)} onStatusChange={status => updateSaleStatus(sale.id,status)} onDeliveryStatusChange={status => updateDeliveryStatus(sale.id,status)} paymentUpdating={updatingSaleFields.some(key => key.startsWith(`${sale.id}:`))} deliveryUpdating={updatingSaleFields.some(key => key.startsWith(`${sale.id}:`))} onSave={event => saveSaleEdits(event,sale)} onDelete={() => deleteSale(sale)} saving={savingSaleId === sale.id} deleting={deletingSaleId === sale.id} products={rows} />)}
+    </div>;
+  }
+
   return (
     <div className="space-y-5">
       {banner ? <p role={banner.tone === "error" ? "alert" : "status"} className={`rounded-xl p-3 text-sm ${banner.tone === "error" ? "bg-rose-50 text-rose-800" : "bg-emerald-50 text-emerald-800"}`}>{banner.message}</p> : null}
@@ -1125,7 +1175,7 @@ export function StockAdminTable({
       {activeView === "NEW_SALE" ? (
         <section className="rounded-[1.8rem] border border-[color:var(--line)] bg-white p-5 shadow-sm sm:p-7">
           <h2 className="font-serif text-3xl text-[color:var(--ink)]">Nova venda</h2>
-          <form className="mt-5 space-y-6" onSubmit={submitCombinedSale}>
+          <form ref={newSaleForm} className="mt-5 space-y-6" onChange={() => requestAnimationFrame(calculateNewSaleTotal)} onClick={() => requestAnimationFrame(calculateNewSaleTotal)} onSubmit={submitCombinedSale}>
             <div className="grid gap-4 md:grid-cols-4">
               <Field label="Cliente"><input name="customerName" value={newSaleCustomerName} onChange={(event) => setNewSaleCustomerName(event.target.value)} list="combined-customer-names" required minLength={2} className="h-12 w-full rounded-2xl border border-[color:var(--line)] px-4" placeholder="Nome da pessoa que compra" /></Field>
               <Field label="Estado da venda">
@@ -1194,7 +1244,7 @@ export function StockAdminTable({
                 ) : null}
               </div>
             </div>
-            <div className="flex justify-end border-t border-[color:var(--line)] pt-5"><button disabled={savingCombinedSale} className="rounded-full bg-[color:var(--atlantic)] px-6 py-3 text-sm font-semibold text-white disabled:opacity-50">{savingCombinedSale ? "A registar..." : "Registar venda completa"}</button></div>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--line)] pt-5"><output aria-live="polite" className="text-lg font-semibold">Total: {formatPrice(newSaleTotal)}</output><button disabled={savingCombinedSale} className="rounded-full bg-[color:var(--atlantic)] px-6 py-3 text-sm font-semibold text-white disabled:opacity-50">{savingCombinedSale ? "A registar..." : "Registar venda completa"}</button></div>
           </form>
         </section>
       ) : null}
@@ -1252,7 +1302,7 @@ export function StockAdminTable({
               </div>
 
               <div className="admin-sales-mobile space-y-3 md:hidden">
-                {mobilePagedSales.map((sale) => <MobileSaleCard key={sale.id} sale={sale} expanded={expandedSaleId === sale.id} onToggle={() => setExpandedSaleId((current) => current === sale.id ? null : sale.id)} onCustomerHistory={() => setCustomerHistoryName(sale.customerName)} onStatusChange={(status) => updateSaleStatus(sale.id, status)} onDeliveryStatusChange={(status) => updateDeliveryStatus(sale.id, status)} paymentUpdating={updatingSaleFields.includes(`${sale.id}:payment`)} deliveryUpdating={updatingSaleFields.includes(`${sale.id}:delivery`)} onSave={(event) => saveSaleEdits(event, sale)} onDelete={() => deleteSale(sale)} saving={savingSaleId === sale.id} deleting={deletingSaleId === sale.id} products={rows.filter((row) => row.active)} />)}
+                {mobilePagedSales.map((sale) => <MobileSaleCard key={sale.id} sale={sale} expanded={expandedSaleId === sale.id} onToggle={() => setExpandedSaleId((current) => current === sale.id ? null : sale.id)} onCustomerHistory={() => setCustomerHistoryName(sale.customerName)} onStatusChange={(status) => updateSaleStatus(sale.id, status)} onDeliveryStatusChange={(status) => updateDeliveryStatus(sale.id, status)} paymentUpdating={updatingSaleFields.some(key => key.startsWith(`${sale.id}:`))} deliveryUpdating={updatingSaleFields.some(key => key.startsWith(`${sale.id}:`))} onSave={(event) => saveSaleEdits(event, sale)} onDelete={() => deleteSale(sale)} saving={savingSaleId === sale.id} deleting={deletingSaleId === sale.id} products={rows.filter((row) => row.active)} />)}
               </div>
 
               {!pagedSales.length ? <p className="rounded-2xl border border-[color:var(--line)] p-5 text-slate-500">Nenhuma venda encontrada.</p> : null}
@@ -1476,9 +1526,9 @@ function MobileSaleCard({ sale, expanded, onToggle, onCustomerHistory, onStatusC
 }) {
   const firstKitItemId = sale.items.find((item) => item.notes?.includes("Kit de decants"))?.id;
   return <article className={`min-w-0 overflow-hidden rounded-2xl border border-[color:var(--line)] ${sale.status === StockSaleStatus.PENDING || sale.deliveryStatus === StockDeliveryStatus.PENDING ? "bg-amber-50" : "bg-white"}`}>
-    <div role="button" tabIndex={0} onClick={onToggle} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onToggle(); } }} className="cursor-pointer space-y-2.5 p-4">
+    <div role="button" tabIndex={0} onClick={onToggle} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { if (event.target !== event.currentTarget) return; event.preventDefault(); onToggle(); } }} className="cursor-pointer space-y-2.5 p-4">
       <div className="flex min-w-0 items-start justify-between gap-3">
-        <Image src={products.find(product => product.id === sale.items[0]?.productId)?.imageUrl || "/logo-9-ilhas.svg"} alt="" width={38} height={48} unoptimized className="h-12 w-9 shrink-0 rounded-lg bg-slate-50 object-contain" />
+        <Image src={products.find(product => product.id === sale.items[0]?.productId)?.imageUrl || "/logo-9-ilhas.svg"} alt="" width={36} height={48} unoptimized className="h-12 w-9 shrink-0 rounded-lg bg-slate-50 object-contain" />
         <div className="min-w-0"><button type="button" onClick={(event) => { event.stopPropagation(); onCustomerHistory(); }} className="max-w-full truncate text-left font-semibold text-[color:var(--ink)] underline decoration-[color:var(--line)] underline-offset-4">{sale.customerName}</button><p className="mt-1 text-xs text-slate-500">{new Date(sale.createdAt).toLocaleString("pt-PT", { timeZone: "Atlantic/Azores", dateStyle: "short", timeStyle: "short" })}{sale.saleOrigin ? ` · ${sale.saleOrigin}` : ""}</p></div>
         <strong className="shrink-0 font-serif text-lg">{formatPrice(sale.totalInCents)}</strong>
       </div>
@@ -1491,6 +1541,7 @@ function MobileSaleCard({ sale, expanded, onToggle, onCustomerHistory, onStatusC
       </div>
     </div>
     {expanded ? <form onSubmit={onSave} className="space-y-4 border-t border-[color:var(--line)] bg-[color:var(--sand-soft)] p-4">
+      {sale.profit ? <p className="text-xs text-slate-600">Margem bruta estimada: {sale.profit.missingCost ? `Incompleta (${sale.profit.missingCost} unidade(s) sem custo) · parcela conhecida ${formatPrice(sale.profit.estimatedProfit)}` : formatPrice(sale.profit.estimatedProfit)}</p> : null}
       <Field label="Nome do cliente"><input name="customerName" defaultValue={sale.customerName} required minLength={2} className="h-12 w-full rounded-2xl border border-[color:var(--line)] bg-white px-4" /></Field>
       <Field label="Origem da venda"><select name="saleOrigin" defaultValue={sale.saleOrigin ?? ""} className="h-12 w-full rounded-2xl border border-[color:var(--line)] bg-white px-4"><option value="">Não indicada</option>{SALE_ORIGINS.map((origin) => <option key={origin} value={origin}>{origin}</option>)}</select></Field>
       {sale.items.map((item) => <div key={item.id} className="space-y-3 rounded-2xl border border-[color:var(--line)] bg-white p-3">
@@ -1649,7 +1700,7 @@ function SearchableProductSelect({
               className="block w-full rounded-xl px-3 py-3 text-left text-sm text-[color:var(--ink)] hover:bg-[color:var(--sand-soft)]"
             >
               <span className="font-medium">{product.name}</span>
-              <span className="ml-1 text-slate-500">· {product.brandName}</span>
+              <span className="ml-1 text-slate-500">· {product.brandName} · {product.sizeLabel || "100 ml"} · {formatPrice(product.salePriceInCents)}</span>
             </button>
           )) : (
             <p className="px-3 py-4 text-sm text-slate-500">Nenhum perfume encontrado.</p>

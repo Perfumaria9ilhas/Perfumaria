@@ -50,6 +50,7 @@ export type AdminStockRow = {
   active: boolean;
   availableInFiveMl: boolean;
   availableInTenMl: boolean;
+  basePriceInCents?: number;
   salePriceInCents: number;
   unitCostInCents: number;
   stock: number;

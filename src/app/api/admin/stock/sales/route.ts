@@ -4,6 +4,7 @@ import { StockDeliveryStatus, StockMovementReason, StockMovementType, StockSaleS
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { summarizePaidSales } from "@/lib/admin-dashboard-sales";
 import { requireAdmin } from "@/lib/auth";
 import { getSalePriceInCents } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
@@ -37,7 +38,7 @@ export async function GET() {
   await requireAdmin();
   const movements = await prisma.stockMovement.findMany({
     where: { type: StockMovementType.SALE, customerName: { not: null } },
-    include: { product: { select: { name: true } } },
+    include: { product: { select: { name: true, purchaseCostInCents: true, sizeLabel: true } } },
     orderBy: { createdAt: "desc" },
   });
   const groups = new Map<string, {
@@ -56,10 +57,12 @@ export async function GET() {
       totalInCents: 0,
       items: [],
     };
-    group.totalInCents += movement.quantity * (movement.saleUnitPriceInCents ?? 0);
+    group.totalInCents += movement.saleStatus === StockSaleStatus.OFFERED ? 0 : movement.quantity * (movement.saleUnitPriceInCents ?? 0);
     group.items.push({ id: movement.id, productId: movement.productId, name: movement.product.name, quantity: movement.quantity, unitPriceInCents: movement.saleUnitPriceInCents ?? 0, status: movement.saleStatus ?? StockSaleStatus.PAID, deliveryStatus: movement.deliveryStatus ?? StockDeliveryStatus.DELIVERED, sizeMl: movement.notes?.includes("Decant individual") ? (movement.notes.includes("10 ml") ? 10 : 5) : null, notes: movement.notes });
     groups.set(id, group);
   }
+  const movementGroups = new Map<string, typeof movements>();
+  for (const movement of movements) { const key = movement.saleGroupId ?? movement.id; movementGroups.set(key, [...(movementGroups.get(key) ?? []), movement]); }
   for (const group of groups.values()) {
     group.status = group.items.some((item) => item.status === StockSaleStatus.PENDING)
       ? StockSaleStatus.PENDING
@@ -70,7 +73,7 @@ export async function GET() {
       ? StockDeliveryStatus.PENDING
       : StockDeliveryStatus.DELIVERED;
   }
-  return NextResponse.json({ sales: [...groups.values()] });
+  return NextResponse.json({ sales: [...groups.values()].map(group => ({ ...group, profit: summarizePaidSales(movementGroups.get(group.id) ?? []) })) });
 }
 
 export async function PATCH(request: Request) {
@@ -100,8 +103,10 @@ export async function PATCH(request: Request) {
       const nextProduct = replacements.get(nextProductId) ?? movement.product;
       const isIndividualDecant = movement.notes?.includes("Decant individual") ?? false;
       const nextSizeMl = itemSizes.get(movement.id) ?? (movement.notes?.includes("10 ml") ? 10 : 5);
-      if (!nextProduct.active) throw new Error(`${nextProduct.name} já não está disponível no site.`);
-      if (movement.reason === StockMovementReason.DECANT) {
+      const formatChanged = isIndividualDecant && itemSizes.has(movement.id) && nextSizeMl !== (movement.notes?.includes("10 ml") ? 10 : 5);
+      const productChanged = nextProductId !== movement.productId;
+      if (productChanged && !nextProduct.active) throw new Error(`${nextProduct.name} já não está disponível no site.`);
+      if (movement.reason === StockMovementReason.DECANT && (productChanged || formatChanged)) {
         if (nextSizeMl === 10 && !nextProduct.availableInTenMl) throw new Error(`${nextProduct.name} não está disponível em 10 ml.`);
         if (nextSizeMl === 5 && !nextProduct.availableInFiveMl) throw new Error(`${nextProduct.name} não está disponível em 5 ml.`);
       }
@@ -111,16 +116,34 @@ export async function PATCH(request: Request) {
         if (movement.quantity > currentReplacement.stock) throw new Error(`Stock insuficiente para ${currentReplacement.name}. Disponível: ${currentReplacement.stock}.`);
         await tx.product.update({ where: { id: nextProductId }, data: { stock: currentReplacement.stock - movement.quantity } });
       }
+      const nextPayment = itemStatuses.get(movement.id) ?? (movement.saleStatus === StockSaleStatus.OFFERED && parsed.data.status !== StockSaleStatus.OFFERED ? StockSaleStatus.OFFERED : parsed.data.status ?? movement.saleStatus);
+      const nextDelivery = itemDeliveryStatuses.get(movement.id) ?? parsed.data.deliveryStatus ?? movement.deliveryStatus;
+      if (nextPayment !== movement.saleStatus || nextDelivery !== movement.deliveryStatus) {
+        await tx.stockMovement.create({ data: {
+          productId: movement.productId, type: StockMovementType.ADJUSTMENT, reason: StockMovementReason.MANUAL,
+          quantity: 0, previousStock: movement.product.stock, resultingStock: movement.product.stock,
+          notes: `Estado da venda ${parsed.data.saleGroupId} · ${JSON.stringify({ anterior: { pagamento: movement.saleStatus, entrega: movement.deliveryStatus }, novo: { pagamento: nextPayment, entrega: nextDelivery } })}`,
+        } });
+      }
+      let nextUnitCost = movement.unitCostInCents;
+      if (productChanged || formatChanged) {
+        nextUnitCost = nextProduct.purchaseCostInCents > 0 ? nextProduct.purchaseCostInCents : null;
+        if (movement.reason === StockMovementReason.DECANT && nextUnitCost !== null) {
+          const volume = nextProduct.sizeLabel.match(/^(\d+(?:[.,]\d+)?)\s*ml$/i);
+          nextUnitCost = volume && Number(volume[1].replace(",", ".")) > 0 ? Math.round(nextUnitCost * nextSizeMl / Number(volume[1].replace(",", "."))) : null;
+        }
+      }
       await tx.stockMovement.update({
         where: { id: movement.id },
         data: {
+          unitCostInCents: nextUnitCost,
           saleGroupId: parsed.data.saleGroupId,
-          saleStatus: itemStatuses.get(movement.id) ?? parsed.data.status,
+          saleStatus: nextPayment,
           deliveryStatus: itemDeliveryStatuses.get(movement.id) ?? parsed.data.deliveryStatus,
           customerName: parsed.data.customerName ?? movement.customerName,
           saleOrigin: parsed.data.saleOrigin === undefined ? movement.saleOrigin : parsed.data.saleOrigin,
           productId: nextProductId,
-          saleUnitPriceInCents: isIndividualDecant
+          saleUnitPriceInCents: isIndividualDecant && (productChanged || formatChanged)
             ? getDecantPriceInCents(getSalePriceInCents(nextProduct), nextSizeMl === 10 ? "10ml" : "5ml")
             : nextProductId !== movement.productId && movement.reason === StockMovementReason.SALE
               ? getSalePriceInCents(nextProduct)
@@ -134,6 +157,8 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Não foi possível guardar a venda." }, { status: 400 });
   }
   revalidatePath("/admin/stock");
+  revalidatePath("/admin");
+  revalidatePath("/admin/estatisticas");
   after(notifyAdminSafely);
   return NextResponse.json({ success: true });
 }
@@ -190,6 +215,8 @@ export async function DELETE(request: Request) {
   }
 
   revalidatePath("/admin/stock");
+  revalidatePath("/admin");
+  revalidatePath("/admin/estatisticas");
   revalidatePath("/catalogo");
   after(notifyAdminSafely);
   return NextResponse.json({ success: true });
@@ -237,6 +264,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Não foi possível registar a venda." }, { status: 400 });
   }
   revalidatePath("/admin/stock");
+  revalidatePath("/admin");
+  revalidatePath("/admin/estatisticas");
   revalidatePath("/catalogo");
   after(notifyAdminSafely);
   return NextResponse.json({ success: true });

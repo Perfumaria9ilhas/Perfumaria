@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useDeferredValue, useMemo, useState, type ReactNode } from "react";
 import { Check, Clock, Eye, History, MoreVertical, Package, Plus, Search, SlidersHorizontal } from "lucide-react";
 import { type AdminStockRow, filterStockRows, getStockStatus, getStockStatusTone, sortStockRows, type StockSortKey } from "@/lib/stock";
+import { QuickStockEditor } from "./quick-stock-editor";
 import { InventoryDialog } from "./inventory-dialog";
 import { formatPrice } from "@/lib/format";
 
@@ -20,7 +21,7 @@ const button = "inline-flex min-h-10 items-center justify-center gap-2 rounded-x
 
 export function InventoryWorkspace({ rows, onUpdate, onHistory, onEntry, onNotes, tools, initialStatus, initialHistory = false }: {
   rows: AdminStockRow[]; onUpdate: (row: AdminStockRow) => void; onHistory: (row: AdminStockRow) => void;
-  onEntry: (row: AdminStockRow) => void; onNotes: (row: AdminStockRow) => void; tools: ReactNode; initialStatus: "all" | "LOW"; initialHistory?: boolean;
+  onEntry: (row: AdminStockRow) => void; onNotes: (row: AdminStockRow) => void; tools: ReactNode; initialStatus: "all" | "LOW" | "OUT"; initialHistory?: boolean;
 }) {
   const [filters, setFilters] = useState<Filters>({ ...empty, inventory: initialStatus });
   const [draftFilters, setDraftFilters] = useState<Filters | null>(null);
@@ -29,13 +30,7 @@ export function InventoryWorkspace({ rows, onUpdate, onHistory, onEntry, onNotes
   const [quick, setQuick] = useState<AdminStockRow | null>(null);
   const [historyPicker, setHistoryPicker] = useState(initialHistory);
   const [actions, setActions] = useState<AdminStockRow | null>(null);
-  const [stock, setStock] = useState(0);
-  const [purchaseCost, setPurchaseCost] = useState(0);
-  const [alert, setAlert] = useState(0);
-  const [active, setActive] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
   const [sort, setSort] = useState<{ key: StockSortKey; direction: "asc" | "desc" }>({ key: "product", direction: "asc" });
   const query = useDeferredValue(filters.query);
   const filtered = useMemo(() => sortStockRows(filterStockRows(rows, {
@@ -51,20 +46,7 @@ export function InventoryWorkspace({ rows, onUpdate, onHistory, onEntry, onNotes
   const counts = useMemo(() => ({ all: rows.length, in: rows.filter((r) => r.stock > 0).length, LOW: rows.filter((r) => getStockStatus(r.stock, r.lowStockAlert) === "LOW").length, OUT: rows.filter((r) => r.stock === 0).length, reserve: rows.filter((r) => r.active && r.stock === 0).length }), [rows]);
   const stockValue = useMemo(() => rows.reduce((total, row) => ({ units: total.units + row.stock, cost: total.cost + row.stock * row.unitCostInCents, potential: total.potential + row.stock * row.salePriceInCents, missing: total.missing + (row.stock > 0 && row.unitCostInCents <= 0 ? 1 : 0) }), { units: 0, cost: 0, potential: 0, missing: 0 }), [rows]);
   function change(next: Partial<Filters>) { setFilters((f) => ({ ...f, ...next })); setPage(1); }
-  function openQuick(row: AdminStockRow) { setActions(null); setStock(row.stock); setPurchaseCost(row.unitCostInCents / 100); setAlert(row.lowStockAlert); setActive(row.active); setError(""); setQuick(row); }
-  async function save(event: React.FormEvent) {
-    event.preventDefault(); if (!quick) return;
-    setSaving(true); setError("");
-    try {
-      const response = await fetch(`/api/admin/stock/product/${quick.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ stock, lowStockAlert: alert, active, unitCost: String(purchaseCost) }) });
-      const payload = await response.json(); if (!response.ok) throw new Error(payload.error ?? "Não foi possível guardar.");
-      window.dispatchEvent(new Event("admin-alerts-change"));
-      const unitCostInCents = Math.round(purchaseCost * 100);
-      onUpdate({ ...quick, stock, unitCostInCents, investedValueInCents: stock * unitCostInCents, potentialSalesValueInCents: stock * quick.salePriceInCents, potentialProfitInCents: unitCostInCents > 0 ? stock * (quick.salePriceInCents - unitCostInCents) : null, lowStockAlert: alert, active, status: getStockStatus(stock, alert) });
-      setQuick(null); setMessage(payload.unchanged ? "Sem alterações. Os dados foram preservados." : "Stock atualizado.");
-    } catch (err) { setError(err instanceof Error ? err.message : "Não foi possível guardar."); }
-    finally { setSaving(false); }
-  }
+  function openQuick(row: AdminStockRow) { setActions(null); setQuick(row); }
   function exportFiltered() {
     const params = new URLSearchParams({ scope: "filtered", ...filters, status: filters.inventory === "LOW" || filters.inventory === "OUT" ? filters.inventory : "all" });
     window.location.href = `/api/admin/stock/export?${params}`;
@@ -82,7 +64,7 @@ export function InventoryWorkspace({ rows, onUpdate, onHistory, onEntry, onNotes
   function product(row: AdminStockRow) {
     return <button type="button" onClick={() => openQuick(row)} className="flex min-w-0 items-center gap-3 text-left" aria-label={`Edição rápida: ${row.name}`}>
       <Image src={row.imageUrl || "/logo-9-ilhas.svg"} alt="" width={48} height={56} unoptimized className="h-14 w-12 shrink-0 rounded-lg bg-[color:var(--sand-soft)] object-contain" />
-      <span className="min-w-0"><strong className="block text-sm font-medium leading-snug">{row.name}</strong><span className="text-xs text-slate-500">{row.sizeLabel || "—"}<span className="lg:hidden"> · {row.brandName}</span></span></span>
+      <span className="min-w-0"><strong className="block text-sm font-medium leading-snug">{row.name}</strong><span className="text-xs text-slate-500">{row.sizeLabel || "—"} · {formatPrice(row.salePriceInCents)}<span className="lg:hidden"> · {row.brandName}</span></span></span>
     </button>;
   }
   function badge(row: AdminStockRow) {
@@ -115,7 +97,7 @@ export function InventoryWorkspace({ rows, onUpdate, onHistory, onEntry, onNotes
     <div className="flex flex-wrap gap-2"><Link href="/admin/produtos" className={button}>Gerir produtos e preferidos</Link><button type="button" className={button} onClick={() => setHistoryPicker(true)}><History size={16} />Histórico de stock</button></div>
     {historyPicker ? <InventoryDialog title="Histórico de stock" onClose={() => setHistoryPicker(false)}><label className="block space-y-2 text-sm">Selecionar produto<select className={control} defaultValue="" onChange={(e) => { const row = rows.find((r) => r.id === e.target.value); if (row) { setHistoryPicker(false); onHistory(row); } }}><option value="">Selecionar produto...</option>{rows.map((r) => <option key={r.id} value={r.id}>{r.name} · {r.brandName}</option>)}</select></label></InventoryDialog> : null}
     {draftFilters ? <InventoryDialog title="Filtros" onClose={() => setDraftFilters(null)}><div className="space-y-4"><label className="block space-y-1 text-xs text-slate-600">Pesquisar<input type="search" value={draftFilters.query} onChange={(e) => setDraftFilters({ ...draftFilters, query: e.target.value })} className={control} placeholder="Nome, marca ou categoria..." /></label>{advanced(draftFilters, (next) => setDraftFilters({ ...draftFilters, ...next }))}<label className="block space-y-1 text-xs text-slate-600">Cliente<select aria-label="Cliente" value={draftFilters.customerName} onChange={(e) => setDraftFilters({ ...draftFilters, customerName: e.target.value })} className={control}><option value="">Todos os clientes</option>{customers.map((name) => <option key={name}>{name}</option>)}</select></label><button type="button" onClick={() => { setFilters(draftFilters); setPage(1); setDraftFilters(null); }} className={`${button} w-full bg-[color:var(--atlantic)] text-white`}>Aplicar filtros</button><button type="button" onClick={() => { setDraftFilters(empty); setFilters(empty); setPage(1); }} className={`${button} w-full`}>Limpar filtros</button></div></InventoryDialog> : null}
-    {quick ? <InventoryDialog title={`Edição rápida · ${quick.name}`} onClose={() => { if (!saving) setQuick(null); }}><dl className="mb-4 grid grid-cols-3 gap-2 rounded-xl bg-[color:var(--sand-soft)] p-3 text-xs"><div><dt>Custo de compra</dt><dd className="mt-1 font-semibold">{purchaseCost > 0 ? formatPrice(Math.round(purchaseCost * 100)) : "Por definir"}</dd></div><div><dt>Preço de venda</dt><dd className="mt-1 font-semibold">{formatPrice(quick.salePriceInCents)}</dd></div><div><dt>Margem bruta/unidade</dt><dd className="mt-1 font-semibold">{purchaseCost > 0 ? formatPrice(quick.salePriceInCents - Math.round(purchaseCost * 100)) : "—"}</dd></div></dl><form onSubmit={save} className="space-y-4"><p className="text-xs text-slate-500">{quick.brandName} · {quick.sizeLabel}. O estado de stock é calculado automaticamente pela quantidade e pelo limite de alerta.</p><label className="block space-y-1 text-sm">Custo de compra (€)<input type="number" min={0} step="0.01" required value={purchaseCost} onChange={(e) => setPurchaseCost(Number(e.target.value))} className={control} /></label><label className="block space-y-1 text-sm">Stock<input type="number" min={0} required value={stock} onChange={(e) => setStock(Number(e.target.value))} className={control} /></label><label className="block space-y-1 text-sm">Limite de stock baixo<input type="number" min={0} required value={alert} onChange={(e) => setAlert(Number(e.target.value))} className={control} /></label><label className="flex min-h-10 items-center gap-2 text-sm"><input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} />Produto ativo</label>{error ? <p role="alert" className="text-sm text-red-700">{error}</p> : null}<div className="flex gap-2"><button type="button" disabled={saving} onClick={() => setQuick(null)} className={`${button} flex-1`}>Cancelar</button><button disabled={saving} className={`${button} flex-1 bg-[color:var(--atlantic)] text-white`}>{saving ? "A guardar..." : "Guardar"}</button></div><Link href={`/admin/produtos?editar=${quick.id}#editar-produto`} className="block text-center text-sm underline">Edição completa do produto</Link></form></InventoryDialog> : null}
+    {quick ? <QuickStockEditor key={quick.id} row={quick} onClose={() => setQuick(null)} onSave={(next) => { onUpdate(next); setMessage("Produto atualizado."); }} /> : null}
     {actions ? <InventoryDialog title={actions.name} onClose={() => setActions(null)}><div className="grid gap-2"><button type="button" className={button} onClick={() => openQuick(actions)}>Edição rápida</button><Link className={button} href={`/admin/produtos?editar=${actions.id}#editar-produto`}>Editar produto completo</Link><button type="button" className={button} onClick={() => { onHistory(actions); setActions(null); }}>Histórico de stock</button><button type="button" className={button} onClick={() => { onEntry(actions); setActions(null); }}>Registar entrada</button><button type="button" className={button} onClick={() => { onNotes(actions); setActions(null); }}>Notas internas</button></div></InventoryDialog> : null}
   </div>;
 }

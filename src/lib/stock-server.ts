@@ -68,6 +68,7 @@ function mapProductRow(
     active: product.active,
     availableInFiveMl: product.availableInFiveMl,
     availableInTenMl: product.availableInTenMl,
+    basePriceInCents: product.priceInCents,
     salePriceInCents: currentSellPriceInCents,
     unitCostInCents: product.purchaseCostInCents,
     stock: product.stock,
