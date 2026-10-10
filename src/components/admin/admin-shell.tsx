@@ -21,6 +21,7 @@ const navSections: AdminNavSection[] = [
   { label: "Gestão", items: [
     { href: "/admin/stock?view=stock", label: "Stock", icon: Boxes },
     { href: "/admin/produtos", label: "Produtos", icon: PackageSearch },
+    { href: "/admin/descontos", label: "Descontos", icon: Tags },
   ] },
   { label: "Catálogo", items: [
     { href: "/admin/marcas", label: "Marcas", icon: Tags },

@@ -33,6 +33,7 @@ model CustomerAccount {
   phone      String
   address    String
   orders     SiteOrder[]
+  favorites  CustomerFavorite[]
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
@@ -101,6 +102,8 @@ model Product {
   orderItems       SiteOrderItem[]
   stockMovements   StockMovement[]
   analyticsDaily   ProductAnalyticsDaily[]
+  promotion        ProductPromotion?
+  favorites        CustomerFavorite[]
 
   @@index([brandId])
   @@index([categoryId])
@@ -425,4 +428,52 @@ model AccountAudit {
   next Json?
   createdAt DateTime @default(now())
   @@index([targetId, createdAt])
+}
+
+enum PromotionMethod {
+  PERCENT
+  FIXED
+}
+
+enum PromotionStatus {
+  ENABLED
+  DISABLED
+  ENDED
+}
+
+// One normal promotion per product. Revisions are retained in PromotionAudit.
+model ProductPromotion {
+  id String @id @default(cuid())
+  productId String @unique
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  method PromotionMethod
+  value Int // hundredths of a percent, or integer euro cents
+  startsAt DateTime @db.Timestamptz(3)
+  endsAt DateTime? @db.Timestamptz(3)
+  status PromotionStatus @default(ENABLED)
+  actorId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([status, startsAt, endsAt])
+}
+
+model PromotionAudit {
+  id String @id @default(cuid())
+  promotionId String
+  productId String
+  actorId String
+  action String
+  previous Json?
+  next Json?
+  createdAt DateTime @default(now())
+  @@index([productId, createdAt])
+}
+
+model CustomerFavorite {
+  customerId String
+  productId String
+  customer CustomerAccount @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@id([customerId, productId])
 }

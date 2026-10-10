@@ -7,9 +7,10 @@ import { prisma } from "@/lib/prisma";
 import { getAdminStockTableData } from "@/lib/stock-server";
 import { getStoreSettings } from "@/lib/store-settings";
 import { readHomepageState } from "@/lib/homepage-config";
-import { applyDailyPerfume } from "@/lib/daily-perfume";
+import { resolveCatalogPrice, promotionSelect } from "@/lib/promotion-select";
 
 const publicProductSelect = {
+  promotion: promotionSelect,
   id: true,
   name: true,
   slug: true,
@@ -38,7 +39,7 @@ export const getCatalogProductBySlug = cache(async (slug: string) => {
     where: { slug, active: true },
     select: publicProductSelect,
   }), getStoreSettings()]);
-  return product ? applyDailyPerfume(product, readHomepageState(settings.homepageConfig).perfumeOfDayId) : null;
+  return product ? resolveCatalogPrice(product, readHomepageState(settings.homepageConfig).perfumeOfDayId) : null;
 });
 
 export async function getCatalogData() {
@@ -67,7 +68,7 @@ export async function getCatalogData() {
   const products = catalogRows.map(({ createdAt, ...product }) => {
     void createdAt;
     return {
-      ...applyDailyPerfume(product, dailyId),
+      ...resolveCatalogPrice(product, dailyId),
       recentRank: recentRankById.get(product.id) ?? catalogRows.length,
     };
   });
@@ -109,7 +110,7 @@ export async function getHomeData() {
   const settings = await getStoreSettings();
   const dailyId = readHomepageState(settings.homepageConfig).perfumeOfDayId;
   return {
-    featuredProducts: featuredProducts.map((product) => applyDailyPerfume(product, dailyId)),
+    featuredProducts: featuredProducts.map((product) => resolveCatalogPrice(product, dailyId)),
     reviews,
     stats: {
       satisfiedCustomersCount: metrics?.totalSatisfiedCustomers ?? fallbackOrdersCount,

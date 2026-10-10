@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 import { logoutAdmin } from "@/actions/admin";
 import { AdminShell } from "@/components/admin/admin-shell";
 const links = [
+  { href: "/admin/descontos", label: "Descontos", text: "Criar e gerir promoções", icon: Tags },
   { href: "/admin/estatisticas", label: "Estatísticas", text: "Vendas e desempenho", icon: BarChart3 },
   { href: "/admin/loja", label: "Página inicial", text: "Imagens e secções da loja", icon: House },
   { href: "/admin/marcas", label: "Marcas", text: "Gerir marcas", icon: Tags },

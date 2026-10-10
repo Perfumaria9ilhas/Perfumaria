@@ -14,7 +14,7 @@ export function ProductCard({ product, price, originalPrice, children, onOpen, p
   const bottlePrice = product.salePriceInCents && product.salePriceInCents < product.priceInCents ? product.salePriceInCents : product.priceInCents;
   const displayPrice = price ?? bottlePrice;
   const previousPrice = originalPrice ?? (price === undefined ? product.priceInCents : displayPrice);
-  const badge = product.perfumeOfDay ? "-10% hoje" : product.bestseller ? "Mais vendido" : product.featured ? "Em destaque" : null;
+  const badge = displayPrice < previousPrice ? `-${new Intl.NumberFormat("pt-PT", { maximumFractionDigits: 1 }).format((1 - displayPrice / previousPrice) * 100)}%${product.perfumeOfDay && product.dailyDiscountApplied !== false ? " · hoje" : ""}` : product.bestseller ? "Mais vendido" : product.featured ? "Em destaque" : null;
   return <article className="store-product-card">
     <div className="store-card-image">
       <Link href={`/catalogo?produto=${encodeURIComponent(product.slug)}`} scroll={false} onClick={onOpen} aria-label={`Ver ${product.name}`}>

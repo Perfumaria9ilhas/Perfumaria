@@ -25,7 +25,7 @@ try {
  const auth=await load('auth');const manager=await load('management');const users=await load('users');const deletion=await load('deletion');
  const {accountPromotions}=await load('promotions');const {applyDailyPerfume}=await load('daily');
  const promotion={id:'daily',priceInCents:4500,salePriceInCents:4000,category:{slug:'perfumes'},productType:{slug:'perfume'}};
- const day=applyDailyPerfume(promotion,'daily');assert.equal(day.salePriceInCents,4050);assert.equal(day.decantBottlePriceInCents,4000);
+ const day=applyDailyPerfume(promotion,'daily');assert.equal(day.salePriceInCents,4000);assert.equal(day.decantBottlePriceInCents,4000);
  assert.equal(accountPromotions([day,promotion,{...promotion,active:false},{...promotion,salePriceInCents:null},{...promotion,salePriceInCents:0},{...promotion,salePriceInCents:-1},{...promotion,salePriceInCents:5000}]).length,2);
  assert.equal(accountPromotions([applyDailyPerfume({...promotion,salePriceInCents:null},null)]).length,0);
  console.log('PASS valid active catalogue promotions, Perfume do Dia, no stacking, original decant pricing, disabled/cleared/invalid promotions excluded.');

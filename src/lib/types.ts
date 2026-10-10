@@ -12,6 +12,7 @@ import type {
 
 export type CatalogProduct = {
   perfumeOfDay?: boolean;
+  dailyDiscountApplied?: boolean;
   decantBottlePriceInCents?: number;
   id: string;
   name: string;

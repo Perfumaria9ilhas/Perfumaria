@@ -6,7 +6,7 @@ export function formatPrice(priceInCents: number) {
 }
 
 export function getSalePriceInCents(product: { priceInCents: number; salePriceInCents: number | null }) {
-  return product.salePriceInCents && product.salePriceInCents < product.priceInCents
+  return product.salePriceInCents && product.salePriceInCents > 0 && product.salePriceInCents < product.priceInCents
     ? product.salePriceInCents
     : product.priceInCents;
 }

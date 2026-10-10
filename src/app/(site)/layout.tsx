@@ -20,7 +20,7 @@ export default async function SiteLayout({
 
   return (
     <CookieConsentProvider metaPixelId={process.env.META_PIXEL_ID}>
-      <FavoritesProvider><div className="public-site min-h-screen min-w-0 max-w-full overflow-x-clip">
+      <FavoritesProvider key={currentCustomer?.id ?? "guest"} accountId={currentCustomer?.id ?? null}><div className="public-site min-h-screen min-w-0 max-w-full overflow-x-clip">
         <SiteHeader
           settings={settings}
           socialLinks={socialLinks}
