@@ -34,8 +34,25 @@ model CustomerAccount {
   address    String
   orders     SiteOrder[]
   favorites  CustomerFavorite[]
+  passwordResets CustomerPasswordReset[]
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+}
+
+model CustomerPasswordReset {
+  id String @id
+  customerId String
+  customer CustomerAccount @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  sessionVersion Int
+  createdAt DateTime @default(now())
+  @@index([customerId, createdAt])
+}
+
+model CustomerAuthThrottle {
+  id String @id
+  count Int
+  expiresAt DateTime
 }
 
 model Brand {
