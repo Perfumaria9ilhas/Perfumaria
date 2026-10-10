@@ -71,4 +71,3 @@ Quando for autorizado publicar, `prisma migrate deploy` aplica a migração ante
 Limitações mantidas: sem novas promoções comerciais em produção, sem alteração de email através da conta, sem descontos novos para kits/decants e sem catálogo artificial. A alteração continua por publicar, mediante autorização.
 
 Verificação final: capturas desktop/mobile atualizadas, sem erros de consola na última sessão. Durante a sessão prolongada ocorreram falhas transitórias de ligação PostgreSQL (P1001); os pedidos seguintes concluíram com sucesso. As imagens em falta no catálogo de teste foram copiadas para esse ambiente e confirmadas na captura final. O servidor de testes foi encerrado e o schema temporário removido; a contagem de contas, administradores, pedidos e produtos do schema público manteve-se igual antes/depois da limpeza. A migração de produção continua por aplicar.
-
