@@ -1,6 +1,7 @@
 import { StockMovementReason, StockMovementType, StockSaleStatus } from "@prisma/client";
 import { getAzoresDateKey, getAzoresDateStart } from "@/lib/date";
 import { prisma } from "@/lib/prisma";
+import { summarizePaidSales } from "@/lib/admin-dashboard-sales";
 
 export type StatisticsPeriod = "today" | "7d" | "30d" | "month" | "year" | "previous-year" | "custom";
 export type StatisticsMetric = "visits" | "views" | "cart" | "whatsapp" | "sales" | "revenue";
@@ -69,7 +70,7 @@ export async function getStatisticsData(range: { from: string; to: string }) {
     prisma.searchAnalyticsDaily.findMany({ where: { dateKey: { gte: range.from, lte: range.to } } }),
     prisma.stockMovement.findMany({
       where: { type: StockMovementType.SALE, createdAt },
-      select: { id: true, saleGroupId: true, saleStatus: true, saleUnitPriceInCents: true, quantity: true, createdAt: true, reason: true, notes: true, productId: true, product: { select: { name: true, audience: true, brand: { select: { name: true } } } } },
+      select: { id: true, saleGroupId: true, saleStatus: true, saleUnitPriceInCents: true, unitCostInCents: true, quantity: true, createdAt: true, reason: true, notes: true, productId: true, product: { select: { purchaseCostInCents: true, sizeLabel: true, name: true, audience: true, brand: { select: { name: true } } } } },
     }),
     prisma.analyticsDaily.findFirst({ orderBy: { dateKey: "asc" }, select: { dateKey: true } }),
     prisma.productAnalyticsDaily.findFirst({ orderBy: { dateKey: "asc" }, select: { dateKey: true } }),
@@ -111,9 +112,9 @@ export async function getStatisticsData(range: { from: string; to: string }) {
   const paidUnits = paidMovements.reduce((sum, movement) => sum + movement.quantity, 0);
 
   const aggregateProducts = (field: "views" | "addedUnits" | "checkoutUnits" | "reservationEvents") => {
-    const map = new Map<string, { name: string; value: number }>();
+    const map = new Map<string, { id: string; name: string; value: number }>();
     for (const row of productDaily) {
-      const current = map.get(row.productId) ?? { name: row.product.name, value: 0 };
+      const current = map.get(row.productId) ?? { id: row.productId, name: row.product.name, value: 0 };
       current.value += row[field];
       map.set(row.productId, current);
     }
@@ -121,11 +122,12 @@ export async function getStatisticsData(range: { from: string; to: string }) {
   };
   const checkoutProducts = aggregateProducts("checkoutUnits");
   const reservationProducts = aggregateProducts("reservationEvents");
-  const soldProducts = new Map<string, { name: string; value: number }>();
+  const soldProducts = new Map<string, { id: string; name: string; brand: string; audience: string; value: number; revenue: number }>();
   for (const movement of paidMovements) {
     if (movement.reason !== StockMovementReason.SALE) continue;
-    const current = soldProducts.get(movement.productId) ?? { name: movement.product.name, value: 0 };
+    const current = soldProducts.get(movement.productId) ?? { id: movement.productId, name: movement.product.name, brand: movement.product.brand.name, audience: movement.product.audience === "MASCULINO" ? "Homem" : movement.product.audience === "FEMININO" ? "Mulher" : "Unissexo", value: 0, revenue: 0 };
     current.value += movement.quantity;
+    current.revenue += movement.quantity * (movement.saleUnitPriceInCents ?? 0);
     soldProducts.set(movement.productId, current);
   }
   const searchRanking = new Map<string, { name: string; value: number; zero: number }>();
@@ -146,8 +148,8 @@ export async function getStatisticsData(range: { from: string; to: string }) {
     return [...values].map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value || a.name.localeCompare(b.name, "pt-PT"));
   };
   const paidBottles = paidMovements.filter((movement) => movement.reason === StockMovementReason.SALE).reduce((sum, movement) => sum + movement.quantity, 0);
-  const paidFiveMl = paidMovements.filter((movement) => movement.reason === StockMovementReason.DECANT && /decant individual/i.test(movement.notes ?? "") && /5\s*ml/i.test(movement.notes ?? "") && !/10\s*ml/i.test(movement.notes ?? "")).reduce((sum, movement) => sum + movement.quantity, 0);
-  const paidTenMl = paidMovements.filter((movement) => movement.reason === StockMovementReason.DECANT && /10\s*ml/i.test(movement.notes ?? "")).reduce((sum, movement) => sum + movement.quantity, 0);
+  const paidFiveMl = paidMovements.filter((movement) => movement.reason === StockMovementReason.DECANT && !/kit de decants/i.test(movement.notes ?? "") && /decant individual/i.test(movement.notes ?? "") && /5\s*ml/i.test(movement.notes ?? "") && !/10\s*ml/i.test(movement.notes ?? "")).reduce((sum, movement) => sum + movement.quantity, 0);
+  const paidTenMl = paidMovements.filter((movement) => movement.reason === StockMovementReason.DECANT && !/kit de decants/i.test(movement.notes ?? "") && /10\s*ml/i.test(movement.notes ?? "")).reduce((sum, movement) => sum + movement.quantity, 0);
   const decantKitGroups = new Map<string, number>();
   for (const movement of paidMovements.filter((item) => item.reason === StockMovementReason.DECANT && /kit de decants/i.test(item.notes ?? ""))) {
     const groupId = movement.saleGroupId ?? movement.id;
@@ -159,6 +161,7 @@ export async function getStatisticsData(range: { from: string; to: string }) {
   const saleDays = new Map<string, Set<string>>();
   const revenueDays = new Map<string, number>();
   const saleHours = new Map<string, Set<string>>();
+  const revenueHours = new Map<string, number>();
   for (const movement of paidMovements) {
     const key = getAzoresDateKey(movement.createdAt);
     const groups = saleDays.get(key) ?? new Set<string>();
@@ -168,13 +171,14 @@ export async function getStatisticsData(range: { from: string; to: string }) {
     const hourGroups = saleHours.get(hour) ?? new Set<string>();
     hourGroups.add(movement.saleGroupId ?? movement.id);
     saleHours.set(hour, hourGroups);
+    revenueHours.set(hour, (revenueHours.get(hour) ?? 0) + movement.quantity * (movement.saleUnitPriceInCents ?? 0));
     revenueDays.set(key, (revenueDays.get(key) ?? 0) + movement.quantity * (movement.saleUnitPriceInCents ?? 0));
   }
   const starts = {
     visits: firstDaily?.dateKey ?? null,
-    views: firstProductDaily?.dateKey ?? BEHAVIOR_TRACKING_START,
-    cart: firstProductDaily?.dateKey ?? BEHAVIOR_TRACKING_START,
-    whatsapp: firstDaily?.dateKey && firstDaily.dateKey > BEHAVIOR_TRACKING_START ? firstDaily.dateKey : BEHAVIOR_TRACKING_START,
+    views: firstProductDaily?.dateKey ?? null,
+    cart: firstProductDaily?.dateKey ?? null,
+    whatsapp: firstDaily ? (firstDaily.dateKey > BEHAVIOR_TRACKING_START ? firstDaily.dateKey : BEHAVIOR_TRACKING_START) : null,
     sales: firstSale ? getAzoresDateKey(firstSale.createdAt) : null,
     revenue: firstSale ? getAzoresDateKey(firstSale.createdAt) : null,
   } satisfies Record<StatisticsMetric, string | null>;
@@ -183,19 +187,19 @@ export async function getStatisticsData(range: { from: string; to: string }) {
     views: starts.views,
     cart: starts.cart,
     whatsapp: starts.whatsapp,
-    reservations: firstDaily?.dateKey && firstDaily.dateKey > BEHAVIOR_TRACKING_START ? firstDaily.dateKey : BEHAVIOR_TRACKING_START,
-    searches: firstSearch?.dateKey ?? BEHAVIOR_TRACKING_START,
+    reservations: firstDaily ? (firstDaily.dateKey > BEHAVIOR_TRACKING_START ? firstDaily.dateKey : BEHAVIOR_TRACKING_START) : null,
+    searches: firstSearch?.dateKey ?? null,
   };
   const availability = Object.fromEntries(
-    Object.entries(behaviorStarts).map(([metric, start]) => [metric, Boolean(start && range.to >= start)]),
+    Object.entries(behaviorStarts).map(([metric, start]) => [metric, Boolean(start && range.to >= start && range.from <= getAzoresDateKey())]),
   ) as Record<keyof typeof behaviorStarts, boolean>;
   const days = enumerateDays(range.from, range.to);
   const series = days.map((dateKey) => ({
     dateKey,
     visits: dateKey <= getAzoresDateKey() && starts.visits && dateKey >= starts.visits ? dayMap.get(dateKey)?.visits ?? 0 : null,
-    views: dateKey <= getAzoresDateKey() && dateKey >= starts.views ? dayMap.get(dateKey)?.productViews ?? 0 : null,
-    cart: dateKey <= getAzoresDateKey() && dateKey >= starts.cart ? dayMap.get(dateKey)?.addToCartEvents ?? 0 : null,
-    whatsapp: dateKey <= getAzoresDateKey() && dateKey >= starts.whatsapp ? dayMap.get(dateKey)?.checkoutWhatsapp ?? 0 : null,
+    views: dateKey <= getAzoresDateKey() && starts.views && dateKey >= starts.views ? dayMap.get(dateKey)?.productViews ?? 0 : null,
+    cart: dateKey <= getAzoresDateKey() && starts.cart && dateKey >= starts.cart ? dayMap.get(dateKey)?.addToCartEvents ?? 0 : null,
+    whatsapp: dateKey <= getAzoresDateKey() && starts.whatsapp && dateKey >= starts.whatsapp ? dayMap.get(dateKey)?.checkoutWhatsapp ?? 0 : null,
     sales: dateKey <= getAzoresDateKey() && starts.sales && dateKey >= starts.sales ? saleDays.get(dateKey)?.size ?? 0 : null,
     revenue: dateKey <= getAzoresDateKey() && starts.revenue && dateKey >= starts.revenue ? revenueDays.get(dateKey) ?? 0 : null,
   }));
@@ -212,23 +216,37 @@ export async function getStatisticsData(range: { from: string; to: string }) {
     audiences: aggregateProductDimension("audience"),
   };
 
+  const profit = summarizePaidSales(movements);
+  const formatKey = (movement: typeof movements[number]) => {
+    if (movement.reason === StockMovementReason.SALE) return "bottles";
+    if (movement.reason === StockMovementReason.DECANT) {
+      if (/kit de decants/i.test(movement.notes ?? "")) return "decantKits";
+      if (/10\s*ml/i.test(movement.notes ?? "")) return "tenMl";
+      if (/decant individual/i.test(movement.notes ?? "") && /5\s*ml/i.test(movement.notes ?? "")) return "fiveMl";
+    }
+    return "other";
+  };
+  const formats = [
+    { key: "bottles", name: "Frascos", quantity: paidBottles, revenue: 0 },
+    { key: "fiveMl", name: "Decants individuais de 5 ml", quantity: paidFiveMl, revenue: 0 },
+    { key: "tenMl", name: "Decants individuais de 10 ml", quantity: paidTenMl, revenue: 0 },
+    { key: "decantKits", name: "Kits de decants", quantity: paidDecantKits, revenue: 0 },
+    { key: "other", name: "Outros formatos", quantity: 0, revenue: 0 },
+  ];
+  for (const movement of paidMovements) {
+    const format = formats.find(item => item.key === formatKey(movement))!;
+    format.revenue += movement.quantity * (movement.saleUnitPriceInCents ?? 0);
+    if (format.key === "other") format.quantity += movement.quantity;
+  }
+
   return {
     totals,
+    profit,
+    formats: formats.filter(item => item.key !== "other" || item.quantity > 0),
     sales: { paidCount: paidGroupIds.size, paidValue, pendingValue, paidUnits, ticketAverage: paidGroupIds.size ? Math.round(paidValue / paidGroupIds.size) : 0, bottles: paidBottles, fiveMl: paidFiveMl, tenMl: paidTenMl, decantKits: paidDecantKits },
-    rankings: {
-      viewed: allRankings.viewed.slice(0, 5),
-      added: allRankings.added.slice(0, 5),
-      whatsapp: allRankings.whatsapp.slice(0, 5),
-      reservations: allRankings.reservations.slice(0, 5),
-      sold: allRankings.sold.slice(0, 5),
-      searches: allRankings.searches.slice(0, 5),
-      zeroSearches: allRankings.zeroSearches.slice(0, 5),
-      brands: allRankings.brands.slice(0, 5),
-      audiences: allRankings.audiences.slice(0, 5),
-    },
     allRankings,
     series,
-    hourlySales: range.from === range.to ? Array.from({ length: 24 }, (_, hour) => ({ label: `${String(hour).padStart(2, "0")}:00`, value: saleHours.get(String(hour).padStart(2, "0"))?.size ?? 0 })) : [],
+    hourlySales: range.from === range.to ? Array.from({ length: 24 }, (_, hour) => ({ label: `${String(hour).padStart(2, "0")}:00`, value: saleHours.get(String(hour).padStart(2, "0"))?.size ?? 0, revenue: revenueHours.get(String(hour).padStart(2, "0")) ?? 0 })) : [],
     starts,
     availability,
     migratedVisitDays,

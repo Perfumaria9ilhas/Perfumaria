@@ -1,6 +1,6 @@
 import { after } from "next/server";
 import { notifyAdminSafely } from "@/lib/admin-push";
-import { StockMovementReason, StockMovementType } from "@prisma/client";
+import { writeStockProduct } from "@/lib/stock-product-update";
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -101,24 +101,7 @@ export async function PATCH(
   try {
     await prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT "id" FROM "Product" WHERE "id" = ${productId} FOR UPDATE`;
-      // One product represents one bottle capacity. Historical sales cannot be
-      // reassigned to a different capacity, including the decant source bottle.
-      if (changes.sizeLabel !== undefined && changes.sizeLabel !== product.sizeLabel) {
-        const historicalSale = await tx.stockMovement.findFirst({ where: { productId, type: StockMovementType.SALE }, select: { id: true } });
-        if (historicalSale) throw new Error("Este produto tem vendas anteriores. Para outra capacidade, utilize um produto distinto; as vendas antigas mantêm a capacidade original.");
-      }
-      const updated = await tx.product.updateMany({
-        where: { id: productId, updatedAt: product.updatedAt, stock: product.stock }, data: changes,
-      });
-      if (updated.count !== 1) throw new Error("O produto foi alterado entretanto. Atualize a página antes de guardar.");
-      version = (await tx.product.findUniqueOrThrow({ where: { id: productId }, select: { updatedAt: true } })).updatedAt.toISOString();
-      const previous = Object.fromEntries(Object.keys(changes).map(key => [key, product[key as keyof typeof product]]));
-      await tx.stockMovement.create({ data: {
-        productId, type: StockMovementType.ADJUSTMENT, reason: StockMovementReason.MANUAL,
-        quantity: Math.abs(parsed.data.stock - product.stock), previousStock: product.stock, resultingStock: parsed.data.stock,
-        unitCostInCents: changes.purchaseCostInCents ?? product.purchaseCostInCents,
-        notes: `Edição rápida no Admin · ${JSON.stringify({ anterior: previous, novo: changes })}`,
-      } });
+      version = (await writeStockProduct(tx, product, changes)).updatedAt.toISOString();
     });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Não foi possível guardar." }, { status: 409 });

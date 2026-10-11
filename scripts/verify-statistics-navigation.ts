@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {statisticsOverview,statisticsSelection,statisticsMonthRange,statisticsDate,statisticsHref} from '../src/lib/statistics-navigation';
+assert.equal(statisticsDate('2026-02-30'),undefined);
+const week=statisticsOverview({period:'7d',from:'2026-10-05',to:'2026-10-11'},'2026-03-29');assert.equal(week.from,'2026-03-23');assert.equal(week.to,'2026-03-29');
+assert.deepEqual(statisticsMonthRange('2024-02-12'),{from:'2024-02-01',to:'2024-02-29'});
+assert.deepEqual(statisticsMonthRange('2026-02-12'),{from:'2026-02-01',to:'2026-02-28'});
+const year=statisticsOverview({period:'year',from:'2026-01-01',to:'2026-12-31'},'2025-12-31');assert.equal(year.from,'2025-01-01');
+const selection=statisticsSelection(year,'2025-02-28','2025-02');assert.equal(selection.range.from,'2025-02-28');assert.equal(selection.context.to,'2025-02-28');assert.equal(statisticsSelection(year,'2026-01-01','2026-01').range.from,year.from);
+assert.match(statisticsHref(year,{month:'2025-02',day:'2025-02-28'}),/month=2025-02&day=2025-02-28|day=2025-02-28&month=2025-02/);
+console.log('PASS calendar leap years, invalid dates, range validation, previous weeks across DST, year/month/day drilldown and deep links');

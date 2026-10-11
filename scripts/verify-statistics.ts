@@ -31,6 +31,8 @@ async function verify() {
     const amount = (rows: typeof lines) => rows.reduce((sum, line) => sum + line.quantity * (line.saleUnitPriceInCents ?? 0), 0);
     const paidValue = amount(paidLines);
     assert.equal(data.sales.paidValue, paidValue);
+    assert.equal(data.formats.reduce((sum, row) => sum + row.revenue, 0), paidValue);
+    assert.equal(new Set(data.formats.map(row => row.key)).size, data.formats.length);
     assert.equal(data.sales.paidCount, paid.length);
     assert.equal(data.sales.pendingValue, amount(lines.filter((line) => line.saleStatus === "PENDING")));
     assert.equal(data.sales.ticketAverage, paid.length ? Math.round(paidValue / paid.length) : 0);
