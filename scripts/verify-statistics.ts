@@ -45,7 +45,7 @@ async function verify() {
     const five = individual.filter((line) => /decant individual/i.test(line.notes ?? "") && /5\s*ml/i.test(line.notes ?? "") && !/10\s*ml/i.test(line.notes ?? "")).reduce((sum, line) => sum + line.quantity, 0);
     const ten = individual.filter((line) => /10\s*ml/i.test(line.notes ?? "")).reduce((sum, line) => sum + line.quantity, 0);
     const kits = new Map<string, number>();
-    for (const line of paidLines.filter((line) => line.reason === "DECANT" && /kit de decants/i.test(line.notes ?? ""))) { const id = line.saleGroupId ?? line.id; kits.set(id, Math.max(kits.get(id) ?? 0, line.quantity)); }
+    for (const line of paidLines.filter((line) => line.reason === "DECANT" && /kit de decants/i.test(line.notes ?? ""))) { const kitId = line.notes?.match(/\[kit:([^\]]+)\]/)?.[1]; const id = `${line.saleGroupId ?? line.id}${kitId ? `:${kitId}` : ""}`; kits.set(id, Math.max(kits.get(id) ?? 0, line.quantity)); }
     assert.equal(data.sales.fiveMl, five);
     assert.equal(data.sales.tenMl, ten);
     assert.equal(data.sales.decantKits, [...kits.values()].reduce((sum, value) => sum + value, 0));

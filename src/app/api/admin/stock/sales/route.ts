@@ -31,7 +31,7 @@ const statusSchema = z.object({
     status: z.nativeEnum(StockSaleStatus).optional(),
     deliveryStatus: z.nativeEnum(StockDeliveryStatus).optional(),
     sizeMl: z.union([z.literal(5), z.literal(10)]).optional(),
-  })).max(100).optional(),
+  })).max(600).optional(),
 });
 
 export async function GET() {

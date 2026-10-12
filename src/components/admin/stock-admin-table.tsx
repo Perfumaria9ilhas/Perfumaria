@@ -6,7 +6,6 @@ import {
   Filter,
   FileText,
   Plus,
-  Search,
   Trash2,
   Upload,
 } from "lucide-react";
@@ -14,9 +13,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { getAzoresDateKey } from "@/lib/date";
-import { getDecantPriceInCents } from "@/lib/product-sizes";
 import { compareMobileSales } from "@/lib/admin-sales-sort";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { NewSaleForm } from "./new-sale-form";
+import { SearchableProductSelect } from "./searchable-product-select";
 import { InventoryWorkspace } from "./inventory-workspace";
 import { InventoryDialog } from "./inventory-dialog";
 import { formatPrice } from "@/lib/format";
@@ -46,6 +46,7 @@ type Props = {
   compact?: boolean;
   initialStockStatus?: "all" | "LOW" | "OUT";
   initialHistory?: boolean;
+  draftOwnerKey?: string;
 };
 
 type BannerState =
@@ -87,12 +88,10 @@ export function StockAdminTable({
   initialStockStatus = "all",
   initialHistory = false,
   compact = false,
+  draftOwnerKey = "",
 }: Props) {
   const router = useRouter();
-  const saleLock = useRef(false);
   const statusLocks = useRef(new Set<string>());
-  const newSaleForm = useRef<HTMLFormElement>(null);
-  const [newSaleTotal, setNewSaleTotal] = useState(0);
   const [rows, setRows] = useState(initialRows);
   const [customerNames, setCustomerNames] = useState(initialCustomerNames);
   const [, setCustomerSummaries] = useState(initialCustomerSummaries);
@@ -111,8 +110,6 @@ export function StockAdminTable({
   const [decantLineIds, setDecantLineIds] = useState([0]);
   const [savingPerfumeSale, setSavingPerfumeSale] = useState(false);
   const [perfumeLineIds, setPerfumeLineIds] = useState([0]);
-  const [combinedDecantMode, setCombinedDecantMode] = useState<"NONE" | "KIT" | "INDIVIDUAL">("NONE");
-  const [savingCombinedSale, setSavingCombinedSale] = useState(false);
   const [sales, setSales] = useState<StockSaleRow[]>([]);
   const [salesLoading, setSalesLoading] = useState(initialView === "SALES");
   const [salesStatusFilter, setSalesStatusFilter] = useState<"ALL" | StockSaleStatus>(initialSalesStatus);
@@ -432,70 +429,6 @@ export function StockAdminTable({
       setBanner({ tone: "error", message: error instanceof Error ? error.message : "Não foi possível registar a venda." });
     } finally {
       setSavingPerfumeSale(false);
-    }
-  }
-
-  function calculateNewSaleTotal() {
-    if (!newSaleForm.current) return;
-    const values = new FormData(newSaleForm.current);
-    if (values.get("status") === StockSaleStatus.OFFERED) { setNewSaleTotal(0); return; }
-    let total = 0;
-    for (const id of perfumeLineIds) {
-      const product = rows.find(row => row.id === values.get(`combinedPerfume${id}`));
-      if (product) total += product.salePriceInCents * Number(values.get(`combinedPerfumeQuantity${id}`) || 0);
-    }
-    if (combinedDecantMode === "INDIVIDUAL") for (const id of decantLineIds) {
-      const product = rows.find(row => row.id === values.get(`combinedDecant${id}`));
-      if (product) total += getDecantPriceInCents(product.salePriceInCents, values.get(`combinedDecantSize${id}`) === "10" ? "10ml" : "5ml") * Number(values.get(`combinedDecantQuantity${id}`) || 0);
-    }
-    if (combinedDecantMode === "KIT" && [1,2,3,4,5].every(id => values.get(`combinedKit${id}`))) total += 1650 * Number(values.get("combinedKitQuantity") || 0);
-    setNewSaleTotal(total);
-  }
-
-  async function submitCombinedSale(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (saleLock.current) return;
-    saleLock.current = true;
-    const formData = new FormData(event.currentTarget);
-    const perfumeLines = perfumeLineIds.map((id) => ({
-      productId: formData.get(`combinedPerfume${id}`)?.toString() ?? "",
-      quantity: Number(formData.get(`combinedPerfumeQuantity${id}`)),
-    })).filter((line) => line.productId);
-    const decantLines = combinedDecantMode === "INDIVIDUAL" ? decantLineIds.map((id) => ({
-      productId: formData.get(`combinedDecant${id}`)?.toString() ?? "",
-      sizeMl: Number(formData.get(`combinedDecantSize${id}`)),
-      quantity: Number(formData.get(`combinedDecantQuantity${id}`)),
-    })).filter((line) => line.productId) : [];
-    const kitProductIds = combinedDecantMode === "KIT"
-      ? [1, 2, 3, 4, 5].map((position) => formData.get(`combinedKit${position}`)?.toString() ?? "")
-      : [];
-    const kitQuantity = combinedDecantMode === "KIT"
-      ? Number(formData.get("combinedKitQuantity"))
-      : 1;
-    setSavingCombinedSale(true);
-    setBanner(null);
-    try {
-      const response = await fetch("/api/admin/stock/sales/combined", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          customerName: formData.get("customerName")?.toString() ?? "",
-          saleOrigin: formData.get("saleOrigin")?.toString() || null,
-          status: formData.get("status"),
-          deliveryStatus: formData.get("deliveryStatus"),
-          perfumeLines,
-          decantLines,
-          kitProductIds,
-          kitQuantity,
-        }),
-      });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error ?? "Não foi possível registar a venda.");
-      window.location.reload();
-    } catch (error) {
-      setBanner({ tone: "error", message: error instanceof Error ? error.message : "Não foi possível registar a venda." });
-    } finally {
-      setSavingCombinedSale(false);
     }
   }
 
@@ -1172,82 +1105,7 @@ export function StockAdminTable({
         </ModalFrame>
       ) : null}
 
-      {activeView === "NEW_SALE" ? (
-        <section className="rounded-[1.8rem] border border-[color:var(--line)] bg-white p-5 shadow-sm sm:p-7">
-          <h2 className="font-serif text-3xl text-[color:var(--ink)]">Nova venda</h2>
-          <form ref={newSaleForm} className="mt-5 space-y-6" onChange={() => requestAnimationFrame(calculateNewSaleTotal)} onClick={() => requestAnimationFrame(calculateNewSaleTotal)} onSubmit={submitCombinedSale}>
-            <div className="grid gap-4 md:grid-cols-4">
-              <Field label="Cliente"><input name="customerName" value={newSaleCustomerName} onChange={(event) => setNewSaleCustomerName(event.target.value)} list="combined-customer-names" required minLength={2} className="h-12 w-full rounded-2xl border border-[color:var(--line)] px-4" placeholder="Nome da pessoa que compra" /></Field>
-              <Field label="Estado da venda">
-                <select name="status" required defaultValue={StockSaleStatus.PAID} className="h-12 w-full rounded-2xl border border-[color:var(--line)] bg-white px-4">
-                  <option value={StockSaleStatus.PAID}>Pago</option>
-                  <option value={StockSaleStatus.PENDING}>Por pagar · aguardar entrega/pagamento</option>
-                  <option value={StockSaleStatus.OFFERED}>Oferecido</option>
-                </select>
-              </Field>
-              <Field label="Estado da entrega">
-                <select name="deliveryStatus" required defaultValue={StockDeliveryStatus.DELIVERED} className="h-12 w-full rounded-2xl border border-[color:var(--line)] bg-white px-4">
-                  <option value={StockDeliveryStatus.DELIVERED}>Entregue</option>
-                  <option value={StockDeliveryStatus.PENDING}>Por entregar</option>
-                </select>
-              </Field>
-              <Field label="Origem da venda">
-                <select name="saleOrigin" defaultValue="" className="h-12 w-full rounded-2xl border border-[color:var(--line)] bg-white px-4">
-                  <option value="">Não indicada</option>
-                  {SALE_ORIGINS.map((origin) => <option key={origin} value={origin}>{origin}</option>)}
-                </select>
-              </Field>
-            </div>
-            <datalist id="combined-customer-names">{customerNames.map((name) => <option key={name} value={name} />)}</datalist>
-
-            <div className="grid items-start gap-5 xl:grid-cols-2">
-              <div className="rounded-[1.5rem] border border-[color:var(--line)] bg-[color:var(--sand-soft)] p-4">
-                <h3 className="font-serif text-2xl text-[color:var(--ink)]">Perfumes</h3>
-                <div className="mt-4 space-y-3">
-                  {perfumeLineIds.map((id, index) => (
-                    <SaleLine key={id} label={`Perfume ${index + 1}`} onRemove={perfumeLineIds.length > 1 ? () => setPerfumeLineIds((current) => current.filter((lineId) => lineId !== id)) : undefined}>
-                      <SearchableProductSelect required={false} name={`combinedPerfume${id}`} products={rows.filter((row) => row.active)} placeholder="Pesquisar perfume..." />
-                      <input name={`combinedPerfumeQuantity${id}`} aria-label="Quantidade" type="number" min="1" defaultValue="1" required className="h-12 w-24 rounded-2xl border border-[color:var(--line)] px-3" />
-                    </SaleLine>
-                  ))}
-                  <AddLineButton onClick={() => setPerfumeLineIds((current) => [...current, Math.max(...current) + 1])}>Adicionar outro perfume</AddLineButton>
-                </div>
-              </div>
-
-              <div className="rounded-[1.5rem] border border-[color:var(--line)] bg-[color:var(--sand-soft)] p-4">
-                <h3 className="font-serif text-2xl text-[color:var(--ink)]">Decants</h3>
-                <div className="mt-4 grid grid-cols-3 gap-2">
-                  {(["NONE", "KIT", "INDIVIDUAL"] as const).map((mode) => (
-                    <button key={mode} type="button" onClick={() => setCombinedDecantMode(mode)} className={`rounded-xl px-2 py-3 text-sm font-semibold ${combinedDecantMode === mode ? "bg-white text-[color:var(--ink)] shadow-sm" : "text-slate-500"}`}>{mode === "NONE" ? "Sem decants" : mode === "KIT" ? "Kit 16,50 €" : "Individuais"}</button>
-                  ))}
-                </div>
-                {combinedDecantMode === "KIT" ? (
-                  <div className="mt-4 space-y-3">
-                    <p className="text-sm text-slate-600">Selecione os 5 perfumes diferentes do kit.</p>
-                    <Field label="Quantidade de kits">
-                      <input name="combinedKitQuantity" type="number" min="1" defaultValue="1" required className="h-12 w-full rounded-2xl border border-[color:var(--line)] bg-white px-4" />
-                    </Field>
-                    {[1, 2, 3, 4, 5].map((position) => <Field key={position} label={`Decant ${position}`}><SearchableProductSelect name={`combinedKit${position}`} products={rows.filter((row) => row.active && row.availableInFiveMl)} placeholder="Pesquisar perfume..." /></Field>)}
-                  </div>
-                ) : null}
-                {combinedDecantMode === "INDIVIDUAL" ? (
-                  <div className="mt-4 space-y-3">
-                    {decantLineIds.map((id, index) => (
-                      <SaleLine key={id} label={`Decant ${index + 1}`} onRemove={decantLineIds.length > 1 ? () => setDecantLineIds((current) => current.filter((lineId) => lineId !== id)) : undefined}>
-                        <SearchableProductSelect name={`combinedDecant${id}`} products={rows.filter((row) => row.active && (row.availableInFiveMl || row.availableInTenMl))} placeholder="Pesquisar perfume..." />
-                        <select name={`combinedDecantSize${id}`} defaultValue="5" className="h-12 rounded-2xl border border-[color:var(--line)] bg-white px-3"><option value="5">5 ml · 3,50 € / 4,50 €</option><option value="10">10 ml · 6,50 € / 7,50 €</option></select>
-                        <input name={`combinedDecantQuantity${id}`} aria-label="Quantidade" type="number" min="1" defaultValue="1" className="h-12 w-24 rounded-2xl border border-[color:var(--line)] px-3" />
-                      </SaleLine>
-                    ))}
-                    <AddLineButton onClick={() => setDecantLineIds((current) => [...current, Math.max(...current) + 1])}>Adicionar outro decant</AddLineButton>
-                  </div>
-                ) : null}
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--line)] pt-5"><output aria-live="polite" className="text-lg font-semibold">Total: {formatPrice(newSaleTotal)}</output><button disabled={savingCombinedSale} className="rounded-full bg-[color:var(--atlantic)] px-6 py-3 text-sm font-semibold text-white disabled:opacity-50">{savingCombinedSale ? "A registar..." : "Registar venda completa"}</button></div>
-          </form>
-        </section>
-      ) : null}
+      {activeView === "NEW_SALE" ? <NewSaleForm rows={rows} customerNames={customerNames} ownerKey={draftOwnerKey} initialCustomerName={newSaleCustomerName} /> : null}
 
       {activeView === "SALES" ? (
         <section className="admin-sales-panel rounded-[1.8rem] border border-[color:var(--line)] bg-white p-4 shadow-sm sm:p-7">
@@ -1629,85 +1487,6 @@ function SaleTableRows({
         </tr>
       ) : null}
     </>
-  );
-}
-
-function SearchableProductSelect({
-  name,
-  products,
-  placeholder,
-  required = true,
-  initialProductId = "",
-}: {
-  name: string;
-  products: AdminStockRow[];
-  placeholder: string;
-  required?: boolean;
-  initialProductId?: string;
-}) {
-  const initialProduct = products.find((product) => product.id === initialProductId);
-  const [query, setQuery] = useState(initialProduct ? `${initialProduct.name} · ${initialProduct.brandName}` : "");
-  const listboxId = useId();
-  const [selectedId, setSelectedId] = useState(initialProductId);
-  const [open, setOpen] = useState(false);
-  const matches = useMemo(() => {
-    const normalizedQuery = normalizeStockSearch(query);
-    const ordered = [...products].sort((left, right) =>
-      left.name.localeCompare(right.name, "pt-PT"),
-    );
-    if (!normalizedQuery) return ordered.slice(0, 30);
-    return ordered.filter((product) =>
-      normalizeStockSearch(`${product.name} ${product.brandName}`).includes(normalizedQuery),
-    ).slice(0, 30);
-  }, [products, query]);
-
-  return (
-    <div className="relative">
-      <input type="hidden" name={name} value={selectedId} />
-      <input
-        value={query}
-        required={required}
-        autoComplete="off"
-        placeholder={placeholder}
-        aria-label={placeholder}
-        role="combobox"
-        aria-expanded={open}
-        aria-controls={listboxId}
-        onFocus={() => setOpen(true)}
-        onBlur={() => window.setTimeout(() => setOpen(false), 120)}
-        onChange={(event) => {
-          setQuery(event.target.value);
-          setSelectedId("");
-          setOpen(true);
-        }}
-        className="h-12 w-full rounded-2xl border border-[color:var(--line)] bg-white px-4 pr-10 text-[color:var(--ink)]"
-      />
-      <Search className="pointer-events-none absolute right-4 top-4 h-4 w-4 text-slate-400" />
-      {open ? (
-        <div id={listboxId} role="listbox" className="absolute z-50 mt-2 max-h-64 w-full overflow-y-auto rounded-2xl border border-[color:var(--line)] bg-white p-2 shadow-xl">
-          {matches.length ? matches.map((product) => (
-            <button
-              key={product.id}
-              type="button"
-              role="option"
-              aria-selected={selectedId === product.id}
-              onPointerDown={(event) => event.preventDefault()}
-              onClick={() => {
-                setSelectedId(product.id);
-                setQuery(`${product.name} · ${product.brandName}`);
-                setOpen(false);
-              }}
-              className="block w-full rounded-xl px-3 py-3 text-left text-sm text-[color:var(--ink)] hover:bg-[color:var(--sand-soft)]"
-            >
-              <span className="font-medium">{product.name}</span>
-              <span className="ml-1 text-slate-500">· {product.brandName} · {product.sizeLabel || "100 ml"} · {formatPrice(product.salePriceInCents)}</span>
-            </button>
-          )) : (
-            <p className="px-3 py-4 text-sm text-slate-500">Nenhum perfume encontrado.</p>
-          )}
-        </div>
-      ) : null}
-    </div>
   );
 }
 

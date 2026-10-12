@@ -1,6 +1,7 @@
 import { StockMovementReason, StockMovementType, StockSaleStatus } from "@prisma/client";
 import { getAzoresDateKey, getAzoresDateStart } from "@/lib/date";
 import { prisma } from "@/lib/prisma";
+import { kitMovementKey } from "@/lib/new-sale-draft";
 import { summarizePaidSales } from "@/lib/admin-dashboard-sales";
 
 export type StatisticsPeriod = "today" | "7d" | "30d" | "month" | "year" | "previous-year" | "custom";
@@ -152,7 +153,7 @@ export async function getStatisticsData(range: { from: string; to: string }) {
   const paidTenMl = paidMovements.filter((movement) => movement.reason === StockMovementReason.DECANT && !/kit de decants/i.test(movement.notes ?? "") && /10\s*ml/i.test(movement.notes ?? "")).reduce((sum, movement) => sum + movement.quantity, 0);
   const decantKitGroups = new Map<string, number>();
   for (const movement of paidMovements.filter((item) => item.reason === StockMovementReason.DECANT && /kit de decants/i.test(item.notes ?? ""))) {
-    const groupId = movement.saleGroupId ?? movement.id;
+    const groupId = kitMovementKey(movement);
     decantKitGroups.set(groupId, Math.max(decantKitGroups.get(groupId) ?? 0, movement.quantity));
   }
   const paidDecantKits = [...decantKitGroups.values()].reduce((sum, quantity) => sum + quantity, 0);

@@ -4,7 +4,7 @@ import { requireAdmin } from "@/lib/auth";
 import { getAdminStockTableData } from "@/lib/stock-server";
 
 export default async function AdminStockPage({ searchParams }: { searchParams: Promise<{ view?: string; payment?: string; delivery?: string; period?: string; status?: string; history?: string }> }) {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const params = await searchParams;
   const initialView = params.view === "new-sale" ? "NEW_SALE" : params.view === "sales" ? "SALES" : "STOCK";
   const title = initialView === "NEW_SALE" ? "Nova venda" : initialView === "SALES" ? "Estado das vendas" : "Stock";
@@ -19,6 +19,7 @@ export default async function AdminStockPage({ searchParams }: { searchParams: P
       <StockAdminTable
         key={JSON.stringify(params)}
         initialView={initialView}
+        draftOwnerKey={`${admin.kind}:${admin.id}`}
         initialHistory={params.history === "1"}
         initialSalesStatus={params.payment === "pending" ? "PENDING" : params.payment === "paid" ? "PAID" : "ALL"}
         initialDeliveryStatus={params.delivery === "pending" ? "PENDING" : "ALL"}
