@@ -60,13 +60,9 @@ function matchesCatalogFilter(product: CatalogProduct, filter: CatalogFilter) {
 }
 
 function getCatalogProductSize(product: CatalogProduct, filter: CatalogFilter, selectedSizes: Record<string, ProductSizeValue>): ProductSizeValue {
-  if (filter === "Decants") {
-    const chosen = selectedSizes[product.id];
-    return chosen === "5ml" && product.availableInFiveMl || chosen === "10ml" && product.availableInTenMl
-      ? chosen
-      : product.availableInFiveMl ? "5ml" : "10ml";
-  }
-  return selectedSizes[product.id] ?? "100ml";
+  const chosen = selectedSizes[product.id];
+  if (chosen === "100ml" || chosen === "5ml" && product.availableInFiveMl || chosen === "10ml" && product.availableInTenMl) return chosen;
+  return filter === "Decants" ? product.availableInFiveMl ? "5ml" : "10ml" : "100ml";
 }
 
 function getBottlePrice(product: CatalogProduct) {
@@ -349,7 +345,7 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
 
   function prepareProductOpen(product: CatalogProduct) {
     setQuantity(1);
-    setSelectedSizes((current) => ({ ...current, [product.id]: "100ml" }));
+    setSelectedSizes((current) => ({ ...current, [product.id]: getCatalogProductSize(product, activeFilter, current) }));
   }
   function closeProduct() {
     const params = new URLSearchParams(searchParams.toString());
@@ -463,8 +459,11 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
         {visibleProducts.map((product, index) => {
           const selectedSize = getSelectedSize(product);
           return <ProductCard key={product.id} product={product} price={getDisplayPrice(product, selectedSize)} originalPrice={selectedSize === "100ml" ? product.priceInCents : getDisplayPrice(product, selectedSize)} priority={index < 4} onOpen={() => prepareProductOpen(product)}>
-            {activeFilter !== "Decants" && selectedSize !== "100ml" ? <small className="store-card-variant">Decant {getSelectedSizeLabel(product, selectedSize)}</small> : null}
-            {activeFilter === "Decants" ? <div className="store-card-options">{product.availableInFiveMl ? <button aria-pressed={selectedSize === "5ml"} onClick={() => setProductSize(product.id, "5ml")}>5 ml</button> : null}{product.availableInTenMl ? <button aria-pressed={selectedSize === "10ml"} onClick={() => setProductSize(product.id, "10ml")}>10 ml</button> : null}</div> : null}
+            {product.category.slug === "perfumes-arabes" && perfumeTypeSlugs.has(product.productType.slug) ? <div className="store-card-options" role="group" aria-label={`Tamanho de ${product.name}`}>
+              <button type="button" aria-pressed={selectedSize === "100ml"} onClick={() => setProductSize(product.id, "100ml")}>{getProductBottleSizeLabel(product)}</button>
+              {product.availableInFiveMl ? <button type="button" aria-pressed={selectedSize === "5ml"} onClick={() => setProductSize(product.id, "5ml")}>5 ml</button> : null}
+              {product.availableInTenMl ? <button type="button" aria-pressed={selectedSize === "10ml"} onClick={() => setProductSize(product.id, "10ml")}>10 ml</button> : null}
+            </div> : null}
             {product.stock > 0 ? <button className="store-card-action" onClick={() => handleAddToCart(product, selectedSize)} aria-label={`Adicionar ${product.name} ao carrinho`}><ShoppingBag size={14} />Adicionar</button> : <a className="store-card-action" href={getReservationUrl(product, selectedSize)} target="_blank" rel="noopener noreferrer" onClick={() => trackInternalEvent({ event: "product_reservation", productId: product.id })}>Reservar no WhatsApp</a>}
           </ProductCard>;
         })}
