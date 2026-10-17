@@ -1,3 +1,4 @@
+import { recordInitialSalePayment } from "./sale-accounts";
 import { randomUUID, createHash } from "node:crypto";
 import { StockDeliveryStatus, StockMovementReason, StockMovementType, StockSaleStatus, type PrismaClient } from "@prisma/client";
 import { z } from "zod";
@@ -25,7 +26,7 @@ export const combinedSaleSchema = z.object({
 export class CombinedSalePriceError extends Error {
   constructor(public currentPrices: Record<string, number>) { super("Os preços mudaram desde a preparação do rascunho. Reveja e atualize os preços antes de registar."); }
 }
-export async function saveCombinedSale(db: Pick<PrismaClient, "$transaction">, data: z.infer<typeof combinedSaleSchema>) {
+export async function saveCombinedSale(db: Pick<PrismaClient, "$transaction">, data: z.infer<typeof combinedSaleSchema>, actor?: { id: string; name: string; kind: string }) {
 
   const saleGroupId = data.requestId ?? randomUUID();
   const signature = createHash("sha256").update(JSON.stringify(data)).digest("hex");
@@ -75,6 +76,7 @@ export async function saveCombinedSale(db: Pick<PrismaClient, "$transaction">, d
         await tx.stockMovement.create({ data: { productId: product.id, type: StockMovementType.SALE, reason: StockMovementReason.DECANT, customerName: data.customerName, saleOrigin: data.saleOrigin, saleGroupId, saleStatus: data.status, deliveryStatus: data.deliveryStatus, saleUnitPriceInCents: price, quantity: line.quantity, unitCostInCents, previousStock: product.stock - (perfumeQuantities.get(product.id) ?? 0), resultingStock: product.stock - (perfumeQuantities.get(product.id) ?? 0), notes: line.note + audit } });
       }
       const movements = await tx.stockMovement.findMany({ where: { saleGroupId, type: StockMovementType.SALE } });
+      if (actor) await recordInitialSalePayment(tx, saleGroupId, actor);
       return { saleGroupId, totalInCents: data.status === StockSaleStatus.OFFERED ? 0 : movements.reduce((sum, item) => sum + item.quantity * (item.saleUnitPriceInCents ?? 0), 0), alreadyRecorded: false };
   }, { maxWait: 10000, timeout: 60000 });
 }

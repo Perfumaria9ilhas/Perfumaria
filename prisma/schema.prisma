@@ -350,7 +350,48 @@ model StoredImage {
   updatedAt   DateTime @updatedAt
 }
 
+// Opening balances preserve legacy states, without inventing dated receipts.
+model SaleAccount {
+  id        String @id
+  version   Int @default(0)
+  opening   Json
+  createdAt DateTime @default(now())
+  events    SaleAccountEvent[]
+  items     SaleAccountItem[]
+}
+
+model SaleAccountItem {
+  movementId String @id
+  accountId String
+  account SaleAccount @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  movement StockMovement @relation(fields: [movementId], references: [id], onDelete: Restrict)
+  @@index([accountId])
+}
+
+model SaleAccountEvent {
+  id           String @id @default(cuid())
+  requestId    String @unique
+  accountId    String
+  account      SaleAccount @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  kind         String
+  amount       Int @default(0)
+  movementId   String?
+  delivered    Int?
+  reversesId   String? @unique
+  reverses     SaleAccountEvent? @relation("PaymentReversal", fields: [reversesId], references: [id], onDelete: Restrict)
+  reversedBy   SaleAccountEvent? @relation("PaymentReversal")
+  method       String?
+  reason       String?
+  actorId      String
+  actorName    String
+  occurredAt   DateTime
+  createdAt    DateTime @default(now())
+  @@index([accountId, createdAt])
+  @@index([occurredAt])
+}
+
 model StockMovement {
+  accountItems      SaleAccountItem[]
   id                String            @id @default(cuid())
   productId         String
   type              StockMovementType

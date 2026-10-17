@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, Box, ClipboardList, Euro, Plus, TrendingUp, CalendarDays, ShoppingCart } from "lucide-react";
+import { AlertTriangle, ArrowRight, ClipboardList, Euro, Plus, TrendingUp, CalendarDays, ShoppingCart } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { requireAdmin } from "@/lib/auth";
 import { DailyPerfumeCard } from "@/components/admin/daily-perfume-card";
@@ -8,7 +8,7 @@ import { readHomepageState } from "@/lib/homepage-config";
 import { isEligibleDailyPerfume } from "@/lib/daily-perfume";
 import { getCatalogData, getAdminDashboardData } from "@/lib/data";
 import { getAdminStockTableData } from "@/lib/stock-server";
-import { StockAdminTable } from "@/components/admin/stock-admin-table";
+import { CustomerReceivables } from "@/components/admin/customer-receivables";
 import { DashboardStock } from "@/components/admin/dashboard-stock";
 import { formatPrice } from "@/lib/format";
 
@@ -33,25 +33,22 @@ export default async function AdminPage() {
 
     <DailyPerfumeCard key={settings.updatedAt?.toISOString()} products={catalog.products.filter(isEligibleDailyPerfume).map(({id,name,imageUrl,priceInCents,stock,brand})=>({id,name,imageUrl,priceInCents,stock,brand}))} selectedId={readHomepageState(settings.homepageConfig).perfumeOfDayId} version={settings.updatedAt!.toISOString()} />
 
-    <section className="admin-today mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4" aria-label="Resumo de vendas">
+    <section className="admin-today mt-4 grid grid-cols-2 gap-3 xl:grid-cols-5" aria-label="Resumo de vendas">
       {[
-        { label: "Vendas hoje", value: String(data.today.paidSales), href: "/admin/stock?view=sales&period=today&payment=paid", icon: ShoppingCart, note: "Vendas pagas" },
-        { label: "Faturação hoje", value: formatPrice(data.today.paidValue), href: "/admin/stock?view=sales&period=today&payment=paid", icon: Euro, note: "Valor das vendas pagas" },
-        { label: "Lucro estimado hoje", value: data.today.missingCost && !data.today.estimatedProfit ? "Incompleto" : formatPrice(data.today.estimatedProfit), href: "/admin/stock?view=sales&period=today&payment=paid", icon: TrendingUp, note: data.today.missingCost ? `Incompleto · ${data.today.missingCost} unidade(s) sem custo` : "Margem bruta estimada" },
-        { label: "Vendas do mês", value: String(data.month.paidSales), href: "/admin/stock?view=sales&period=month&payment=paid", icon: CalendarDays, note: "Vendas pagas · Açores" },
+        { label: "Vendas hoje", value: String(data.today.saleCount), href: "/admin/stock?view=sales&period=today", icon: ShoppingCart, note: "Vendas registadas" },
+        { label: "Recebido hoje", value: formatPrice(data.today.receivedValue), href: "/admin/stock?view=sales&period=today", icon: Euro, note: "Recebimentos datados, l\u00edquidos de anula\u00e7\u00f5es" },
+        { label: "Lucro estimado hoje", value: data.today.missingCost && !data.today.estimatedProfit ? "Incompleto" : formatPrice(data.today.estimatedProfit), href: "/admin/stock?view=sales&period=today", icon: TrendingUp, note: data.today.missingCost ? `Incompleto · ${data.today.missingCost} unidade(s) sem custo` : "Margem bruta estimada" },
+        { label: "Vendido hoje", value: formatPrice(data.today.soldValue), href: "/admin/stock?view=sales&period=today", icon: CalendarDays, note: "Valor das vendas registadas" },
+        { label: "Vendas do m\u00eas", value: String(data.month.saleCount), href: "/admin/stock?view=sales&period=month", icon: CalendarDays, note: "Vendas registadas \u00b7 A\u00e7ores" },
       ].map(({ label, value, href, icon: Icon, note }) => <Link key={label} href={href} className="dashboard-metric min-w-0 rounded-2xl border bg-white p-3"><Icon size={20} className="mb-2 text-[color:var(--gold)]" /><span className="block text-xs text-slate-600">{label}</span><strong className="my-1 block break-words text-xl">{value}</strong><span className="block text-[10px] text-slate-500">{note}</span></Link>)}
     </section>
 
     <section className="mt-6"><h2 className="font-serif text-2xl text-[color:var(--ink)]">Pendentes e atenção</h2><div className="admin-attention-grid mt-3 grid grid-cols-1 gap-3">
-      <AttentionCard label="Por pagar" value={data.attention.pendingPayments} href="/admin/stock?view=sales&period=all&payment=pending" icon={<Euro className="h-5 w-5" />} />
-      <AttentionCard label="Por entregar" value={data.attention.pendingDeliveries} href="/admin/stock?view=sales&period=all&delivery=pending" icon={<Box className="h-5 w-5" />} />
       <AttentionCard label="Stock baixo" value={data.attention.lowStock} href="/admin/stock?view=stock&status=low" icon={<AlertTriangle className="h-5 w-5" />} />
     </div></section>
 
     <div className="mt-5 grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]">
-      <section className="min-w-0"><div className="mb-3 flex items-center justify-between gap-2"><h2 className="font-serif text-xl">Vendas que exigem atenção</h2><Link href="/admin/stock?view=sales&period=all" className="shrink-0 text-xs underline">Ver todas</Link></div>
-        <StockAdminTable rows={stock.rows} brands={stock.brands} categories={stock.categories} customerNames={stock.customerNames} customerSummaries={stock.customerSummaries} initialView="SALES" initialSalesPeriod="ALL" compact />
-      </section>
+      <CustomerReceivables dashboard />
       <DashboardStock rows={stock.rows.filter(row => row.active && row.stock > 0 && row.stock <= row.lowStockAlert).sort((a,b) => a.stock - b.stock || a.name.localeCompare(b.name, "pt")).slice(0,3)} />
     </div>
     </div>

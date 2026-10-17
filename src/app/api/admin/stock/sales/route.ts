@@ -1,3 +1,5 @@
+import { recordInitialSalePayment, saleAccountVersion } from "@/lib/sale-accounts";
+import { isAccountRequestOriginAllowed } from "@/lib/account-request-origin";
 import { after } from "next/server";
 import { notifyAdminSafely } from "@/lib/admin-push";
 import { StockDeliveryStatus, StockMovementReason, StockMovementType, StockSaleStatus } from "@prisma/client";
@@ -20,6 +22,7 @@ const schema = z.object({
 });
 
 const statusSchema = z.object({
+  version: z.string().length(64),
   saleGroupId: z.string().min(1),
   status: z.nativeEnum(StockSaleStatus).optional(),
   deliveryStatus: z.nativeEnum(StockDeliveryStatus).optional(),
@@ -77,16 +80,38 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
-  await requireAdmin();
+  const actor = await requireAdmin();
+  if (!isAccountRequestOriginAllowed(request)) return NextResponse.json({error: "Origem inv\u00e1lida."}, {status: 403});
   const parsed = statusSchema.safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: "Estado inválido." }, { status: 400 });
   try {
     await prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${parsed.data.saleGroupId}, 0))`;
+    const managed = await tx.saleAccount.findUnique({where: {id: parsed.data.saleGroupId}});
+
     const movements = await tx.stockMovement.findMany({
       where: { OR: [{ saleGroupId: parsed.data.saleGroupId }, { id: parsed.data.saleGroupId }] },
       include: { product: true },
     });
     if (!movements.length) throw new Error("Venda não encontrada.");
+    if (saleAccountVersion(movements, managed) !== parsed.data.version) throw new Error("Outro administrador alterou esta venda. Atualize antes de guardar.");
+
+    if (movements.some(m => (m.saleGroupId ?? m.id) !== parsed.data.saleGroupId)) throw new Error("Identificador de venda inv\u00e1lido.");
+    for (const m of movements) {
+      const change = parsed.data.items?.find(i => i.movementId === m.id);
+      if (parsed.data.status && parsed.data.status !== (m.saleStatus ?? "PAID") || change?.status && change.status !== (m.saleStatus ?? "PAID") || parsed.data.deliveryStatus && parsed.data.deliveryStatus !== (m.deliveryStatus ?? "DELIVERED") || change?.deliveryStatus && change.deliveryStatus !== (m.deliveryStatus ?? "DELIVERED")) throw new Error("Utilize os controlos de pagamentos e entregas para preservar o hist\u00f3rico.");
+      if (managed && change && (change.productId !== m.productId || change.sizeMl && change.sizeMl !== (m.notes?.includes("10 ml") ? 10 : 5))) throw new Error("Venda com movimentos financeiros: n\u00e3o pode substituir os artigos. Corrija os lan\u00e7amentos no hist\u00f3rico.");
+    }
+    if (managed) {
+      if (parsed.data.customerName !== undefined && parsed.data.customerName !== movements[0].customerName || parsed.data.saleOrigin !== undefined && parsed.data.saleOrigin !== movements[0].saleOrigin) {
+        const first = movements[0];
+        await tx.stockMovement.create({data:{productId:first.productId,type:StockMovementType.ADJUSTMENT,reason:StockMovementReason.MANUAL,quantity:0,previousStock:first.product.stock,resultingStock:first.product.stock,
+          notes:`Dados da venda ${managed.id} \u00b7 ${JSON.stringify({administrador:{id:actor.id,nome:actor.name},anterior:{cliente:first.customerName,origem:first.saleOrigin},novo:{cliente:parsed.data.customerName,origem:parsed.data.saleOrigin}})}`}});
+      }
+      await tx.stockMovement.updateMany({where:{id:{in:movements.map(m=>m.id)}},data:{customerName:parsed.data.customerName, saleOrigin:parsed.data.saleOrigin}});
+      await tx.saleAccount.update({where:{id:managed.id},data:{version:{increment:1}}});
+      return;
+    }
     const itemChanges = new Map((parsed.data.items ?? []).map((item) => [item.movementId, item.productId]));
     const itemStatuses = new Map((parsed.data.items ?? []).map((item) => [item.movementId, item.status]));
     const itemDeliveryStatuses = new Map((parsed.data.items ?? []).map((item) => [item.movementId, item.deliveryStatus]));
@@ -122,7 +147,7 @@ export async function PATCH(request: Request) {
         await tx.stockMovement.create({ data: {
           productId: movement.productId, type: StockMovementType.ADJUSTMENT, reason: StockMovementReason.MANUAL,
           quantity: 0, previousStock: movement.product.stock, resultingStock: movement.product.stock,
-          notes: `Estado da venda ${parsed.data.saleGroupId} · ${JSON.stringify({ anterior: { pagamento: movement.saleStatus, entrega: movement.deliveryStatus }, novo: { pagamento: nextPayment, entrega: nextDelivery } })}`,
+          notes: `Estado da venda ${parsed.data.saleGroupId} · ${JSON.stringify({ administrador: { id: actor.id, nome: actor.name }, anterior: { pagamento: movement.saleStatus, entrega: movement.deliveryStatus }, novo: { pagamento: nextPayment, entrega: nextDelivery } })}`,
         } });
       }
       let nextUnitCost = movement.unitCostInCents;
@@ -152,7 +177,7 @@ export async function PATCH(request: Request) {
         },
       });
     }
-    });
+    }, { timeout: 30000 });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Não foi possível guardar a venda." }, { status: 400 });
   }
@@ -165,6 +190,7 @@ export async function PATCH(request: Request) {
 
 export async function DELETE(request: Request) {
   await requireAdmin();
+  if (!isAccountRequestOriginAllowed(request)) return NextResponse.json({error: "Origem inv\u00e1lida."}, {status: 403});
   const parsed = z.object({ saleGroupId: z.string().min(1) }).safeParse(await request.json());
   if (!parsed.success) {
     return NextResponse.json({ error: "Venda inválida." }, { status: 400 });
@@ -172,6 +198,9 @@ export async function DELETE(request: Request) {
 
   try {
     await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${parsed.data.saleGroupId}, 0))`;
+      if (await tx.saleAccount.findUnique({where:{id:parsed.data.saleGroupId}})) throw new Error("Esta venda tem hist\u00f3rico financeiro protegido. N\u00e3o pode ser eliminada; anule os pagamentos com registo do motivo.");
+
       const movements = await tx.stockMovement.findMany({
         where: {
           type: StockMovementType.SALE,
@@ -206,7 +235,7 @@ export async function DELETE(request: Request) {
       await tx.stockMovement.deleteMany({
         where: { id: { in: movements.map((movement) => movement.id) } },
       });
-    });
+    }, { timeout: 30000 });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Não foi possível eliminar a venda." },
@@ -223,7 +252,7 @@ export async function DELETE(request: Request) {
 }
 
 export async function POST(request: Request) {
-  await requireAdmin();
+  const actor = await requireAdmin();
   const parsed = schema.safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Dados inválidos." }, { status: 400 });
 
@@ -246,7 +275,7 @@ export async function POST(request: Request) {
           data: { stock: resultingStock },
         });
         if (updated.count !== 1) throw new Error(`O stock de ${product.name} foi alterado. Tente novamente.`);
-        await tx.stockMovement.create({ data: {
+        const movement = await tx.stockMovement.create({ data: {
           productId: product.id,
           type: StockMovementType.SALE,
           reason: StockMovementReason.SALE,
@@ -258,8 +287,9 @@ export async function POST(request: Request) {
           resultingStock,
           notes: "Venda de perfumes",
         } });
+        await recordInitialSalePayment(tx, movement.id, actor);
       }
-    });
+    }, { timeout: 30000 });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Não foi possível registar a venda." }, { status: 400 });
   }

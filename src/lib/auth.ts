@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { timingSafeEqual } from "node:crypto";
 import { compare } from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
@@ -115,7 +116,9 @@ async function resolveAdminIdentity(id?: string, kind?: string): Promise<AdminId
   return null;
 }
 
-export async function getCurrentAdmin(): Promise<AdminIdentity | null> {
+// Share one identity snapshot between the layout and page in a server render.
+// React cache is request-scoped; permission changes are rechecked on the next request.
+export const getCurrentAdmin = cache(async (): Promise<AdminIdentity | null> => {
   const token = (await cookies()).get(sessionCookieName)?.value;
   if (token) {
     try {
@@ -128,7 +131,7 @@ export async function getCurrentAdmin(): Promise<AdminIdentity | null> {
   // role and version; permissions never come from editable JWT metadata.
   const customer = await getCurrentCustomer();
   return customer ? resolveAdminIdentity(customer.id, "CUSTOMER") : null;
-}
+});
 
 export async function getCurrentCustomer() {
   const token = (await cookies()).get(customerSessionCookieName)?.value;

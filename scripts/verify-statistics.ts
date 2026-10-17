@@ -5,7 +5,9 @@ import { getStatisticsData, previousStatisticsRange, resolveStatisticsRange } fr
 
 // Read-only reconciliation: no inserts, updates, deletes or migrations.
 async function verify() {
-  const movements = await prisma.stockMovement.findMany({ where: { type: "SALE" }, select: { id: true, saleGroupId: true, createdAt: true, saleStatus: true, quantity: true, saleUnitPriceInCents: true, reason: true, notes: true } });
+  const movements = await prisma.stockMovement.findMany({ where: { type: "SALE", customerName: { not: null } }, select: { id: true, saleGroupId: true, createdAt: true, saleStatus: true, quantity: true, saleUnitPriceInCents: true, reason: true, notes: true } });
+  const accounts = await prisma.saleAccount.findMany({include:{events:true}});
+  const allEvents = accounts.flatMap(a=>a.events);
   const ranges = ["today", "7d", "30d", "month", "year"].map((period) => resolveStatisticsRange({ period }));
   ranges.push(resolveStatisticsRange({ period: "custom", from: "2026-09-12", to: "2026-09-23" }));
   const today = getAzoresDateKey();
@@ -26,21 +28,33 @@ async function verify() {
     const lines = movements.filter((line) => { const date = getAzoresDateKey(line.createdAt); return date >= range.from && date <= range.to; });
     const groups = new Map<string, typeof lines>();
     for (const line of lines) { const id = line.saleGroupId ?? line.id; groups.set(id, [...(groups.get(id) ?? []), line]); }
-    const paid = [...groups.values()].filter((group) => !group.some((line) => line.saleStatus === "PENDING") && group.some((line) => !line.saleStatus || line.saleStatus === "PAID"));
-    const paidLines = paid.flat().filter((line) => !line.saleStatus || line.saleStatus === "PAID");
+    const paidLines = lines.filter(l => l.saleStatus !== "OFFERED");
+    const commercialGroups = new Set(paidLines.map(l=>l.saleGroupId ?? l.id));
+    let pendingValue = 0; let paidCount = 0;
+    for(const [id,group] of groups) {
+      const account = accounts.find(a=>a.id===id);
+      const total = group.filter(l=>l.saleStatus!=="OFFERED").reduce((n,l)=>n+l.quantity*(l.saleUnitPriceInCents??0),0);
+      const opening = account ? Object.values(account.opening as Record<string,{paid:number}>).reduce((n,v)=>n+v.paid,0) : group.filter(l=>!l.saleStatus||l.saleStatus==="PAID").reduce((n,l)=>n+l.quantity*(l.saleUnitPriceInCents??0),0);
+      const received = opening + (account?.events.reduce((n,e)=>n+e.amount,0) ?? 0);
+      pendingValue += Math.max(0,total-received);
+      if(total>0&&total<=received)paidCount++;
+    }
+    const receivedValue = allEvents.filter(e=>(e.kind==="PAYMENT"||e.kind==="REVERSAL")&&getAzoresDateKey(e.occurredAt)>=range.from&&getAzoresDateKey(e.occurredAt)<=range.to).reduce((n,e)=>n+e.amount,0);
     const amount = (rows: typeof lines) => rows.reduce((sum, line) => sum + line.quantity * (line.saleUnitPriceInCents ?? 0), 0);
     const paidValue = amount(paidLines);
     assert.equal(data.sales.paidValue, paidValue);
     assert.equal(data.formats.reduce((sum, row) => sum + row.revenue, 0), paidValue);
     assert.equal(new Set(data.formats.map(row => row.key)).size, data.formats.length);
-    assert.equal(data.sales.paidCount, paid.length);
-    assert.equal(data.sales.pendingValue, amount(lines.filter((line) => line.saleStatus === "PENDING")));
-    assert.equal(data.sales.ticketAverage, paid.length ? Math.round(paidValue / paid.length) : 0);
+    assert.equal(data.sales.paidCount, paidCount);
+    assert.equal(data.sales.receivedValue, receivedValue);
+    assert.equal(data.sales.soldValue, paidValue);
+    assert.equal(data.sales.pendingValue, pendingValue);
+    assert.equal(data.sales.ticketAverage, groups.size ? Math.round(paidValue / groups.size) : 0);
     const bottles = paidLines.filter((line) => line.reason === "SALE").reduce((sum, line) => sum + line.quantity, 0);
     assert.equal(data.sales.bottles, bottles);
     for (const key of ["sold", "brands", "audiences"] as const) assert.equal(data.allRankings[key].reduce((sum, row) => sum + row.value, 0), bottles);
     assert.equal(data.series.reduce((sum, row) => sum + (row.revenue ?? 0), 0), paidValue);
-    assert.equal(data.series.reduce((sum, row) => sum + (row.sales ?? 0), 0), paid.length);
+    assert.equal(data.series.reduce((sum, row) => sum + (row.sales ?? 0), 0), commercialGroups.size);
     const individual = paidLines.filter((line) => line.reason === "DECANT" && !/kit de decants/i.test(line.notes ?? ""));
     const five = individual.filter((line) => /decant individual/i.test(line.notes ?? "") && /5\s*ml/i.test(line.notes ?? "") && !/10\s*ml/i.test(line.notes ?? "")).reduce((sum, line) => sum + line.quantity, 0);
     const ten = individual.filter((line) => /10\s*ml/i.test(line.notes ?? "")).reduce((sum, line) => sum + line.quantity, 0);
@@ -56,7 +70,7 @@ async function verify() {
     const days = (r: { from: string; to: string }) => (Date.parse(r.to) - Date.parse(r.from)) / 86400000;
     assert.equal(days(previous), days(range));
     assert.ok(previous.to < range.from);
-    console.log(JSON.stringify({ period: range.period, from: range.from, to: range.to, paidSales: data.sales.paidCount, receivedCents: data.sales.paidValue, pendingCents: data.sales.pendingValue, bottles, fiveMl: five, tenMl: ten, kits: data.sales.decantKits, result: "PASS" }));
+    console.log(JSON.stringify({ period: range.period, from: range.from, to: range.to, paidSales: data.sales.paidCount, receivedCents: data.sales.receivedValue, soldCents: data.sales.soldValue, pendingCents: data.sales.pendingValue, bottles, fiveMl: five, tenMl: ten, kits: data.sales.decantKits, result: "PASS" }));
   }
 }
 verify().finally(() => prisma.$disconnect()).catch((error) => { console.error(error instanceof Error ? error.message : "Verification failed"); process.exitCode = 1; });

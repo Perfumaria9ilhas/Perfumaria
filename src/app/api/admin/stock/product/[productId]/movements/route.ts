@@ -176,7 +176,7 @@ export async function POST(
           notes: parsed.data.notes.trim() || null,
         },
       });
-    });
+    }, { timeout: 30000 });
   } catch (error) {
     return NextResponse.json(
       {
@@ -238,6 +238,11 @@ export async function DELETE(
         throw new Error("Produto não encontrado.");
       }
 
+      if (movement.type === "SALE") {
+        const saleId = movement.saleGroupId ?? movement.id;
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${saleId}, 0))`;
+        if (await tx.saleAccount.findUnique({where:{id:saleId}})) throw new Error("Venda com hist\u00f3rico financeiro protegido. Consulte pagamentos e entregas na venda.");
+      }
       const stockDelta =
         movement.type === StockMovementType.ENTRY
           ? movement.quantity

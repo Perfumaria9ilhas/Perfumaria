@@ -1,3 +1,4 @@
+import { getSalesFinance } from "./sales-finance";
 import { StockMovementReason, StockMovementType, StockSaleStatus } from "@prisma/client";
 import { getAzoresDateKey, getAzoresDateStart } from "@/lib/date";
 import { prisma } from "@/lib/prisma";
@@ -65,12 +66,12 @@ export function resolveStatisticsRange(input: { period?: string; from?: string; 
 
 export async function getStatisticsData(range: { from: string; to: string }) {
   const createdAt = { gte: getAzoresDateStart(range.from), lt: getAzoresDateStart(addDays(range.to, 1)) };
-  const [daily, productDaily, searches, movements, firstDaily, firstProductDaily, firstSearch, firstSale, migratedVisitDays] = await Promise.all([
+  const [daily, productDaily, searches, movements, firstDaily, firstProductDaily, firstSearch, firstSale, migratedVisitDays, finance] = await Promise.all([
     prisma.analyticsDaily.findMany({ where: { dateKey: { gte: range.from, lte: range.to } }, orderBy: { dateKey: "asc" } }),
     prisma.productAnalyticsDaily.findMany({ where: { dateKey: { gte: range.from, lte: range.to } }, include: { product: { select: { name: true, audience: true, brand: { select: { name: true } } } } } }),
     prisma.searchAnalyticsDaily.findMany({ where: { dateKey: { gte: range.from, lte: range.to } } }),
     prisma.stockMovement.findMany({
-      where: { type: StockMovementType.SALE, createdAt },
+      where: { type: StockMovementType.SALE, customerName: { not: null }, createdAt },
       select: { id: true, saleGroupId: true, saleStatus: true, saleUnitPriceInCents: true, unitCostInCents: true, quantity: true, createdAt: true, reason: true, notes: true, productId: true, product: { select: { purchaseCostInCents: true, sizeLabel: true, name: true, audience: true, brand: { select: { name: true } } } } },
     }),
     prisma.analyticsDaily.findFirst({ orderBy: { dateKey: "asc" }, select: { dateKey: true } }),
@@ -78,6 +79,7 @@ export async function getStatisticsData(range: { from: string; to: string }) {
     prisma.searchAnalyticsDaily.findFirst({ orderBy: { dateKey: "asc" }, select: { dateKey: true } }),
     prisma.stockMovement.findFirst({ where: { type: StockMovementType.SALE }, orderBy: { createdAt: "asc" }, select: { createdAt: true } }),
     prisma.dailySiteVisit.count(),
+    getSalesFinance(createdAt.gte, createdAt.lt),
   ]);
 
   const totals = daily.reduce((sum, row) => ({
@@ -90,27 +92,11 @@ export async function getStatisticsData(range: { from: string; to: string }) {
     contacts: sum.contacts + row.generalWhatsappContacts,
   }), { visits: 0, views: 0, addToCartEvents: 0, addedUnits: 0, checkout: 0, reservations: 0, contacts: 0 });
 
-  const movementGroups = new Map<string, typeof movements>();
-  for (const movement of movements) {
-    const groupId = movement.saleGroupId ?? movement.id;
-    movementGroups.set(groupId, [...(movementGroups.get(groupId) ?? []), movement]);
-  }
-  const paidGroupIds = new Set(
-    [...movementGroups.entries()]
-      .filter(([, items]) =>
-        !items.some((item) => item.saleStatus === StockSaleStatus.PENDING) &&
-        items.some((item) => (item.saleStatus ?? StockSaleStatus.PAID) === StockSaleStatus.PAID),
-      )
-      .map(([groupId]) => groupId),
-  );
-  const paidMovements = movements.filter((movement) =>
-    paidGroupIds.has(movement.saleGroupId ?? movement.id) &&
-    (movement.saleStatus ?? StockSaleStatus.PAID) === StockSaleStatus.PAID,
-  );
-  const pendingMovements = movements.filter((movement) => movement.saleStatus === StockSaleStatus.PENDING);
-  const paidValue = paidMovements.reduce((sum, movement) => sum + movement.quantity * (movement.saleUnitPriceInCents ?? 0), 0);
-  const pendingValue = pendingMovements.reduce((sum, movement) => sum + movement.quantity * (movement.saleUnitPriceInCents ?? 0), 0);
-  const paidUnits = paidMovements.reduce((sum, movement) => sum + movement.quantity, 0);
+  // Commercial charts/rankings follow the sale date, independently of receipts.
+  const paidMovements = movements.filter(m => m.saleStatus !== StockSaleStatus.OFFERED);
+  const paidValue = paidMovements.reduce((n,m) => n+m.quantity*(m.saleUnitPriceInCents??0),0);
+  const pendingValue = finance.pendingValue;
+  const paidUnits = paidMovements.reduce((n,m) => n+m.quantity,0);
 
   const aggregateProducts = (field: "views" | "addedUnits" | "checkoutUnits" | "reservationEvents") => {
     const map = new Map<string, { id: string; name: string; value: number }>();
@@ -217,7 +203,7 @@ export async function getStatisticsData(range: { from: string; to: string }) {
     audiences: aggregateProductDimension("audience"),
   };
 
-  const profit = summarizePaidSales(movements);
+  const profit = summarizePaidSales(movements.map(m => ({ ...m, saleStatus: m.saleStatus === StockSaleStatus.OFFERED ? StockSaleStatus.OFFERED : StockSaleStatus.PAID })));
   const formatKey = (movement: typeof movements[number]) => {
     if (movement.reason === StockMovementReason.SALE) return "bottles";
     if (movement.reason === StockMovementReason.DECANT) {
@@ -244,7 +230,7 @@ export async function getStatisticsData(range: { from: string; to: string }) {
     totals,
     profit,
     formats: formats.filter(item => item.key !== "other" || item.quantity > 0),
-    sales: { paidCount: paidGroupIds.size, paidValue, pendingValue, paidUnits, ticketAverage: paidGroupIds.size ? Math.round(paidValue / paidGroupIds.size) : 0, bottles: paidBottles, fiveMl: paidFiveMl, tenMl: paidTenMl, decantKits: paidDecantKits },
+    sales: { receivedValue: finance.receivedValue, legacyPaidValue: finance.legacyPaidValue, soldValue: finance.soldValue, paidCount: finance.paidCount, saleCount: finance.saleCount, paidValue, pendingValue, paidUnits, ticketAverage: finance.ticketAverage, bottles: paidBottles, fiveMl: paidFiveMl, tenMl: paidTenMl, decantKits: paidDecantKits },
     allRankings,
     series,
     hourlySales: range.from === range.to ? Array.from({ length: 24 }, (_, hour) => ({ label: `${String(hour).padStart(2, "0")}:00`, value: saleHours.get(String(hour).padStart(2, "0"))?.size ?? 0, revenue: revenueHours.get(String(hour).padStart(2, "0")) ?? 0 })) : [],

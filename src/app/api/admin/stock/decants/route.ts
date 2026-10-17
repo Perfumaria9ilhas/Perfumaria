@@ -1,3 +1,5 @@
+import { recordInitialSalePayment } from "@/lib/sale-accounts";
+import { randomUUID } from "node:crypto";
 import { after } from "next/server";
 import { notifyAdminSafely } from "@/lib/admin-push";
 import { StockMovementReason, StockMovementType } from "@prisma/client";
@@ -31,7 +33,7 @@ const schema = z.object({
 });
 
 export async function POST(request: Request) {
-  await requireAdmin();
+  const actor = await requireAdmin();
   const parsed = schema.safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Dados inválidos." }, { status: 400 });
 
@@ -39,6 +41,7 @@ export async function POST(request: Request) {
   const lines = mode === "KIT"
     ? productIds.map((productId) => ({ productId, sizeMl: 5 as const, quantity: 1 }))
     : parsed.data.lines!;
+  const saleGroupId = randomUUID();
   try {
     await prisma.$transaction(async (tx) => {
       const uniqueProductIds = [...new Set(lines.map((line) => line.productId))];
@@ -53,11 +56,12 @@ export async function POST(request: Request) {
         const unitPrice = mode === "KIT" ? 330 : getDecantPriceInCents(getSalePriceInCents(product), line.sizeMl === 5 ? "5ml" : "10ml");
         await tx.stockMovement.create({ data: {
           productId: product.id, type: StockMovementType.SALE, reason: StockMovementReason.DECANT,
-          customerName, saleOrigin, saleUnitPriceInCents: unitPrice, quantity: line.quantity,
+          customerName, saleOrigin, saleGroupId, saleUnitPriceInCents: unitPrice, quantity: line.quantity,
           previousStock: product.stock, resultingStock: product.stock,
           notes: mode === "KIT" ? "Kit de decants · 5 ml" : `Decant individual · ${line.sizeMl} ml`,
         } });
       }
+      await recordInitialSalePayment(tx, saleGroupId, actor);
     });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Não foi possível registar a venda." }, { status: 400 });
