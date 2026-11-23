@@ -36,6 +36,7 @@ export type StockPagination = {
 };
 
 export type AdminStockRow = {
+  checkoutPrices?: {bottle:number;fiveMl:number;tenMl:number};
   id: string;
   catalogReference: string;
   brandSlotLabel: string;

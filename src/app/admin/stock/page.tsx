@@ -19,6 +19,7 @@ export default async function AdminStockPage({ searchParams }: { searchParams: P
       <StockAdminTable
         key={JSON.stringify(params)}
         initialView={initialView}
+        kitPriceInCents={data.kitPriceInCents}
         draftOwnerKey={`${admin.kind}:${admin.id}`}
         initialHistory={params.history === "1"}
         initialSalesStatus={params.payment === "pending" ? "PENDING" : params.payment === "paid" ? "PAID" : "ALL"}

@@ -1,3 +1,4 @@
+import { getStorePromotion } from "@/lib/store-promotion";
 import { summarizeSalesFinance } from "./sales-finance";
 import { getSaleAccounts } from "./sale-accounts";
 import { unstable_noStore as noStore } from "next/cache";
@@ -9,10 +10,10 @@ import { prisma } from "@/lib/prisma";
 import { getAdminStockTableData } from "@/lib/stock-server";
 import { getStoreSettings } from "@/lib/store-settings";
 import { readHomepageState } from "@/lib/homepage-config";
-import { resolveCatalogPrice, promotionSelect } from "@/lib/promotion-select";
+import { resolveCatalogPrice, productPromotionSelect } from "@/lib/promotion-select";
 
 const publicProductSelect = {
-  promotion: promotionSelect,
+  promotion: productPromotionSelect,
   id: true,
   name: true,
   slug: true,
@@ -37,11 +38,11 @@ const publicProductSelect = {
 
 export const getCatalogProductBySlug = cache(async (slug: string) => {
   noStore();
-  const [product, settings] = await Promise.all([prisma.product.findFirst({
+  const [product, settings, storePromotion] = await Promise.all([prisma.product.findFirst({
     where: { slug, active: true },
     select: publicProductSelect,
-  }), getStoreSettings()]);
-  return product ? resolveCatalogPrice(product, readHomepageState(settings.homepageConfig).perfumeOfDayId) : null;
+  }), getStoreSettings(),getStorePromotion()]);
+  return product ? resolveCatalogPrice(product, readHomepageState(settings.homepageConfig).perfumeOfDayId,new Date(),storePromotion) : null;
 });
 
 export async function getCatalogData() {
@@ -65,12 +66,13 @@ export async function getCatalogData() {
       .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())
       .map((product, index) => [product.id, index]),
   );
-  const settings = await getStoreSettings();
+  const [settings,storePromotion] = await Promise.all([getStoreSettings(),getStorePromotion()]);
   const dailyId = readHomepageState(settings.homepageConfig).perfumeOfDayId;
+  const pricingTime=new Date();
   const products = catalogRows.map(({ createdAt, ...product }) => {
     void createdAt;
     return {
-      ...resolveCatalogPrice(product, dailyId),
+      ...resolveCatalogPrice(product, dailyId,pricingTime,storePromotion),
       recentRank: recentRankById.get(product.id) ?? catalogRows.length,
     };
   });
@@ -109,10 +111,11 @@ export async function getHomeData() {
     }),
   ]);
 
-  const settings = await getStoreSettings();
+  const [settings,storePromotion] = await Promise.all([getStoreSettings(),getStorePromotion()]);
   const dailyId = readHomepageState(settings.homepageConfig).perfumeOfDayId;
+  const pricingTime=new Date();
   return {
-    featuredProducts: featuredProducts.map((product) => resolveCatalogPrice(product, dailyId)),
+    featuredProducts: featuredProducts.map((product) => resolveCatalogPrice(product, dailyId,pricingTime,storePromotion)),
     reviews,
     stats: {
       satisfiedCustomersCount: metrics?.totalSatisfiedCustomers ?? fallbackOrdersCount,

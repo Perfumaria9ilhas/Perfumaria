@@ -1,3 +1,8 @@
+import { getStorePromotion } from "./store-promotion";
+import { getStoreSettings } from "./store-settings";
+import { readHomepageState } from "./homepage-config";
+import { resolveCatalogPrice, productPromotionSelect } from "./promotion-select";
+import { decantKitPrice } from "./promotions";
 import type { Prisma } from "@prisma/client";
 import { StockMovementReason, StockMovementType } from "@prisma/client";
 import { unstable_noStore as noStore } from "next/cache";
@@ -96,6 +101,8 @@ export async function getAdminStockTableData() {
       include: {
         brand: true,
         category: true,
+        productType: true,
+        promotion: productPromotionSelect,
         stockMovements: {
           orderBy: { createdAt: "desc" },
           take: 25,
@@ -168,7 +175,12 @@ export async function getAdminStockTableData() {
     supplierByProductId.set(movement.productId, supplier);
   }
 
-  const rows = products.map((product) => mapProductRow(product, movementSummary, supplierByProductId));
+  const [storeRule,settings]=await Promise.all([getStorePromotion(),getStoreSettings()]);
+  const dailyId=readHomepageState(settings.homepageConfig).perfumeOfDayId;
+  const rows = products.map(product=>{
+    const priced=resolveCatalogPrice(product,dailyId,new Date(),storeRule);
+    return {...mapProductRow(product,movementSummary,supplierByProductId),checkoutPrices:{bottle:getSalePriceInCents(priced),fiveMl:priced.fiveMlPriceInCents,tenMl:priced.tenMlPriceInCents}};
+  });
   const rowsById = new Map(rows.map((row) => [row.id, row]));
   for (const movement of saleMovements) {
     const customerName = movement.customerName?.trim();
@@ -240,6 +252,7 @@ export async function getAdminStockTableData() {
   const customerNames = customerSummaries.map((entry) => entry.customerName);
 
   return {
+    kitPriceInCents:decantKitPrice(storeRule),
     rows,
     brands,
     categories,

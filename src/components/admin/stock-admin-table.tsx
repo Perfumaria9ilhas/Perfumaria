@@ -32,6 +32,7 @@ import {
 } from "@/lib/stock";
 
 type Props = {
+  kitPriceInCents?:number;
   rows: AdminStockRow[];
   brands: Brand[];
   categories: Category[];
@@ -84,6 +85,7 @@ export function StockAdminTable({
   initialHistory = false,
   compact = false,
   draftOwnerKey = "",
+  kitPriceInCents=1650,
 }: Props) {
   const router = useRouter();
   const [rows, setRows] = useState(initialRows);
@@ -966,7 +968,7 @@ export function StockAdminTable({
         </ModalFrame>
       ) : null}
 
-      {activeView === "NEW_SALE" ? <NewSaleForm rows={rows} customerNames={customerNames} ownerKey={draftOwnerKey} initialCustomerName={newSaleCustomerName} /> : null}
+      {activeView === "NEW_SALE" ? <NewSaleForm kitPriceInCents={kitPriceInCents} rows={rows} customerNames={customerNames} ownerKey={draftOwnerKey} initialCustomerName={newSaleCustomerName} /> : null}
 
       {activeView === "SALES" ? <CustomerReceivables renderEditor={(id,version) => {
         const sale = sales.find(s => s.id === id);

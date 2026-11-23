@@ -14,6 +14,10 @@ export type CatalogProduct = {
   perfumeOfDay?: boolean;
   dailyDiscountApplied?: boolean;
   decantBottlePriceInCents?: number;
+  fiveMlPriceInCents?: number;
+  tenMlPriceInCents?: number;
+  fiveMlBasePriceInCents?: number;
+  tenMlBasePriceInCents?: number;
   id: string;
   name: string;
   slug: string;

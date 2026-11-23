@@ -63,7 +63,7 @@ try {
  const scheduled=await p.productPromotion.findUniqueOrThrow({where:{productId:one.id}});assert.equal(rules.promotionState(scheduled),'SCHEDULED');assert.equal(rules.promotionState(scheduled,new Date(scheduled.endsAt.getTime()+1)),'EXPIRED');
  assert.equal(rules.applyProductPromotion({...one,salePriceInCents:null},null,scheduled,new Date(scheduled.endsAt.getTime()+1)).salePriceInCents,null);
  assert.equal(rules.applyProductPromotion({...one,active:false},null,rule).salePriceInCents,one.salePriceInCents);
- assert.equal(rules.applyProductPromotion({...one,productType:{slug:'gift-set'}},null,rule).salePriceInCents,one.salePriceInCents);
+ assert.equal(rules.applyProductPromotion({...one,productType:{slug:'gift-set'}},null,rule).salePriceInCents,Math.round(one.priceInCents*.8));
  const audit=await p.promotionAudit.findFirstOrThrow();await assert.rejects(p.promotionAudit.delete({where:{id:audit.id}}));
  assert.equal((await api.PATCH(req({id:scheduled.id,version:scheduled.updatedAt.toISOString(),action:'DELETE'}))).status,409);
  assert.equal((await api.PATCH(req({id:scheduled.id,version:scheduled.updatedAt.toISOString(),action:'DELETE',confirmation:'ELIMINAR'}))).status,200);assert.equal(await p.productPromotion.count(),0);assert(await p.promotionAudit.count()>5);

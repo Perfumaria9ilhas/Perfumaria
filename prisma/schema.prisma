@@ -491,6 +491,7 @@ model AccountAudit {
 enum PromotionMethod {
   PERCENT
   FIXED
+  AMOUNT
 }
 
 enum PromotionStatus {
@@ -506,6 +507,7 @@ model ProductPromotion {
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   method PromotionMethod
   value Int // hundredths of a percent, or integer euro cents
+  includeVariants Boolean @default(false)
   startsAt DateTime @db.Timestamptz(3)
   endsAt DateTime? @db.Timestamptz(3)
   status PromotionStatus @default(ENABLED)
@@ -513,6 +515,18 @@ model ProductPromotion {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([status, startsAt, endsAt])
+}
+
+model StorePromotion {
+  id String @id
+  method PromotionMethod
+  value Int
+  startsAt DateTime @db.Timestamptz(3)
+  endsAt DateTime? @db.Timestamptz(3)
+  status PromotionStatus @default(ENABLED)
+  actorId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model PromotionAudit {

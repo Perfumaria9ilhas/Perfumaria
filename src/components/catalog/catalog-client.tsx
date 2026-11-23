@@ -72,8 +72,12 @@ function getBottlePrice(product: CatalogProduct) {
 }
 
 function getDisplayPrice(product: CatalogProduct, size: ProductSizeValue) {
-  if (size === "5ml" || size === "10ml") return getDecantPriceInCents(product.decantBottlePriceInCents ?? getBottlePrice(product), size);
+  if (size === "5ml" || size === "10ml") return (size === "5ml" ? product.fiveMlPriceInCents : product.tenMlPriceInCents) ?? getDecantPriceInCents(product.decantBottlePriceInCents ?? getBottlePrice(product), size);
   return getBottlePrice(product);
+}
+
+function getOriginalPrice(product:CatalogProduct,size:ProductSizeValue) {
+  return size==="100ml"?product.priceInCents:(size==="5ml"?product.fiveMlBasePriceInCents:product.tenMlBasePriceInCents)??getDecantPriceInCents(product.decantBottlePriceInCents??getBottlePrice(product),size);
 }
 
 function getSelectedSizeLabel(product: CatalogProduct, size: ProductSizeValue) {
@@ -319,7 +323,7 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
       brand: product.brand.name,
       sizeLabel: getSelectedSizeLabel(product, size),
       priceInCents: getDisplayPrice(product, size),
-      originalPriceInCents: size === "100ml" ? product.priceInCents : null,
+      originalPriceInCents: getOriginalPrice(product,size),
       imageUrl: product.imageUrl,
       stock: product.stock,
     };
@@ -407,8 +411,8 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
           <div className="store-product-layout">
             <div className="store-product-photo"><ProductImage key={selectedProduct.id} src={selectedProduct.imageUrl} alt={selectedProduct.name} priority sizes="(max-width: 767px) 90vw, 520px" /></div>
             <div className="store-product-info">
-              <div className="store-product-name-row"><div><h2>{selectedProduct.name}</h2><p className="store-product-brand">{selectedProduct.brand.name}</p></div>{getBottlePrice(selectedProduct) < selectedProduct.priceInCents || selectedProduct.perfumeOfDay || selectedProduct.bestseller || selectedProduct.featured ? <span className="store-badge">{getBottlePrice(selectedProduct) < selectedProduct.priceInCents ? `-${new Intl.NumberFormat("pt-PT", { maximumFractionDigits: 1 }).format((1 - getBottlePrice(selectedProduct) / selectedProduct.priceInCents) * 100)}%${selectedProduct.perfumeOfDay && selectedProduct.dailyDiscountApplied !== false ? " · hoje" : ""}` : selectedProduct.bestseller ? "Mais vendido" : "Em destaque"}</span> : null}</div>
-              <div className="store-product-price"><strong>{formatPrice(getDisplayPrice(selectedProduct, selectedProductSize))}</strong>{selectedProductSize === "100ml" && getBottlePrice(selectedProduct) < selectedProduct.priceInCents ? <del>{formatPrice(selectedProduct.priceInCents)}</del> : null}</div>
+              <div className="store-product-name-row"><div><h2>{selectedProduct.name}</h2><p className="store-product-brand">{selectedProduct.brand.name}</p></div>{getDisplayPrice(selectedProduct,selectedProductSize) < getOriginalPrice(selectedProduct,selectedProductSize) || selectedProduct.perfumeOfDay || selectedProduct.bestseller || selectedProduct.featured ? <span className="store-badge">{getDisplayPrice(selectedProduct,selectedProductSize) < getOriginalPrice(selectedProduct,selectedProductSize) ? `-${new Intl.NumberFormat("pt-PT", { maximumFractionDigits: 1 }).format((1 - getDisplayPrice(selectedProduct,selectedProductSize) / getOriginalPrice(selectedProduct,selectedProductSize)) * 100)}%${selectedProductSize === "100ml" && selectedProduct.perfumeOfDay && selectedProduct.dailyDiscountApplied !== false ? " · hoje" : ""}` : selectedProduct.bestseller ? "Mais vendido" : "Em destaque"}</span> : null}</div>
+              <div className="store-product-price"><strong>{formatPrice(getDisplayPrice(selectedProduct, selectedProductSize))}</strong>{getDisplayPrice(selectedProduct,selectedProductSize) < getOriginalPrice(selectedProduct,selectedProductSize) ? <del>{formatPrice(getOriginalPrice(selectedProduct,selectedProductSize))}</del> : null}</div>
               <div><p className="store-field">Tamanho</p><div className="store-variant-options"><button aria-pressed={selectedProductSize === "100ml"} onClick={() => setProductSize(selectedProduct.id, "100ml")}>{getProductBottleSizeLabel(selectedProduct)}</button></div></div>
               {selectedProduct.availableInFiveMl || selectedProduct.availableInTenMl ? <div><p className="store-field">Decants</p><div className="store-variant-options">
                 <button aria-pressed={selectedProductSize === "100ml"} onClick={() => setProductSize(selectedProduct.id, "100ml")}>Sem decant</button>
@@ -458,7 +462,7 @@ export function CatalogClient({ products, whatsappNumber }: CatalogClientProps) 
       <section className="store-product-grid" aria-label="Produtos">
         {visibleProducts.map((product, index) => {
           const selectedSize = getSelectedSize(product);
-          return <ProductCard key={product.id} product={product} price={getDisplayPrice(product, selectedSize)} originalPrice={selectedSize === "100ml" ? product.priceInCents : getDisplayPrice(product, selectedSize)} priority={index < 4} onOpen={() => prepareProductOpen(product)}>
+          return <ProductCard key={product.id} product={product} dailyBadge={selectedSize==="100ml"} price={getDisplayPrice(product, selectedSize)} originalPrice={getOriginalPrice(product,selectedSize)} priority={index < 4} onOpen={() => prepareProductOpen(product)}>
             {product.category.slug === "perfumes-arabes" && perfumeTypeSlugs.has(product.productType.slug) ? <div className="store-card-options" role="group" aria-label={`Tamanho de ${product.name}`}>
               <button type="button" aria-pressed={selectedSize === "100ml"} onClick={() => setProductSize(product.id, "100ml")}>{getProductBottleSizeLabel(product)}</button>
               {product.availableInFiveMl ? <button type="button" aria-pressed={selectedSize === "5ml"} onClick={() => setProductSize(product.id, "5ml")}>5 ml</button> : null}

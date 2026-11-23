@@ -1,12 +1,13 @@
+import { getStorePromotion } from "@/lib/store-promotion";
 import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentCustomer } from "@/lib/auth";
 import { formatPrice } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
-import { getDecantPriceInCents, getProductBottleSizeLabel } from "@/lib/product-sizes";
+import { getProductBottleSizeLabel } from "@/lib/product-sizes";
 import { getSalePriceInCents } from "@/lib/format";
-import { resolveCatalogPrice, promotionSelect } from "@/lib/promotion-select";
+import { resolveCatalogPrice, productPromotionSelect } from "@/lib/promotion-select";
 import { readHomepageState } from "@/lib/homepage-config";
 
 const orderItemSchema = z.object({
@@ -47,18 +48,19 @@ export async function POST(request: Request) {
   const productIds = [...new Set(parsed.data.items.map((item) => item.productId))];
   const products = await prisma.product.findMany({
     where: { id: { in: productIds } },
-    select: { promotion: promotionSelect, id: true, name: true, sizeLabel: true, priceInCents: true, salePriceInCents: true, stock: true, active: true, availableInFiveMl: true, availableInTenMl: true, brand: { select: { name: true } }, category: {select:{slug:true}}, productType: {select:{slug:true}} },
+    select: { promotion: productPromotionSelect, id: true, name: true, sizeLabel: true, priceInCents: true, salePriceInCents: true, stock: true, active: true, availableInFiveMl: true, availableInTenMl: true, brand: { select: { name: true } }, category: {select:{slug:true}}, productType: {select:{slug:true}} },
   });
   const productMap = new Map(products.map((product) => [product.id, product]));
   const settings = await prisma.storeSettings.findUnique({ where: { id: "main" }, select: { whatsappNumber: true, homepageConfig: true } });
   const dailyId = readHomepageState(settings?.homepageConfig).perfumeOfDayId;
+  const storePromotion=await getStorePromotion();
+  const pricingTime=new Date();
   const validatedItems: ValidatedOrderItem[] = [];
 
   for (const item of parsed.data.items) {
     const product = productMap.get(item.productId);
     if (!product?.active || product.stock <= 0) return NextResponse.json({ error: "Um dos produtos não está disponível." }, { status: 400 });
-    const bottlePrice = getSalePriceInCents(resolveCatalogPrice(product, dailyId));
-    const decantPrice = getSalePriceInCents(product);
+    const bottlePrice = getSalePriceInCents(resolveCatalogPrice(product, dailyId,pricingTime,storePromotion));
     if (item.variant === "5ml" && !product.availableInFiveMl) return NextResponse.json({ error: "A opção de 5 ml não está disponível para este produto." }, { status: 400 });
     if (item.variant === "10ml" && !product.availableInTenMl) return NextResponse.json({ error: "A opção de 10 ml não está disponível para este produto." }, { status: 400 });
     validatedItems.push({
@@ -66,7 +68,7 @@ export async function POST(request: Request) {
       name: product.name,
       brand: product.brand.name,
       sizeLabel: item.variant === "bottle" ? getProductBottleSizeLabel(product) : item.variant === "5ml" ? "5 ml" : "10 ml",
-      priceInCents: item.variant === "bottle" ? bottlePrice : getDecantPriceInCents(decantPrice, item.variant),
+      priceInCents: item.variant === "bottle" ? bottlePrice : (item.variant === "5ml" ? resolveCatalogPrice(product,dailyId,pricingTime,storePromotion).fiveMlPriceInCents : resolveCatalogPrice(product,dailyId,pricingTime,storePromotion).tenMlPriceInCents),
       quantity: item.quantity,
     });
   }

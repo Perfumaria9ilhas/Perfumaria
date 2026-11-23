@@ -6,5 +6,5 @@ import "../promotions.css";
 export const dynamic = "force-dynamic";
 export default async function DiscountsPage() {
   await requireAdmin();
-  return <AdminShell title="Descontos e promoções" description="Gerir preços especiais dos frascos, independentemente do Perfume do Dia."><PromotionManager initial={await listPromotions()} /></AdminShell>;
+  return <AdminShell title="Descontos e promoções" description="Escolha e controle os descontos da loja toda ou de produtos específicos."><PromotionManager initial={await listPromotions()} /></AdminShell>;
 }
